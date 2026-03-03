@@ -43,6 +43,41 @@ def test_build_document_text_minimal():
     assert "실행 절차" not in text
 
 
+def test_build_document_text_with_program():
+    """프로그램명과 소스코드 유형이 포함된 문서 텍스트 생성."""
+    text = _build_document_text(
+        title="ZFIR0090 에러 분석",
+        category="오류분석",
+        tcode="SE38",
+        content="ZFIR0090 프로그램의 런타임 에러를 분석합니다.",
+        steps=["SE38에서 프로그램 열기", "디버깅 실행"],
+        warnings=["운영계에서 직접 수정 금지"],
+        tags=["ABAP", "디버깅"],
+        program_name="ZFIR0090",
+        source_type="source_code",
+    )
+
+    assert "프로그램명: ZFIR0090" in text
+    assert "유형: 소스코드 분석" in text
+    assert "T-code: SE38" in text
+
+
+def test_build_document_text_guide_no_type_label():
+    """guide 유형은 유형 레이블을 표시하지 않는다."""
+    text = _build_document_text(
+        title="일반 가이드",
+        category="데이터분석",
+        tcode=None,
+        content="일반 내용",
+        steps=[],
+        warnings=[],
+        tags=[],
+        source_type="guide",
+    )
+
+    assert "유형:" not in text
+
+
 def test_extract_tcodes_basic():
     """텍스트에서 SAP T-code를 정확히 추출."""
     text = "ST22로 덤프를 분석하고 SM21에서 시스템 로그를 확인하세요."

@@ -49,6 +49,8 @@ class KnowledgeBase(BaseModel):
     title: str = Field(..., max_length=200)
     category: str = Field(..., max_length=50)
     tcode: str | None = Field(default=None, max_length=20)
+    program_name: str | None = Field(default=None, max_length=40, description="ABAP 프로그램명 (예: ZFIR0090)")
+    source_type: str = Field(default="guide", description="guide, source_code, error_pattern")
     content: str
     steps: list[str] = []
     warnings: list[str] = []
@@ -61,6 +63,8 @@ class KnowledgeCreate(BaseModel):
     title: str = Field(..., max_length=200)
     category: str = Field(..., max_length=50)
     tcode: str | None = Field(default=None, max_length=20)
+    program_name: str | None = Field(default=None, max_length=40, description="ABAP 프로그램명")
+    source_type: str = Field(default="guide", description="guide, source_code, error_pattern")
     content: str
     steps: list[str] = []
     warnings: list[str] = []
@@ -71,6 +75,8 @@ class KnowledgeUpdate(BaseModel):
     title: str | None = None
     category: str | None = None
     tcode: str | None = None
+    program_name: str | None = None
+    source_type: str | None = None
     content: str | None = None
     steps: list[str] | None = None
     warnings: list[str] | None = None

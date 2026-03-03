@@ -51,10 +51,15 @@ async def index_knowledge_item(
     steps: list[str],
     warnings: list[str],
     tags: list[str],
+    program_name: str | None = None,
+    source_type: str = "guide",
 ) -> None:
     """지식 항목을 ChromaDB에 벡터 인덱싱한다."""
     # 검색 품질을 위해 모든 필드를 하나의 텍스트로 결합
-    full_text = _build_document_text(title, category, tcode, content, steps, warnings, tags)
+    full_text = _build_document_text(
+        title, category, tcode, content, steps, warnings, tags,
+        program_name=program_name, source_type=source_type,
+    )
 
     embedding = await generate_embedding(full_text)
 
@@ -67,6 +72,8 @@ async def index_knowledge_item(
             "title": title,
             "category": category,
             "tcode": tcode or "",
+            "program_name": program_name or "",
+            "source_type": source_type,
             "tags": json.dumps(tags, ensure_ascii=False),
         }],
     )
@@ -80,11 +87,22 @@ def _build_document_text(
     steps: list[str],
     warnings: list[str],
     tags: list[str],
+    program_name: str | None = None,
+    source_type: str = "guide",
 ) -> str:
     """인덱싱/검색용 통합 문서 텍스트를 생성한다."""
+    source_labels = {
+        "guide": "운영 가이드",
+        "source_code": "소스코드 분석",
+        "error_pattern": "에러 패턴",
+    }
     parts = [f"제목: {title}", f"카테고리: {category}"]
+    if source_type != "guide":
+        parts.append(f"유형: {source_labels.get(source_type, source_type)}")
     if tcode:
         parts.append(f"T-code: {tcode}")
+    if program_name:
+        parts.append(f"프로그램명: {program_name}")
     parts.append(f"내용: {content}")
     if steps:
         parts.append("실행 절차:\n" + "\n".join(f"  {i+1}. {s}" for i, s in enumerate(steps)))

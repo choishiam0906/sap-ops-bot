@@ -51,6 +51,8 @@ async def create_knowledge(db: AsyncSession, data: KnowledgeCreate) -> Knowledge
         title=data.title,
         category=data.category,
         tcode=data.tcode,
+        program_name=data.program_name,
+        source_type=data.source_type,
         content=data.content,
         steps=data.steps,
         warnings=data.warnings,

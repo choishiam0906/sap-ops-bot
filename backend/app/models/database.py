@@ -27,6 +27,10 @@ class KnowledgeItem(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     tcode: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    program_name: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    source_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="guide"
+    )  # guide, source_code, error_pattern
     content: Mapped[str] = mapped_column(Text, nullable=False)
     steps: Mapped[list] = mapped_column(JSON, default=list)
     warnings: Mapped[list] = mapped_column(JSON, default=list)

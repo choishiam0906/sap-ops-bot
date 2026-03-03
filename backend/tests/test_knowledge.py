@@ -108,6 +108,29 @@ async def test_delete_knowledge(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_create_knowledge_with_program(client: AsyncClient):
+    """ABAP 프로그램 정보가 포함된 지식 항목 생성."""
+    payload = {
+        "title": "ZFIR0090 에러 패턴",
+        "category": "오류분석",
+        "tcode": "SE38",
+        "program_name": "ZFIR0090",
+        "source_type": "source_code",
+        "content": "ZFIR0090 프로그램에서 자주 발생하는 런타임 에러 패턴입니다.",
+        "steps": ["SE38에서 ZFIR0090 열기", "디버깅 모드 실행"],
+        "tags": ["ABAP", "에러패턴"],
+    }
+
+    response = await client.post("/api/v1/knowledge", json=payload)
+    assert response.status_code == 201
+
+    data = response.json()
+    assert data["program_name"] == "ZFIR0090"
+    assert data["source_type"] == "source_code"
+    assert data["tcode"] == "SE38"
+
+
+@pytest.mark.asyncio
 async def test_list_with_category_filter(client: AsyncClient):
     """카테고리 필터로 지식 목록 조회."""
     # 2개 카테고리에 데이터 생성

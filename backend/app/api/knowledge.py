@@ -70,6 +70,8 @@ async def add_knowledge(
             steps=item.steps,
             warnings=item.warnings,
             tags=item.tags,
+            program_name=item.program_name,
+            source_type=item.source_type,
         )
     except Exception:
         pass  # 벡터 인덱싱 실패 시에도 DB 저장은 유지
@@ -99,6 +101,8 @@ async def edit_knowledge(
             steps=item.steps,
             warnings=item.warnings,
             tags=item.tags,
+            program_name=item.program_name,
+            source_type=item.source_type,
         )
     except Exception:
         pass
@@ -126,6 +130,8 @@ def _to_schema(item) -> KnowledgeBase:
         title=item.title,
         category=item.category,
         tcode=item.tcode,
+        program_name=getattr(item, "program_name", None),
+        source_type=getattr(item, "source_type", "guide"),
         content=item.content,
         steps=item.steps or [],
         warnings=item.warnings or [],
