@@ -1,0 +1,112 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SAP Ops Bot API",
+    "description": "SAP 운영 자동화 AI 봇 — Microsoft Copilot Studio Custom Connector 스펙",
+    "version": "1.0.0",
+    "contact": {
+      "name": "SAP Ops Bot Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://your-api-endpoint.azurewebsites.net",
+      "description": "프로덕션 서버"
+    },
+    {
+      "url": "http://localhost:8000",
+      "description": "로컬 개발 서버"
+    }
+  ],
+  "paths": {
+    "/api/v1/chat/copilot": {
+      "post": {
+        "operationId": "AskSAPBot",
+        "summary": "SAP 운영 질문하기",
+        "description": "자연어로 SAP 운영 관련 질문을 보내면 AI가 T-code, 절차, 주의사항을 안내합니다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "사용자의 SAP 운영 관련 질문",
+                    "example": "ST22로 덤프 분석하는 방법 알려줘"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI 응답 (Adaptive Card 형식)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "example": "AdaptiveCard"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.5"
+                    },
+                    "body": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthCheck",
+        "summary": "서비스 상태 확인",
+        "responses": {
+          "200": {
+            "description": "서비스 상태",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "version": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Connector-Secret"
+      }
+    }
+  }
+}

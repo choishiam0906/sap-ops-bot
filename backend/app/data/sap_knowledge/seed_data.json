@@ -1,0 +1,251 @@
+[
+  {
+    "title": "사용자 트랜잭션 이력 조회 (ST03N)",
+    "category": "데이터분석",
+    "tcode": "ST03N",
+    "content": "ST03N은 SAP Workload Analysis 도구로, 특정 기간 동안의 트랜잭션 실행 이력을 분석합니다. Transaction Profile에서 사용자별/T-code별 실행 통계를 확인하고, RFC Profile에서 외부 시스템 호출 이력을 조회할 수 있습니다.",
+    "steps": [
+      "T-code ST03N 실행",
+      "분석 기간 선택 (일/주/월)",
+      "서버 인스턴스 선택",
+      "Transaction Profile 또는 RFC Profile 선택",
+      "사용자/T-code별 필터링하여 결과 확인"
+    ],
+    "warnings": [
+      "데이터 보존 기간은 시스템 설정에 따라 다름 (보통 30일)",
+      "Expert Mode 활성화 시 더 상세한 데이터 확인 가능"
+    ],
+    "tags": ["사용이력", "트랜잭션", "워크로드", "성능분석"]
+  },
+  {
+    "title": "보안 감사 로그 조회 (SM20)",
+    "category": "데이터분석",
+    "tcode": "SM20",
+    "content": "SM20은 Security Audit Log를 조회하는 T-code입니다. 사용자의 로그온/로그오프 이력, 프로그램 실행 기록, RFC 호출 등 보안 관련 이벤트를 추적합니다. 누가 언제 무엇을 실행했는지 상세히 확인할 수 있습니다.",
+    "steps": [
+      "T-code SM20 실행",
+      "날짜/시간 범위 설정",
+      "사용자 ID 입력 (선택)",
+      "이벤트 유형 선택 (로그온, 트랜잭션 시작 등)",
+      "실행하여 결과 조회"
+    ],
+    "warnings": [
+      "SM19에서 Audit Profile 설정이 선행되어야 로그가 기록됨",
+      "로그 데이터 양이 많으면 성능에 영향을 줄 수 있으므로 범위를 좁혀서 조회"
+    ],
+    "tags": ["보안", "감사로그", "사용이력", "로그온"]
+  },
+  {
+    "title": "백그라운드 잡 이력 조회 (RSM37/SM37)",
+    "category": "데이터분석",
+    "tcode": "RSM37",
+    "content": "RSM37(또는 SM37)은 백그라운드 잡 실행 이력을 조회합니다. 잡 이름, 사용자, 실행 상태(성공/실패/취소), 실행 시간 등을 확인할 수 있습니다. 특정 프로그램의 배치 실행 이력을 추적할 때 유용합니다.",
+    "steps": [
+      "T-code RSM37 또는 SM37 실행",
+      "잡 이름 또는 사용자 ID 입력 (* 와일드카드 사용 가능)",
+      "날짜 범위 설정",
+      "잡 상태 선택 (Scheduled, Released, Ready, Active, Finished, Canceled)",
+      "실행하여 결과 조회",
+      "특정 잡 더블클릭으로 상세 정보 (스풀, 로그) 확인"
+    ],
+    "warnings": [
+      "* 를 사용한 전체 검색은 시스템 부하를 줄 수 있으므로 필터 조건을 가능한 좁힐 것",
+      "실패한 잡은 로그에서 에러 메시지 확인 가능"
+    ],
+    "tags": ["백그라운드잡", "배치", "스케줄링", "SM37"]
+  },
+  {
+    "title": "프로그램 소스 검색 (SE38 - RS_ABAP_SOURCE_SCAN)",
+    "category": "데이터분석",
+    "tcode": "SE38",
+    "content": "SE38에서 프로그램 RS_ABAP_SOURCE_SCAN을 실행하면 ABAP 소스 코드 내에서 특정 문자열을 검색할 수 있습니다. 특정 테이블명, 함수명, 변수명 등이 어떤 프로그램에서 사용되는지 찾을 때 유용합니다.",
+    "steps": [
+      "T-code SE38 실행",
+      "프로그램명에 RS_ABAP_SOURCE_SCAN 입력",
+      "실행 (F8)",
+      "검색할 문자열 입력",
+      "검색 범위 설정 (프로그램 이름 패턴, 패키지 등)",
+      "실행하여 해당 문자열이 포함된 프로그램 목록 확인"
+    ],
+    "warnings": [
+      "검색 범위가 넓으면 실행 시간이 오래 걸릴 수 있음",
+      "대소문자 구분 옵션 확인 필요"
+    ],
+    "tags": ["소스검색", "ABAP", "프로그램찾기", "SE38"]
+  },
+  {
+    "title": "외부 DB 접근 쿼리 (SE38 - ADBC_QUERY)",
+    "category": "데이터분석",
+    "tcode": "SE38",
+    "content": "SE38에서 ADBC_QUERY 프로그램을 실행하면 SAP 시스템의 데이터베이스에 직접 SQL 쿼리를 실행할 수 있습니다. Native SQL을 사용하여 테이블 데이터를 조회하거나, 시스템 테이블 정보를 확인할 때 유용합니다.",
+    "steps": [
+      "T-code SE38 실행",
+      "프로그램명에 ADBC_QUERY 입력",
+      "실행 (F8)",
+      "SQL 쿼리문 입력 (SELECT 권장)",
+      "실행하여 결과 확인"
+    ],
+    "warnings": [
+      "INSERT/UPDATE/DELETE 등 DML은 절대 실행 금지 (운영 시스템)",
+      "프로덕션 시스템에서는 SELECT만 사용",
+      "대용량 조회 시 LIMIT/TOP 제한 필수",
+      "DB 종류(HANA, Oracle 등)에 따라 SQL 문법이 다를 수 있음"
+    ],
+    "tags": ["SQL", "DB직접접근", "Native SQL", "ADBC"]
+  },
+  {
+    "title": "테이블 변경 이력 조회 (SCU3)",
+    "category": "데이터분석",
+    "tcode": "SCU3",
+    "content": "SCU3는 Table Logging이 활성화된 테이블의 DML(Insert/Update/Delete) 이력을 조회합니다. 누가, 언제, 어떤 데이터를 변경했는지 상세히 확인할 수 있어 데이터 변경 추적에 필수적입니다.",
+    "steps": [
+      "T-code SCU3 실행",
+      "테이블명 입력",
+      "날짜 범위 설정",
+      "사용자 ID 입력 (선택)",
+      "실행하여 변경 이력 확인 (Old/New 값 비교 가능)"
+    ],
+    "warnings": [
+      "해당 테이블에 Table Logging이 활성화(SE13)되어 있어야 이력이 기록됨",
+      "모든 테이블에 Logging을 켜면 DB 부하 증가 → 필요한 테이블만 활성화",
+      "CDHDR/CDPOS (Change Document)와 혼동하지 말 것 — SCU3는 기술적 테이블 로그"
+    ],
+    "tags": ["테이블로깅", "DML이력", "변경추적", "데이터감사"]
+  },
+  {
+    "title": "SQL Trace 분석 (ST05)",
+    "category": "데이터분석",
+    "tcode": "ST05",
+    "content": "ST05는 SQL Trace를 활성화/비활성화하여 특정 사용자의 DB 요청을 실시간으로 추적합니다. 성능 문제 분석, 특정 트랜잭션의 DB 접근 패턴 파악, 프로그램이 실제로 어떤 SQL을 실행하는지 확인할 때 사용합니다.",
+    "steps": [
+      "T-code ST05 실행",
+      "Trace 유형 선택 (SQL Trace, RFC Trace 등)",
+      "추적할 사용자 ID 입력",
+      "Activate Trace 클릭 → 해당 사용자가 작업 수행",
+      "Deactivate Trace 클릭",
+      "Display Trace로 결과 분석"
+    ],
+    "warnings": [
+      "Trace 활성화 후 반드시 비활성화할 것 — 잊으면 시스템 부하 발생",
+      "운영 시스템에서는 짧은 시간만 활성화",
+      "다른 사용자의 Trace를 실수로 끄지 않도록 주의"
+    ],
+    "tags": ["SQL Trace", "성능분석", "디버깅", "DB추적"]
+  },
+  {
+    "title": "메시지 클래스/번호로 메시지 찾기 (SE11 - T100)",
+    "category": "오류분석",
+    "tcode": "SE11",
+    "content": "SE11에서 T100 테이블을 조회하면 SAP 시스템의 모든 메시지를 검색할 수 있습니다. 에러 메시지의 클래스(Message Class)와 번호(Message Number)를 알면 정확한 메시지 텍스트와 변수 위치를 확인할 수 있습니다.",
+    "steps": [
+      "T-code SE11 실행",
+      "테이블명에 T100 입력",
+      "내용 표시(Display) 클릭",
+      "SPRSL(언어), ARBGB(메시지 클래스), MSGNR(메시지 번호) 필터 입력",
+      "실행하여 메시지 텍스트 확인"
+    ],
+    "warnings": [
+      "메시지의 &1, &2 등은 런타임에 치환되는 변수",
+      "SE91에서도 메시지 클래스별로 조회 가능"
+    ],
+    "tags": ["메시지", "에러메시지", "T100", "메시지클래스"]
+  },
+  {
+    "title": "ABAP 덤프 분석 (ST22)",
+    "category": "오류분석",
+    "tcode": "ST22",
+    "content": "ST22는 ABAP Runtime Error(덤프)를 분석하는 T-code입니다. 프로그램 실행 중 발생한 치명적 오류의 상세 정보를 확인할 수 있으며, 에러 발생 위치, 변수 값, 콜 스택 등을 제공합니다.",
+    "steps": [
+      "T-code ST22 실행",
+      "날짜 선택 (Today, Yesterday, 또는 특정 날짜)",
+      "에러 목록에서 분석할 덤프 선택",
+      "Error Analysis 섹션에서 에러 유형 및 원인 확인",
+      "Source Code Extract에서 에러 발생 코드 라인 확인",
+      "Contents of System Fields에서 변수 값 확인"
+    ],
+    "warnings": [
+      "덤프 보존 기간은 시스템 설정에 따라 다름 (보통 7-14일)",
+      "USER_ID로 특정 사용자의 덤프만 필터링 가능",
+      "자주 발생하는 덤프는 SM21 시스템 로그와 교차 확인"
+    ],
+    "tags": ["덤프", "런타임에러", "ABAP에러", "디버깅"]
+  },
+  {
+    "title": "시스템 로그 조회 (SM21)",
+    "category": "오류분석",
+    "tcode": "SM21",
+    "content": "SM21은 SAP 시스템 로그를 조회하는 T-code입니다. 시스템 레벨의 이벤트(시작/종료, 에러, 경고)와 사용자 레벨의 이벤트(덤프, 권한 오류)를 기록합니다. ST22와 함께 오류 분석에 필수적인 도구입니다.",
+    "steps": [
+      "T-code SM21 실행",
+      "날짜/시간 범위 설정",
+      "사용자 ID 입력 (선택)",
+      "이벤트 유형 선택 (All, Errors only 등)",
+      "실행하여 시스템 로그 확인"
+    ],
+    "warnings": [
+      "로그 보존 기간은 시스템 파라미터에 의해 결정",
+      "대량의 로그가 있을 수 있으므로 범위를 좁혀서 조회",
+      "RZ20과 연계하여 모니터링 알림 설정 가능"
+    ],
+    "tags": ["시스템로그", "에러로그", "시스템이벤트", "모니터링"]
+  },
+  {
+    "title": "역할/사용자/T-code 기반 권한 조회 (S_BCE_68001425)",
+    "category": "역할관리",
+    "tcode": "S_BCE_68001425",
+    "content": "S_BCE_68001425는 역할(Role) 기반 권한 정보를 다양한 관점에서 조회할 수 있는 리포트입니다. 사용자 기준, 역할 기준, T-code 기준으로 검색하여 '이 사용자가 어떤 역할을 가지고 있는지', '이 T-code를 실행할 수 있는 사용자가 누구인지' 등을 빠르게 파악합니다.",
+    "steps": [
+      "T-code S_BCE_68001425 실행 (또는 SE38에서 프로그램명으로 실행)",
+      "검색 기준 선택: By User / By Role / By Transaction",
+      "검색 값 입력",
+      "실행하여 결과 확인"
+    ],
+    "warnings": [
+      "T-code 직접 입력이 안 될 수 있음 — SE38에서 프로그램명으로 실행",
+      "대규모 사용자/역할 환경에서는 조회 시간이 걸릴 수 있음",
+      "SU01(사용자 마스터)과 PFCG(역할 관리)와 연계하여 상세 확인"
+    ],
+    "tags": ["역할", "권한", "사용자관리", "Role", "Authorization"]
+  },
+  {
+    "title": "CTS 이동 경로 설정 및 전송 (STMS)",
+    "category": "CTS관리",
+    "tcode": "STMS",
+    "content": "STMS(Transport Management System)는 CTS(Change and Transport System)의 이동 경로를 관리합니다. 개발→품질→운영 시스템 간의 전송 경로를 설정하고, Transport Request를 다른 시스템으로 전송(Import)하는 작업을 수행합니다.",
+    "steps": [
+      "T-code STMS 실행",
+      "Transport Routes(이동경로) 또는 Import Overview 선택",
+      "대상 시스템 선택",
+      "Import Queue에서 전송할 Request 선택",
+      "Import 실행 (단일 또는 전체)",
+      "Import 로그 확인하여 성공/실패 확인"
+    ],
+    "warnings": [
+      "운영 시스템 Import는 반드시 승인 후 실행",
+      "Import 순서가 중요 — 의존 관계 있는 Request는 순서대로 전송",
+      "실패한 Import는 로그 확인 후 원인 분석 필요",
+      "Emergency Import는 관리자 승인 필수"
+    ],
+    "tags": ["CTS", "Transport", "이동경로", "전송관리", "Import"]
+  },
+  {
+    "title": "Transport Request 이력 조회 (SE03)",
+    "category": "CTS관리",
+    "tcode": "SE03",
+    "content": "SE03은 Transport Organizer의 확장 기능으로, Transport Request의 상세 이력을 조회하고 관리합니다. 특정 오브젝트가 어떤 Request에 포함되어 있는지, Request의 전송 상태와 이력 등을 종합적으로 확인할 수 있습니다.",
+    "steps": [
+      "T-code SE03 실행",
+      "필요한 기능 선택:",
+      "  - Search for Objects in Requests: 오브젝트로 Request 검색",
+      "  - Display Requests: Request 상세 조회",
+      "  - Object Directory: 오브젝트의 패키지/Request 정보",
+      "검색 조건 입력 후 실행"
+    ],
+    "warnings": [
+      "Release된 Request는 수정 불가 — 새 Request 생성 필요",
+      "SE09/SE10에서 자신의 Request 관리 가능",
+      "프로덕션 시스템의 Request 직접 수정은 절대 금지"
+    ],
+    "tags": ["CTS", "Transport Request", "이력조회", "오브젝트검색", "SE09", "SE10"]
+  }
+]

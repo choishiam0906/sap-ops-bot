@@ -1,0 +1,122 @@
+"""지식 베이스 관리 — DB CRUD 및 시드 데이터 로드."""
+
+import json
+from pathlib import Path
+from uuid import uuid4
+
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.database import KnowledgeItem
+from app.models.schemas import KnowledgeCreate, KnowledgeUpdate
+
+SEED_DATA_PATH = Path(__file__).parent.parent / "data" / "sap_knowledge" / "seed_data.json"
+
+
+async def get_all_knowledge(
+    db: AsyncSession,
+    category: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[KnowledgeItem], int]:
+    """지식 목록 조회 (페이지네이션, 카테고리 필터)."""
+    query = select(KnowledgeItem).order_by(KnowledgeItem.updated_at.desc())
+    count_query = select(func.count()).select_from(KnowledgeItem)
+
+    if category:
+        query = query.where(KnowledgeItem.category == category)
+        count_query = count_query.where(KnowledgeItem.category == category)
+
+    total = (await db.execute(count_query)).scalar() or 0
+
+    query = query.offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    items = list(result.scalars().all())
+
+    return items, total
+
+
+async def get_knowledge_by_id(db: AsyncSession, item_id: str) -> KnowledgeItem | None:
+    """ID로 지식 항목 조회."""
+    result = await db.execute(
+        select(KnowledgeItem).where(KnowledgeItem.id == item_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_knowledge(db: AsyncSession, data: KnowledgeCreate) -> KnowledgeItem:
+    """새 지식 항목 생성."""
+    item = KnowledgeItem(
+        id=str(uuid4()),
+        title=data.title,
+        category=data.category,
+        tcode=data.tcode,
+        content=data.content,
+        steps=data.steps,
+        warnings=data.warnings,
+        tags=data.tags,
+    )
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+async def update_knowledge(
+    db: AsyncSession, item_id: str, data: KnowledgeUpdate
+) -> KnowledgeItem | None:
+    """기존 지식 항목 수정."""
+    item = await get_knowledge_by_id(db, item_id)
+    if not item:
+        return None
+
+    update_data = data.model_dump(exclude_unset=True)
+    if update_data:
+        await db.execute(
+            update(KnowledgeItem)
+            .where(KnowledgeItem.id == item_id)
+            .values(**update_data)
+        )
+        await db.commit()
+        await db.refresh(item)
+
+    return item
+
+
+async def delete_knowledge(db: AsyncSession, item_id: str) -> bool:
+    """지식 항목 삭제."""
+    result = await db.execute(
+        delete(KnowledgeItem).where(KnowledgeItem.id == item_id)
+    )
+    await db.commit()
+    return result.rowcount > 0
+
+
+async def load_seed_data(db: AsyncSession) -> int:
+    """시드 데이터(JSON)를 DB에 로드한다. 이미 데이터가 있으면 스킵."""
+    count_result = await db.execute(select(func.count()).select_from(KnowledgeItem))
+    existing_count = count_result.scalar() or 0
+
+    if existing_count > 0:
+        return 0
+
+    with open(SEED_DATA_PATH, encoding="utf-8") as f:
+        seed_items = json.load(f)
+
+    loaded = 0
+    for item_data in seed_items:
+        item = KnowledgeItem(
+            id=str(uuid4()),
+            title=item_data["title"],
+            category=item_data["category"],
+            tcode=item_data.get("tcode"),
+            content=item_data["content"],
+            steps=item_data.get("steps", []),
+            warnings=item_data.get("warnings", []),
+            tags=item_data.get("tags", []),
+        )
+        db.add(item)
+        loaded += 1
+
+    await db.commit()
+    return loaded
