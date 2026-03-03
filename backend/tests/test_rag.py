@@ -1,7 +1,5 @@
 """RAG 엔진 테스트 — 유틸리티 함수 및 벡터 검색 로직 검증."""
 
-import pytest
-
 from app.core.rag_engine import _build_document_text, extract_tcodes_from_text
 
 

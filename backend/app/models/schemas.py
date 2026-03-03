@@ -5,7 +5,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-
 # ── Chat ──────────────────────────────────────────
 
 
@@ -49,7 +48,9 @@ class KnowledgeBase(BaseModel):
     title: str = Field(..., max_length=200)
     category: str = Field(..., max_length=50)
     tcode: str | None = Field(default=None, max_length=20)
-    program_name: str | None = Field(default=None, max_length=40, description="ABAP 프로그램명 (예: ZFIR0090)")
+    program_name: str | None = Field(
+        default=None, max_length=40, description="ABAP 프로그램명 (예: ZFIR0090)"
+    )
     source_type: str = Field(default="guide", description="guide, source_code, error_pattern")
     content: str
     steps: list[str] = []

@@ -250,7 +250,11 @@ def remove_from_vector_store(item_id: str) -> None:
 
 def extract_tcodes_from_text(text: str) -> list[str]:
     """텍스트에서 SAP T-code 패턴을 추출한다."""
-    # \b는 한국어 문자 경계에서 작동하지 않으므로 (?<![A-Z0-9]) / (?![A-Z0-9]) 사용
-    pattern = r"(?<![A-Z0-9])(S[A-Z]\d{2,3}[A-Z]?|SE\d{2}|SM\d{2}|ST\d{2}[A-Z]?|SU\d{2}|STMS|PFCG|RSM\d{2}|SCU\d|RZ\d{2})(?![A-Z0-9])"
+    # \b는 한국어 문자 경계에서 작동하지 않으므로 lookbehind/lookahead 사용
+    tcode_patterns = (
+        r"S[A-Z]\d{2,3}[A-Z]?|SE\d{2}|SM\d{2}|ST\d{2}[A-Z]?"
+        r"|SU\d{2}|STMS|PFCG|RSM\d{2}|SCU\d|RZ\d{2}"
+    )
+    pattern = rf"(?<![A-Z0-9])({tcode_patterns})(?![A-Z0-9])"
     matches = re.findall(pattern, text.upper())
     return list(dict.fromkeys(matches))  # 중복 제거, 순서 유지

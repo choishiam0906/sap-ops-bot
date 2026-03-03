@@ -1,6 +1,5 @@
 """테스트 공용 fixture — 테스트 DB 및 FastAPI TestClient 설정."""
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

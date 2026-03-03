@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import AsyncGenerator
 
 from sqlalchemy import JSON, DateTime, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
