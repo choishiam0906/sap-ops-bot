@@ -101,6 +101,15 @@ class KnowledgeListResponse(BaseModel):
     page_size: int
 
 
+class KnowledgeBulkCreateRequest(BaseModel):
+    items: list[KnowledgeCreate] = Field(default_factory=list, min_length=1)
+
+
+class KnowledgeBulkCreateResponse(BaseModel):
+    created: int
+    items: list[KnowledgeBase] = Field(default_factory=list)
+
+
 # ── System ────────────────────────────────────────
 
 

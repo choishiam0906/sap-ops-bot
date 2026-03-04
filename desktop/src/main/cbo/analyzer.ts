@@ -36,14 +36,32 @@ export class CboAnalyzer {
 
   async analyzeText(input: CboAnalyzeTextInput): Promise<CboAnalysisResult> {
     const parsed = parseCboText(input.fileName, input.content);
-    const baseResult = analyzeByRules(parsed.fileName, parsed.content);
-    return this.enrichWithOptionalLlm(baseResult, parsed.content, input.provider, input.model);
+    return this.analyzeContent(
+      parsed.fileName,
+      parsed.content,
+      input.provider,
+      input.model
+    );
   }
 
   async analyzeFile(input: CboAnalyzeFileInput): Promise<CboAnalysisResult> {
     const parsed = await parseCboFile(input.filePath);
-    const baseResult = analyzeByRules(parsed.fileName, parsed.content);
-    return this.enrichWithOptionalLlm(baseResult, parsed.content, input.provider, input.model);
+    return this.analyzeContent(
+      parsed.fileName,
+      parsed.content,
+      input.provider,
+      input.model
+    );
+  }
+
+  async analyzeContent(
+    fileName: string,
+    content: string,
+    provider?: ProviderType,
+    model?: string
+  ): Promise<CboAnalysisResult> {
+    const baseResult = analyzeByRules(fileName, content);
+    return this.enrichWithOptionalLlm(baseResult, content, provider, model);
   }
 
   private async enrichWithOptionalLlm(

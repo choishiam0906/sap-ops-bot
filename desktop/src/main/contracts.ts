@@ -111,3 +111,120 @@ export interface CboAnalyzePickOutput {
   filePath: string | null;
   result: CboAnalysisResult | null;
 }
+
+export type CboAnalysisMode = "text" | "file" | "folder";
+export type CboAnalysisFileStatus = "success" | "failed" | "skipped";
+export type CboBatchFileErrorCode =
+  | "UNSUPPORTED_EXT"
+  | "TOO_LARGE"
+  | "EMPTY_FILE"
+  | "BINARY_FILE"
+  | "ANALYZE_ERROR";
+
+export interface CboBatchFileError {
+  filePath: string;
+  code: CboBatchFileErrorCode;
+  message: string;
+}
+
+export interface CboAnalysisRunSummary {
+  id: string;
+  mode: CboAnalysisMode;
+  rootPath: string | null;
+  provider: ProviderType | null;
+  model: string | null;
+  totalFiles: number;
+  successFiles: number;
+  failedFiles: number;
+  skippedFiles: number;
+  startedAt: string;
+  finishedAt: string | null;
+}
+
+export interface CboAnalysisFileRecord {
+  id: string;
+  runId: string;
+  filePath: string;
+  fileName: string;
+  fileHash: string | null;
+  status: CboAnalysisFileStatus;
+  errorCode: string | null;
+  errorMessage: string | null;
+  result: CboAnalysisResult | null;
+  analyzedAt: string;
+}
+
+export interface CboAnalysisRunDetail {
+  run: CboAnalysisRunSummary;
+  files: CboAnalysisFileRecord[];
+}
+
+export interface CboAnalyzeFolderInput {
+  rootPath: string;
+  recursive?: boolean;
+  provider?: ProviderType;
+  model?: string;
+  skipUnchanged?: boolean;
+}
+
+export interface CboAnalyzeFolderOutput {
+  run: CboAnalysisRunSummary;
+  errors: CboBatchFileError[];
+}
+
+export interface CboAnalyzeFolderPickInput {
+  recursive?: boolean;
+  provider?: ProviderType;
+  model?: string;
+  skipUnchanged?: boolean;
+}
+
+export interface CboAnalyzeFolderPickOutput {
+  canceled: boolean;
+  rootPath: string | null;
+  output: CboAnalyzeFolderOutput | null;
+}
+
+export interface CboSyncKnowledgeFailure {
+  filePath: string;
+  message: string;
+}
+
+export interface CboSyncKnowledgeInput {
+  runId: string;
+  apiBaseUrl?: string;
+}
+
+export interface CboSyncKnowledgeOutput {
+  runId: string;
+  mode: "bulk" | "single-fallback";
+  endpoint: string;
+  totalCandidates: number;
+  synced: number;
+  failed: number;
+  failures: CboSyncKnowledgeFailure[];
+}
+
+export interface CboRunDiffInput {
+  fromRunId: string;
+  toRunId: string;
+}
+
+export type CboRunDiffChangeType = "added" | "resolved" | "persisted";
+
+export interface CboRunDiffItem {
+  type: CboRunDiffChangeType;
+  filePath: string;
+  severity: CboRiskSeverity;
+  title: string;
+  detail: string;
+}
+
+export interface CboRunDiffOutput {
+  fromRunId: string;
+  toRunId: string;
+  added: number;
+  resolved: number;
+  persisted: number;
+  changes: CboRunDiffItem[];
+}

@@ -2,8 +2,12 @@ import { contextBridge, ipcRenderer } from "electron";
 
 import {
   CboAnalyzeFileInput,
+  CboAnalyzeFolderInput,
+  CboAnalyzeFolderPickInput,
   CboAnalyzePickInput,
   CboAnalyzeTextInput,
+  CboRunDiffInput,
+  CboSyncKnowledgeInput,
   OAuthCompleteInput,
   ProviderType,
   SendMessageInput,
@@ -37,8 +41,26 @@ const desktopApi = {
   analyzeCboFile(input: CboAnalyzeFileInput) {
     return ipcRenderer.invoke("cbo:analyzeFile", input);
   },
+  analyzeCboFolder(input: CboAnalyzeFolderInput) {
+    return ipcRenderer.invoke("cbo:analyzeFolder", input);
+  },
   pickAndAnalyzeCboFile(input?: CboAnalyzePickInput) {
     return ipcRenderer.invoke("cbo:pickAndAnalyzeFile", input);
+  },
+  pickAndAnalyzeCboFolder(input?: CboAnalyzeFolderPickInput) {
+    return ipcRenderer.invoke("cbo:pickAndAnalyzeFolder", input);
+  },
+  listCboRuns(limit = 20) {
+    return ipcRenderer.invoke("cbo:runs:list", limit);
+  },
+  getCboRunDetail(runId: string, limitFiles = 500) {
+    return ipcRenderer.invoke("cbo:runs:detail", runId, limitFiles);
+  },
+  syncCboRunKnowledge(input: CboSyncKnowledgeInput) {
+    return ipcRenderer.invoke("cbo:runs:syncKnowledge", input);
+  },
+  diffCboRuns(input: CboRunDiffInput) {
+    return ipcRenderer.invoke("cbo:runs:diff", input);
   },
 };
 

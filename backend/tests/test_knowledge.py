@@ -148,3 +148,65 @@ async def test_list_with_category_filter(client: AsyncClient):
     data = response.json()
     assert data["total"] == 1
     assert data["items"][0]["category"] == "데이터분석"
+
+
+@pytest.mark.asyncio
+async def test_list_with_source_type_filter(client: AsyncClient):
+    """source_type 필터로 지식 목록 조회."""
+    await client.post(
+        "/api/v1/knowledge",
+        json={
+            "title": "운영 가이드",
+            "category": "데이터분석",
+            "source_type": "guide",
+            "content": "가이드 내용",
+        },
+    )
+    await client.post(
+        "/api/v1/knowledge",
+        json={
+            "title": "소스 코드 분석 결과",
+            "category": "소스분석",
+            "source_type": "source_code",
+            "content": "소스 분석 내용",
+        },
+    )
+
+    response = await client.get("/api/v1/knowledge?source_type=source_code")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["source_type"] == "source_code"
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_knowledge(client: AsyncClient):
+    """지식 항목 일괄 생성."""
+    payload = {
+        "items": [
+            {
+                "title": "CBO 분석 결과 A",
+                "category": "소스분석",
+                "source_type": "source_code",
+                "content": "요약 A",
+                "tags": ["cbo", "source_code"],
+            },
+            {
+                "title": "CBO 분석 결과 B",
+                "category": "소스분석",
+                "source_type": "source_code",
+                "content": "요약 B",
+                "tags": ["cbo", "source_code"],
+            },
+        ]
+    }
+
+    response = await client.post("/api/v1/knowledge/bulk", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["created"] == 2
+    assert len(data["items"]) == 2
+
+    listed = await client.get("/api/v1/knowledge?source_type=source_code")
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 2

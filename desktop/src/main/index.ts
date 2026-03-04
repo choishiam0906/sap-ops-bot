@@ -9,8 +9,12 @@ import { OAuthManager } from "./auth/oauthManager.js";
 import { SecureStore } from "./auth/secureStore.js";
 import {
   CboAnalyzeFileInput,
+  CboAnalyzeFolderInput,
+  CboAnalyzeFolderPickInput,
   CboAnalyzePickInput,
   CboAnalyzeTextInput,
+  CboRunDiffInput,
+  CboSyncKnowledgeInput,
   OAuthCompleteInput,
   ProviderType,
   SendMessageInput,
@@ -19,7 +23,9 @@ import { CopilotProvider } from "./providers/copilotProvider.js";
 import { CodexProvider } from "./providers/codexProvider.js";
 import { ChatRuntime } from "./chatRuntime.js";
 import { CboAnalyzer } from "./cbo/analyzer.js";
+import { CboBatchRuntime } from "./cbo/batchRuntime.js";
 import {
+  CboAnalysisRepository,
   MessageRepository,
   ProviderAccountRepository,
   SessionRepository,
@@ -30,6 +36,7 @@ let mainWindow: BrowserWindow | null = null;
 let chatRuntime: ChatRuntime;
 let oauthManager: OAuthManager;
 let cboAnalyzer: CboAnalyzer;
+let cboBatchRuntime: CboBatchRuntime;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
 
 function initRuntime(): void {
@@ -39,6 +46,7 @@ function initRuntime(): void {
   const sessionRepo = new SessionRepository(db);
   const messageRepo = new MessageRepository(db);
   const accountRepo = new ProviderAccountRepository(db);
+  const analysisRepo = new CboAnalysisRepository(db);
   const secureStore = new SecureStore("sap-ops-bot-desktop");
 
   const codexProvider = new CodexProvider(
@@ -56,6 +64,11 @@ function initRuntime(): void {
   chatRuntime = new ChatRuntime(providers, secureStore, sessionRepo, messageRepo);
   oauthManager = new OAuthManager(providers, secureStore, accountRepo);
   cboAnalyzer = new CboAnalyzer(providers, secureStore);
+  cboBatchRuntime = new CboBatchRuntime(
+    cboAnalyzer,
+    analysisRepo,
+    process.env.SAP_OPS_BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1"
+  );
 }
 
 function createWindow(): void {
@@ -202,6 +215,21 @@ function createWindow(): void {
               <div class="row">
                 <button id="analyzeText">텍스트 분석</button>
                 <button id="analyzeFile" class="secondary">파일 선택 후 분석</button>
+                <button id="analyzeFolder" class="secondary">폴더 배치 분석</button>
+                <button id="listRuns" class="secondary">최근 실행 이력</button>
+              </div>
+              <div class="row">
+                <label style="width:100%;">Run ID (상세 조회/동기화)</label>
+                <input id="runId" type="text" placeholder="최근 실행 이력 조회 후 자동 입력됩니다." />
+              </div>
+              <div class="row">
+                <label style="width:100%;">비교 기준 Run ID (diff from)</label>
+                <input id="fromRunId" type="text" placeholder="최근 실행 이력 조회 시 자동 입력됩니다." />
+              </div>
+              <div class="row">
+                <button id="getRunDetail" class="secondary">Run 상세 조회</button>
+                <button id="syncRunKnowledge" class="secondary">Run 지식 동기화</button>
+                <button id="diffRuns" class="secondary">Run 리스크 비교</button>
               </div>
               <div id="status" class="status"></div>
             </section>
@@ -221,8 +249,22 @@ function createWindow(): void {
           const useLlmEl = document.getElementById("useLlm");
           const analyzeTextButton = document.getElementById("analyzeText");
           const analyzeFileButton = document.getElementById("analyzeFile");
+          const analyzeFolderButton = document.getElementById("analyzeFolder");
+          const listRunsButton = document.getElementById("listRuns");
+          const runIdEl = document.getElementById("runId");
+          const fromRunIdEl = document.getElementById("fromRunId");
+          const getRunDetailButton = document.getElementById("getRunDetail");
+          const syncRunKnowledgeButton = document.getElementById("syncRunKnowledge");
+          const diffRunsButton = document.getElementById("diffRuns");
           const statusEl = document.getElementById("status");
           const resultViewEl = document.getElementById("resultView");
+
+          function toMessage(error) {
+            if (error && typeof error === "object" && typeof error.message === "string") {
+              return error.message;
+            }
+            return "알 수 없는 오류가 발생했습니다.";
+          }
 
           function setStatus(message, isError) {
             statusEl.textContent = message;
@@ -250,6 +292,38 @@ function createWindow(): void {
           function setBusy(busy) {
             analyzeTextButton.disabled = busy;
             analyzeFileButton.disabled = busy;
+            analyzeFolderButton.disabled = busy;
+            listRunsButton.disabled = busy;
+            getRunDetailButton.disabled = busy;
+            syncRunKnowledgeButton.disabled = busy;
+            diffRunsButton.disabled = busy;
+          }
+
+          async function ensureRunIdFromLatest() {
+            const existing = runIdEl.value.trim();
+            if (existing) {
+              return existing;
+            }
+            const runs = await api.listCboRuns(1);
+            const latest = Array.isArray(runs) && runs.length > 0 ? runs[0] : null;
+            if (!latest || !latest.id) {
+              throw new Error("조회 가능한 분석 run 이력이 없습니다.");
+            }
+            runIdEl.value = latest.id;
+            return latest.id;
+          }
+
+          async function ensureFromRunId() {
+            const existing = fromRunIdEl.value.trim();
+            if (existing) {
+              return existing;
+            }
+            const runs = await api.listCboRuns(2);
+            if (!Array.isArray(runs) || runs.length < 2 || !runs[1].id) {
+              throw new Error("비교할 이전 run 이력이 부족합니다. 최소 2개 run이 필요합니다.");
+            }
+            fromRunIdEl.value = runs[1].id;
+            return runs[1].id;
           }
 
           if (!api) {
@@ -277,7 +351,7 @@ function createWindow(): void {
               renderResult(result);
               setStatus("텍스트 분석 완료", false);
             } catch (error) {
-              setStatus(error.message || "텍스트 분석 실패", true);
+              setStatus(toMessage(error), true);
             } finally {
               setBusy(false);
             }
@@ -302,7 +376,121 @@ function createWindow(): void {
               });
               setStatus("파일 분석 완료: " + response.filePath, false);
             } catch (error) {
-              setStatus(error.message || "파일 분석 실패", true);
+              setStatus(toMessage(error), true);
+            } finally {
+              setBusy(false);
+            }
+          });
+
+          analyzeFolderButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("폴더 선택 대기 중...", false);
+              const llmOptions = resolveLlmOptions();
+              const response = await api.pickAndAnalyzeCboFolder({
+                recursive: true,
+                skipUnchanged: true,
+                ...llmOptions,
+              });
+              if (!response || response.canceled || !response.output) {
+                setStatus("폴더 선택이 취소되었습니다.", false);
+                return;
+              }
+              renderResult(response.output);
+              runIdEl.value = response.output.run.id;
+              setStatus(
+                "폴더 배치 분석 완료: " + response.output.run.successFiles + "건 성공",
+                false
+              );
+            } catch (error) {
+              setStatus(toMessage(error), true);
+            } finally {
+              setBusy(false);
+            }
+          });
+
+          listRunsButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("실행 이력 조회 중...", false);
+              const runs = await api.listCboRuns(20);
+              if (Array.isArray(runs) && runs.length > 0 && runs[0].id) {
+                runIdEl.value = runs[0].id;
+              }
+              if (Array.isArray(runs) && runs.length > 1 && runs[1].id) {
+                fromRunIdEl.value = runs[1].id;
+              }
+              renderResult({ runs });
+              setStatus("실행 이력 조회 완료", false);
+            } catch (error) {
+              setStatus(toMessage(error), true);
+            } finally {
+              setBusy(false);
+            }
+          });
+
+          getRunDetailButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("실행 상세 조회 중...", false);
+              const runId = await ensureRunIdFromLatest();
+              const detail = await api.getCboRunDetail(runId, 500);
+              renderResult({ detail });
+              setStatus("실행 상세 조회 완료", false);
+            } catch (error) {
+              setStatus(toMessage(error), true);
+            } finally {
+              setBusy(false);
+            }
+          });
+
+          syncRunKnowledgeButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("지식 동기화 실행 중...", false);
+              const runId = await ensureRunIdFromLatest();
+              const output = await api.syncCboRunKnowledge({ runId });
+              renderResult({ sync: output });
+              setStatus(
+                "동기화 완료(" + output.mode + "): " + output.synced + "건 성공 / " + output.failed + "건 실패",
+                output.failed > 0
+              );
+            } catch (error) {
+              setStatus(toMessage(error), true);
+            } finally {
+              setBusy(false);
+            }
+          });
+
+          diffRunsButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("run 리스크 diff 계산 중...", false);
+              const toRunId = await ensureRunIdFromLatest();
+              const fromRunId = await ensureFromRunId();
+              const diff = await api.diffCboRuns({ fromRunId, toRunId });
+              renderResult({ diff });
+              setStatus(
+                "diff 완료: 신규 " + diff.added + " / 해소 " + diff.resolved + " / 지속 " + diff.persisted,
+                false
+              );
+            } catch (error) {
+              setStatus(toMessage(error), true);
             } finally {
               setBusy(false);
             }
@@ -354,6 +542,10 @@ function registerIpc(): void {
     return cboAnalyzer.analyzeFile(input);
   });
 
+  ipcMain.handle("cbo:analyzeFolder", async (_event, input: CboAnalyzeFolderInput) => {
+    return cboBatchRuntime.analyzeFolder(input);
+  });
+
   ipcMain.handle(
     "cbo:pickAndAnalyzeFile",
     async (_event, input: CboAnalyzePickInput = {}) => {
@@ -388,6 +580,66 @@ function registerIpc(): void {
       };
     }
   );
+
+  ipcMain.handle(
+    "cbo:pickAndAnalyzeFolder",
+    async (_event, input: CboAnalyzeFolderPickInput = {}) => {
+      const selection = mainWindow
+        ? await dialog.showOpenDialog(mainWindow, {
+            title: "CBO 소스 폴더 선택",
+            properties: ["openDirectory"],
+          })
+        : await dialog.showOpenDialog({
+            title: "CBO 소스 폴더 선택",
+            properties: ["openDirectory"],
+          });
+
+      if (selection.canceled || selection.filePaths.length === 0) {
+        return {
+          canceled: true,
+          rootPath: null,
+          output: null,
+        };
+      }
+
+      const rootPath = selection.filePaths[0];
+      const output = await cboBatchRuntime.analyzeFolder({
+        rootPath,
+        recursive: input.recursive,
+        provider: input.provider,
+        model: input.model,
+        skipUnchanged: input.skipUnchanged,
+      });
+
+      return {
+        canceled: false,
+        rootPath,
+        output,
+      };
+    }
+  );
+
+  ipcMain.handle("cbo:runs:list", async (_event, limit = 20) => {
+    return cboBatchRuntime.listRuns(limit);
+  });
+
+  ipcMain.handle(
+    "cbo:runs:detail",
+    async (_event, runId: string, limitFiles = 500) => {
+      return cboBatchRuntime.getRunDetail(runId, limitFiles);
+    }
+  );
+
+  ipcMain.handle(
+    "cbo:runs:syncKnowledge",
+    async (_event, input: CboSyncKnowledgeInput) => {
+      return cboBatchRuntime.syncRunToKnowledge(input);
+    }
+  );
+
+  ipcMain.handle("cbo:runs:diff", async (_event, input: CboRunDiffInput) => {
+    return cboBatchRuntime.diffRuns(input);
+  });
 }
 
 app.whenReady().then(() => {

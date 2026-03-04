@@ -215,6 +215,10 @@ npm run start
 Desktop 실행 후 기본 화면에서 아래를 바로 수행할 수 있습니다.
 - CBO 텍스트 직접 입력 분석
 - CBO 파일 선택 분석(`.txt`, `.md`, 최대 1MB)
+- CBO 폴더 배치 분석(재귀 스캔 + 동일 해시 스킵)
+- CBO 실행 이력 조회(로컬 SQLite 저장)
+- CBO 실행 결과를 backend Knowledge API로 동기화(`source_type=source_code`, bulk 우선)
+- CBO 실행 간 리스크 변화 비교(diff)
 - 선택적 LLM 보강 분석(provider/model 지정)
 
 ### 2. Backend (보조 API/MCP)
@@ -255,6 +259,7 @@ Backend 실행 후 자동 생성됩니다:
 | `GET` | `/api/v1/chat/skills` | 사용 가능한 스킬 목록 조회 |
 | `GET` | `/api/v1/knowledge` | 지식 목록 조회 |
 | `POST` | `/api/v1/knowledge` | 지식 추가 (에러 패턴 포함) |
+| `POST` | `/api/v1/knowledge/bulk` | 지식 일괄 추가 (Desktop CBO sync) |
 | `PUT` | `/api/v1/knowledge/{id}` | 지식 수정 |
 | `DELETE` | `/api/v1/knowledge/{id}` | 지식 삭제 |
 | `GET` | `/api/v1/health` | 헬스체크 |

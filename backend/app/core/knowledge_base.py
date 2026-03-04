@@ -19,16 +19,20 @@ ERROR_PATTERNS_PATH = (
 async def get_all_knowledge(
     db: AsyncSession,
     category: str | None = None,
+    source_type: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[KnowledgeItem], int]:
-    """지식 목록 조회 (페이지네이션, 카테고리 필터)."""
+    """지식 목록 조회 (페이지네이션, 카테고리/소스유형 필터)."""
     query = select(KnowledgeItem).order_by(KnowledgeItem.updated_at.desc())
     count_query = select(func.count()).select_from(KnowledgeItem)
 
     if category:
         query = query.where(KnowledgeItem.category == category)
         count_query = count_query.where(KnowledgeItem.category == category)
+    if source_type:
+        query = query.where(KnowledgeItem.source_type == source_type)
+        count_query = count_query.where(KnowledgeItem.source_type == source_type)
 
     total = (await db.execute(count_query)).scalar() or 0
 
@@ -68,6 +72,37 @@ async def create_knowledge(db: AsyncSession, data: KnowledgeCreate) -> Knowledge
     await db.commit()
     await db.refresh(item)
     return item
+
+
+async def create_many_knowledge(
+    db: AsyncSession,
+    items: list[KnowledgeCreate],
+) -> list[KnowledgeItem]:
+    """지식 항목을 일괄 생성한다."""
+    created: list[KnowledgeItem] = []
+    for data in items:
+        item = KnowledgeItem(
+            id=str(uuid4()),
+            title=data.title,
+            category=data.category,
+            tcode=data.tcode,
+            program_name=data.program_name,
+            source_type=data.source_type,
+            content=data.content,
+            steps=data.steps,
+            warnings=data.warnings,
+            tags=data.tags,
+            sap_note=data.sap_note,
+            error_code=data.error_code,
+            solutions=data.solutions,
+        )
+        db.add(item)
+        created.append(item)
+
+    await db.commit()
+    for item in created:
+        await db.refresh(item)
+    return created
 
 
 async def update_knowledge(
