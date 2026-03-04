@@ -58,3 +58,56 @@ export interface OAuthCompleteInput {
   state: string;
   code: string;
 }
+
+export type CboRiskSeverity = "high" | "medium" | "low";
+export type CboRecommendationPriority = "p0" | "p1" | "p2";
+
+export interface CboRisk {
+  severity: CboRiskSeverity;
+  title: string;
+  detail: string;
+  evidence?: string;
+}
+
+export interface CboRecommendation {
+  priority: CboRecommendationPriority;
+  action: string;
+  rationale: string;
+}
+
+export interface CboAnalysisMetadata {
+  fileName: string;
+  charCount: number;
+  languageHint: "abap" | "unknown";
+}
+
+export interface CboAnalysisResult {
+  summary: string;
+  risks: CboRisk[];
+  recommendations: CboRecommendation[];
+  metadata: CboAnalysisMetadata;
+}
+
+export interface CboAnalyzeTextInput {
+  fileName: string;
+  content: string;
+  provider?: ProviderType;
+  model?: string;
+}
+
+export interface CboAnalyzeFileInput {
+  filePath: string;
+  provider?: ProviderType;
+  model?: string;
+}
+
+export interface CboAnalyzePickInput {
+  provider?: ProviderType;
+  model?: string;
+}
+
+export interface CboAnalyzePickOutput {
+  canceled: boolean;
+  filePath: string | null;
+  result: CboAnalysisResult | null;
+}

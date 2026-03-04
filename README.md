@@ -94,6 +94,20 @@ Desktop 앱에서 자연어로 질문하면, **RAG(Retrieval-Augmented Generatio
       <p>지식 베이스 CRUD 관리, 대화 이력 조회, 사용 통계 대시보드를 제공합니다.</p>
     </td>
   </tr>
+  <tr>
+    <td width="50%">
+      <h3>🧪 CBO 소스 정적 분석</h3>
+      <p>`.txt`/`.md`로 전달된 CBO 소스를 규칙 기반으로 점검하고 운영 리스크와 개선 권고를 제시합니다.</p>
+      <pre>"EXEC SQL, SELECT *가 포함된 CBO 소스 점검해줘"
+→ 리스크 목록 + 우선순위 권고 + 요약 리포트</pre>
+    </td>
+    <td width="50%">
+      <h3>✨ 선택적 LLM 보강</h3>
+      <p>OAuth 인증된 provider/model을 선택하면 규칙 분석 결과를 LLM 관점으로 추가 보강할 수 있습니다.</p>
+      <pre>규칙 분석 결과 + LLM 보강 요약
+→ 실무 개선 포인트 빠른 도출</pre>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -197,6 +211,11 @@ npm install
 npm run build
 npm run start
 ```
+
+Desktop 실행 후 기본 화면에서 아래를 바로 수행할 수 있습니다.
+- CBO 텍스트 직접 입력 분석
+- CBO 파일 선택 분석(`.txt`, `.md`, 최대 1MB)
+- 선택적 LLM 보강 분석(provider/model 지정)
 
 ### 2. Backend (보조 API/MCP)
 
@@ -341,6 +360,7 @@ sap-ops-bot/
 │       │   ├── index.ts          # Electron main + IPC
 │       │   ├── chatRuntime.ts    # 세션/메시지 런타임
 │       │   ├── auth/             # OAuth 매니저 + SecureStore
+│       │   ├── cbo/              # CBO parser/rules/analyzer
 │       │   ├── providers/        # Codex/Copilot 어댑터
 │       │   └── storage/          # SQLite 저장소
 │       └── preload/index.ts      # renderer 브리지

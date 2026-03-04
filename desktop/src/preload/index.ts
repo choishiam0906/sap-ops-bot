@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-import { OAuthCompleteInput, ProviderType, SendMessageInput } from "../main/contracts.js";
+import {
+  CboAnalyzeFileInput,
+  CboAnalyzePickInput,
+  CboAnalyzeTextInput,
+  OAuthCompleteInput,
+  ProviderType,
+  SendMessageInput,
+} from "../main/contracts.js";
 
 const desktopApi = {
   startOAuth(provider: ProviderType) {
@@ -23,6 +30,15 @@ const desktopApi = {
   },
   getSessionMessages(sessionId: string, limit = 100) {
     return ipcRenderer.invoke("sessions:messages", sessionId, limit);
+  },
+  analyzeCboText(input: CboAnalyzeTextInput) {
+    return ipcRenderer.invoke("cbo:analyzeText", input);
+  },
+  analyzeCboFile(input: CboAnalyzeFileInput) {
+    return ipcRenderer.invoke("cbo:analyzeFile", input);
+  },
+  pickAndAnalyzeCboFile(input?: CboAnalyzePickInput) {
+    return ipcRenderer.invoke("cbo:pickAndAnalyzeFile", input);
   },
 };
 

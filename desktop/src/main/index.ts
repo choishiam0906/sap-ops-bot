@@ -1,15 +1,24 @@
 import "dotenv/config";
 
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import type { OpenDialogOptions } from "electron";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { OAuthManager } from "./auth/oauthManager.js";
 import { SecureStore } from "./auth/secureStore.js";
-import { OAuthCompleteInput, ProviderType, SendMessageInput } from "./contracts.js";
+import {
+  CboAnalyzeFileInput,
+  CboAnalyzePickInput,
+  CboAnalyzeTextInput,
+  OAuthCompleteInput,
+  ProviderType,
+  SendMessageInput,
+} from "./contracts.js";
 import { CopilotProvider } from "./providers/copilotProvider.js";
 import { CodexProvider } from "./providers/codexProvider.js";
 import { ChatRuntime } from "./chatRuntime.js";
+import { CboAnalyzer } from "./cbo/analyzer.js";
 import {
   MessageRepository,
   ProviderAccountRepository,
@@ -20,6 +29,7 @@ import { LocalDatabase } from "./storage/sqlite.js";
 let mainWindow: BrowserWindow | null = null;
 let chatRuntime: ChatRuntime;
 let oauthManager: OAuthManager;
+let cboAnalyzer: CboAnalyzer;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
 
 function initRuntime(): void {
@@ -45,6 +55,7 @@ function initRuntime(): void {
   const providers = [codexProvider, copilotProvider];
   chatRuntime = new ChatRuntime(providers, secureStore, sessionRepo, messageRepo);
   oauthManager = new OAuthManager(providers, secureStore, accountRepo);
+  cboAnalyzer = new CboAnalyzer(providers, secureStore);
 }
 
 function createWindow(): void {
@@ -58,11 +69,245 @@ function createWindow(): void {
 
   const splash = `
     <html>
-      <head><title>SAP Ops Bot Desktop</title></head>
-      <body style="font-family:sans-serif;padding:24px;">
-        <h1>SAP Ops Bot Desktop Runtime</h1>
-        <p>Renderer UI scaffold is intentionally minimal in this migration commit.</p>
-        <p>Use IPC endpoints from preload to build session list/chat/settings views.</p>
+      <head>
+        <title>SAP Ops Bot Desktop</title>
+        <style>
+          :root {
+            color-scheme: light;
+            font-family: "Segoe UI", "Pretendard", sans-serif;
+          }
+          body {
+            margin: 0;
+            background: linear-gradient(120deg, #eef6ff, #f8fbff);
+            color: #102a43;
+          }
+          .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+          }
+          h1 {
+            margin: 0;
+            font-size: 28px;
+          }
+          p.lead {
+            margin-top: 8px;
+            color: #486581;
+          }
+          .grid {
+            margin-top: 20px;
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          }
+          .card {
+            background: #ffffffcc;
+            border: 1px solid #d9e2ec;
+            border-radius: 12px;
+            padding: 16px;
+          }
+          .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+          }
+          label {
+            font-size: 12px;
+            color: #334e68;
+          }
+          input[type="text"], select, textarea {
+            width: 100%;
+            border: 1px solid #bcccdc;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 13px;
+            box-sizing: border-box;
+          }
+          textarea {
+            min-height: 220px;
+            resize: vertical;
+            font-family: "Consolas", "Courier New", monospace;
+          }
+          button {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            background: #006edc;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+          }
+          button.secondary {
+            background: #486581;
+          }
+          button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+          .status {
+            margin-top: 12px;
+            font-size: 13px;
+            min-height: 20px;
+            color: #0b6b38;
+          }
+          .status.error {
+            color: #9f1239;
+          }
+          pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            min-height: 260px;
+            overflow: auto;
+            font-size: 12px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <h1>SAP Ops Bot Desktop</h1>
+          <p class="lead">CBO 텍스트/마크다운 소스를 선택해서 1차 규칙 분석(+선택적 LLM 보강)을 수행합니다.</p>
+          <div class="grid">
+            <section class="card">
+              <div class="row">
+                <label style="width:100%;">파일명(텍스트 직접 입력 분석용)</label>
+                <input id="fileName" type="text" value="inline-cbo.md" />
+              </div>
+              <div class="row">
+                <label style="width:100%;">소스 입력</label>
+                <textarea id="sourceText" placeholder="분석할 CBO 소스(.txt/.md)를 붙여넣으세요"></textarea>
+              </div>
+              <div class="row">
+                <label><input id="useLlm" type="checkbox" /> LLM 보강 분석 사용</label>
+              </div>
+              <div class="row">
+                <div style="flex:1; min-width:150px;">
+                  <label>Provider</label>
+                  <select id="provider">
+                    <option value="codex">codex</option>
+                    <option value="copilot">copilot</option>
+                  </select>
+                </div>
+                <div style="flex:2; min-width:220px;">
+                  <label>Model</label>
+                  <input id="model" type="text" value="gpt-4.1-mini" />
+                </div>
+              </div>
+              <div class="row">
+                <button id="analyzeText">텍스트 분석</button>
+                <button id="analyzeFile" class="secondary">파일 선택 후 분석</button>
+              </div>
+              <div id="status" class="status"></div>
+            </section>
+            <section class="card">
+              <label style="display:block; margin-bottom:8px;">분석 결과(JSON)</label>
+              <pre id="resultView">{ "status": "ready" }</pre>
+            </section>
+          </div>
+        </div>
+
+        <script>
+          const api = window.sapOpsDesktop;
+          const fileNameEl = document.getElementById("fileName");
+          const sourceTextEl = document.getElementById("sourceText");
+          const providerEl = document.getElementById("provider");
+          const modelEl = document.getElementById("model");
+          const useLlmEl = document.getElementById("useLlm");
+          const analyzeTextButton = document.getElementById("analyzeText");
+          const analyzeFileButton = document.getElementById("analyzeFile");
+          const statusEl = document.getElementById("status");
+          const resultViewEl = document.getElementById("resultView");
+
+          function setStatus(message, isError) {
+            statusEl.textContent = message;
+            statusEl.classList.toggle("error", Boolean(isError));
+          }
+
+          function resolveLlmOptions() {
+            if (!useLlmEl.checked) {
+              return {};
+            }
+            const model = modelEl.value.trim();
+            if (!model) {
+              throw new Error("LLM 보강을 사용하려면 model 값을 입력하세요.");
+            }
+            return {
+              provider: providerEl.value,
+              model,
+            };
+          }
+
+          function renderResult(payload) {
+            resultViewEl.textContent = JSON.stringify(payload, null, 2);
+          }
+
+          function setBusy(busy) {
+            analyzeTextButton.disabled = busy;
+            analyzeFileButton.disabled = busy;
+          }
+
+          if (!api) {
+            setStatus("preload API 연결 실패: 앱을 다시 시작하세요.", true);
+          }
+
+          analyzeTextButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            const source = sourceTextEl.value;
+            if (!source.trim()) {
+              setStatus("분석할 텍스트를 입력하세요.", true);
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("텍스트 분석 실행 중...", false);
+              const llmOptions = resolveLlmOptions();
+              const result = await api.analyzeCboText({
+                fileName: fileNameEl.value,
+                content: source,
+                ...llmOptions,
+              });
+              renderResult(result);
+              setStatus("텍스트 분석 완료", false);
+            } catch (error) {
+              setStatus(error.message || "텍스트 분석 실패", true);
+            } finally {
+              setBusy(false);
+            }
+          });
+
+          analyzeFileButton.addEventListener("click", async () => {
+            if (!api) {
+              return;
+            }
+            try {
+              setBusy(true);
+              setStatus("파일 선택 대기 중...", false);
+              const llmOptions = resolveLlmOptions();
+              const response = await api.pickAndAnalyzeCboFile(llmOptions);
+              if (!response || response.canceled) {
+                setStatus("파일 선택이 취소되었습니다.", false);
+                return;
+              }
+              renderResult({
+                filePath: response.filePath,
+                result: response.result,
+              });
+              setStatus("파일 분석 완료: " + response.filePath, false);
+            } catch (error) {
+              setStatus(error.message || "파일 분석 실패", true);
+            } finally {
+              setBusy(false);
+            }
+          });
+        </script>
       </body>
     </html>
   `;
@@ -98,6 +343,49 @@ function registerIpc(): void {
     "sessions:messages",
     async (_event, sessionId: string, limit = 100) => {
       return chatRuntime.getMessages(sessionId, limit);
+    }
+  );
+
+  ipcMain.handle("cbo:analyzeText", async (_event, input: CboAnalyzeTextInput) => {
+    return cboAnalyzer.analyzeText(input);
+  });
+
+  ipcMain.handle("cbo:analyzeFile", async (_event, input: CboAnalyzeFileInput) => {
+    return cboAnalyzer.analyzeFile(input);
+  });
+
+  ipcMain.handle(
+    "cbo:pickAndAnalyzeFile",
+    async (_event, input: CboAnalyzePickInput = {}) => {
+      const dialogOptions: OpenDialogOptions = {
+        title: "CBO 소스 파일 선택",
+        properties: ["openFile"],
+        filters: [{ name: "Text/Markdown", extensions: ["txt", "md"] }],
+      };
+      const selection = mainWindow
+        ? await dialog.showOpenDialog(mainWindow, dialogOptions)
+        : await dialog.showOpenDialog(dialogOptions);
+
+      if (selection.canceled || selection.filePaths.length === 0) {
+        return {
+          canceled: true,
+          filePath: null,
+          result: null,
+        };
+      }
+
+      const filePath = selection.filePaths[0];
+      const result = await cboAnalyzer.analyzeFile({
+        filePath,
+        provider: input.provider,
+        model: input.model,
+      });
+
+      return {
+        canceled: false,
+        filePath,
+        result,
+      };
     }
   );
 }
