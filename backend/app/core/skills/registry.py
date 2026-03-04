@@ -20,9 +20,30 @@ class SkillRegistry:
         if not self.skills:
             raise RuntimeError("등록된 스킬이 없습니다")
 
-        scores = [(skill, skill.matches(query)) for skill in self.skills]
-        best = max(scores, key=lambda x: x[1])
-        return best[0]
+        ranked = self.rank_skills(query)
+        return ranked[0]["skill"]
+
+    def rank_skills(self, query: str) -> list[dict]:
+        """질문에 대한 스킬 점수 랭킹을 반환한다."""
+        if not self.skills:
+            raise RuntimeError("등록된 스킬이 없습니다")
+
+        scored = []
+        for index, skill in enumerate(self.skills):
+            score = skill.matches(query)
+            scored.append({
+                "skill": skill,
+                "score": score,
+                "priority": skill.metadata.priority,
+                "index": index,
+            })
+
+        ranked = sorted(
+            scored,
+            key=lambda item: (item["score"], item["priority"], -item["index"]),
+            reverse=True,
+        )
+        return ranked
 
     def list_skills(self) -> list[dict]:
         """등록된 스킬 목록을 반환한다."""
@@ -32,6 +53,7 @@ class SkillRegistry:
                 "description": s.metadata.description,
                 "category": s.metadata.category,
                 "suggested_tcodes": s.metadata.suggested_tcodes,
+                "priority": s.metadata.priority,
             }
             for s in self.skills
         ]

@@ -315,7 +315,7 @@ Claude Code에서 SAP 운영 지식을 직접 사용할 수 있는 MCP 서버를
 
 Claude Code에서 프로젝트를 열면 자동으로 MCP 서버가 로드됩니다.
 
-### MCP Tools (4개)
+### MCP Tools (6개)
 
 | Tool | 설명 | 사용 예시 |
 |------|------|----------|
@@ -323,14 +323,17 @@ Claude Code에서 프로젝트를 열면 자동으로 MCP 서버가 로드됩니
 | `get_error_pattern` | 에러코드로 패턴 직접 조회 | `get_error_pattern("DBIF_RSQL_SQL_ERROR")` |
 | `suggest_tcode` | 주제별 T-code 추천 | `suggest_tcode("권한 관리")` |
 | `diagnose_problem` | RAG + 스킬 라우팅 종합 진단 | `diagnose_problem("메모리 부족 덤프 반복")` |
+| `remember_note` | 운영 메모 저장 | `remember_note("야간 점검 후 ST22 확인", "운영,점검")` |
+| `search_memory` | 저장된 메모리 검색 | `search_memory("야간 점검")` |
 
-### MCP Resources (3개)
+### MCP Resources (4개)
 
 | URI | 설명 |
 |-----|------|
 | `sap://skills` | 사용 가능한 스킬 목록 |
 | `sap://knowledge/categories` | 지식 카테고리별 항목 수 |
 | `sap://error-catalog` | 에러 패턴 카탈로그 전체 목록 |
+| `sap://memory/recent` | 최근 운영 메모리 목록 |
 
 ### 독립 실행 테스트
 

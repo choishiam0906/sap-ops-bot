@@ -19,6 +19,7 @@ class CTSManagementSkill(BaseSkill):
                 "릴리즈", "release", "전송관리", "패키지",
             ],
             suggested_tcodes=["STMS", "SE03", "SE09", "SE10"],
+            priority=35,
         )
 
     def _get_system_prompt(self) -> str:

@@ -1,6 +1,6 @@
 """MCP 서버 — Claude Code 연동을 위한 SAP Ops Bot MCP 인터페이스.
 
-stdio 기반으로 동작하며, 4개 Tools + 3개 Resources를 제공한다.
+stdio 기반으로 동작하며, 6개 Tools + 4개 Resources를 제공한다.
 실행: python -m app.mcp_server
 """
 
@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+
+from app.core.memory_store import get_memory_store
 
 # MCP 서버 인스턴스
 mcp = FastMCP(
@@ -199,7 +201,10 @@ def diagnose_problem(problem_description: str) -> str:
 
     # 스킬 선택
     registry = get_skill_registry()
-    skill = registry.select_skill(problem_description)
+    ranked = registry.rank_skills(problem_description)
+    skill = ranked[0]["skill"]
+    score = ranked[0]["score"]
+    memory_store = get_memory_store()
 
     # 에러코드 직접 매칭 시도
     patterns = _load_json(ERROR_PATTERNS_PATH)
@@ -214,10 +219,11 @@ def diagnose_problem(problem_description: str) -> str:
     knowledge_result = search_knowledge(
         problem_description, top_k=3
     )
+    memory_hits = memory_store.search(problem_description, top_k=3)
 
     # 진단 결과 구성
     result = "# SAP 문제 진단\n\n"
-    result += f"**진단 스킬:** {skill.metadata.name}\n"
+    result += f"**진단 스킬:** {skill.metadata.name} (score={score:.2f})\n"
 
     if skill.metadata.suggested_tcodes:
         result += "**관련 T-code:** "
@@ -234,9 +240,68 @@ def diagnose_problem(problem_description: str) -> str:
             )
         result += "\n"
 
+    if memory_hits:
+        result += "\n## 유사 최근 메모리\n\n"
+        for i, entry in enumerate(memory_hits, start=1):
+            result += f"{i}. {entry.created_at} | {entry.kind}"
+            if entry.skill:
+                result += f" | {entry.skill}"
+            result += f"\n   - {entry.text}\n"
+
     result += f"\n## 관련 지식\n\n{knowledge_result}"
 
+    tags: list[str] = []
+    if matched_pattern and matched_pattern.get("error_code"):
+        tags.append(str(matched_pattern["error_code"]))
+    memory_store.add_diagnosis(
+        problem_description=problem_description,
+        skill_name=skill.metadata.name,
+        suggested_tcodes=skill.metadata.suggested_tcodes,
+        tags=tags,
+    )
+
     return result
+
+
+@mcp.tool()
+def remember_note(note: str, tags: str | None = None) -> str:
+    """운영 메모를 저장합니다.
+
+    Args:
+        note: 저장할 메모 내용
+        tags: 쉼표(,)로 구분된 태그 문자열 (예: "긴급,운영")
+    """
+    parsed_tags = [tag.strip() for tag in (tags or "").split(",") if tag.strip()]
+    entry = get_memory_store().add_note(note, parsed_tags)
+    return f"메모 저장 완료: {entry.id} ({entry.created_at})"
+
+
+@mcp.tool()
+def search_memory(query: str, top_k: int = 5) -> str:
+    """저장된 운영 메모리를 검색합니다.
+
+    Args:
+        query: 검색어
+        top_k: 최대 결과 수
+    """
+    hits = get_memory_store().search(query, top_k=top_k)
+    if not hits:
+        return "메모리 검색 결과가 없습니다."
+
+    lines = ["# 메모리 검색 결과\n"]
+    for i, entry in enumerate(hits, start=1):
+        header = f"{i}. [{entry.kind}] {entry.created_at}"
+        if entry.skill:
+            header += f" | skill={entry.skill}"
+        lines.append(header)
+        lines.append(f"- {entry.text}")
+        if entry.tags:
+            lines.append(f"- tags: {', '.join(entry.tags)}")
+        if entry.suggested_tcodes:
+            lines.append(f"- tcodes: {', '.join(entry.suggested_tcodes)}")
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 # ── MCP Resources ──────────────────────────────────
@@ -289,6 +354,26 @@ def get_error_catalog_resource() -> str:
         lines.append(f"- **{p['error_code']}**: {p['title']}{note}")
 
     lines.append(f"\n총 {len(patterns)}개 에러 패턴 등록")
+    return "\n".join(lines)
+
+
+@mcp.resource("sap://memory/recent")
+def get_memory_recent_resource() -> str:
+    """최근 저장된 운영 메모리를 반환합니다."""
+    entries = get_memory_store().recent(limit=20)
+    if not entries:
+        return "# SAP 운영 메모리\n\n저장된 메모가 없습니다."
+
+    lines = ["# SAP 운영 메모리 (최근 20건)\n"]
+    for entry in entries:
+        line = f"- [{entry.kind}] {entry.created_at}"
+        if entry.skill:
+            line += f" | {entry.skill}"
+        line += f" | {entry.text}"
+        if entry.tags:
+            line += f" | tags={','.join(entry.tags)}"
+        lines.append(line)
+
     return "\n".join(lines)
 
 

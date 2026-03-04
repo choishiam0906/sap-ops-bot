@@ -21,6 +21,7 @@ class ErrorAnalysisSkill(BaseSkill):
                 "메시지", "short dump", "abap dump",
             ],
             suggested_tcodes=["ST22", "SM21", "SE11", "SE91"],
+            priority=60,
         )
 
     def _get_system_prompt(self) -> str:

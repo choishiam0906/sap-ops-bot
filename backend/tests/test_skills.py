@@ -109,6 +109,19 @@ def test_registry_empty_raises():
         registry.select_skill("아무 질문")
 
 
+def test_registry_rank_skills_returns_sorted_scores():
+    """스킬 랭킹이 점수/우선순위 기준으로 정렬된다."""
+    registry = SkillRegistry()
+    registry.register(DataAnalysisSkill())
+    registry.register(ErrorAnalysisSkill())
+    registry.register(GeneralSkill())
+
+    ranked = registry.rank_skills("ST22 덤프 원인 분석")
+    assert len(ranked) == 3
+    assert ranked[0]["score"] >= ranked[1]["score"]
+    assert ranked[0]["skill"].metadata.name == "오류분석"
+
+
 # ── 스킬 메타데이터 검증 ──────────────────────────
 
 def test_all_skills_have_system_prompt():
@@ -166,3 +179,4 @@ async def test_skills_endpoint(client: AsyncClient):
     assert "역할관리" in names
     assert "CTS관리" in names
     assert "일반" in names
+    assert all("priority" in s for s in skills)

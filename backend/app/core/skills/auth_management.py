@@ -19,6 +19,7 @@ class AuthManagementSkill(BaseSkill):
                 "권한오류", "missing authorization", "프로파일",
             ],
             suggested_tcodes=["PFCG", "SU01", "SU53", "SU10"],
+            priority=35,
         )
 
     def _get_system_prompt(self) -> str:

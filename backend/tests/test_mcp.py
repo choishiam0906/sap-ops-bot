@@ -2,9 +2,12 @@
 
 from app.mcp_server import (
     diagnose_problem,
+    get_memory_recent_resource,
     get_categories_resource,
     get_error_catalog_resource,
     get_error_pattern,
+    remember_note,
+    search_memory,
     get_skills_resource,
     search_knowledge,
     suggest_tcode,
@@ -105,6 +108,16 @@ def test_diagnose_problem_general():
     assert "관련 지식" in result
 
 
+def test_memory_note_and_search():
+    """메모 저장 후 검색 가능."""
+    remember_result = remember_note("야간 배치 실패 시 ST22 먼저 확인", tags="운영,긴급")
+    assert "메모 저장 완료" in remember_result
+
+    search_result = search_memory("야간 배치 ST22", top_k=3)
+    assert "메모리 검색 결과" in search_result
+    assert "ST22" in search_result
+
+
 # ── MCP Resources ──────────────────────────────────
 
 def test_skills_resource():
@@ -128,3 +141,11 @@ def test_error_catalog_resource():
     assert "DBIF_RSQL_SQL_ERROR" in result
     assert "TSV_TNEW_PAGE_ALLOC_FAILED" in result
     assert "10" in result  # 총 10개
+
+
+def test_memory_recent_resource():
+    """최근 메모리 리소스 조회."""
+    remember_note("SM21 로그 확인 루틴", tags="로그")
+    result = get_memory_recent_resource()
+    assert "SAP 운영 메모리" in result
+    assert "SM21" in result

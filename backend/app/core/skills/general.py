@@ -14,6 +14,7 @@ class GeneralSkill(BaseSkill):
             category="",
             keywords=[],
             suggested_tcodes=[],
+            priority=0,
         )
 
     def matches(self, query: str) -> float:

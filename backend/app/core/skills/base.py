@@ -1,5 +1,6 @@
 """BaseSkill 추상 클래스 — 모든 도메인 스킬의 공통 인터페이스."""
 
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
@@ -13,6 +14,7 @@ class SkillMetadata:
     category: str
     keywords: list[str] = field(default_factory=list)
     suggested_tcodes: list[str] = field(default_factory=list)
+    priority: int = 0
 
 
 class BaseSkill(ABC):
@@ -35,10 +37,21 @@ class BaseSkill(ABC):
     def matches(self, query: str) -> float:
         """질문과의 매칭 점수를 반환한다 (0.0~1.0)."""
         query_lower = query.lower()
-        matched = sum(
-            1 for kw in self.metadata.keywords if kw.lower() in query_lower
-        )
-        if matched == 0:
+        query_tokens = set(re.findall(r"[a-z0-9가-힣_]+", query_lower))
+
+        contains_matched = 0
+        token_matched = 0
+        for kw in self.metadata.keywords:
+            kw_lower = kw.lower()
+            if kw_lower in query_lower:
+                contains_matched += 1
+            kw_tokens = set(re.findall(r"[a-z0-9가-힣_]+", kw_lower))
+            if kw_tokens and kw_tokens.issubset(query_tokens):
+                token_matched += 1
+
+        matched = max(contains_matched, token_matched)
+        if matched <= 0:
             return 0.0
-        # 최대 1.0, 키워드 3개 이상 매칭이면 0.9+
-        return min(1.0, 0.3 + matched * 0.2)
+        # 포함 매칭을 조금 더 강하게 반영한다.
+        raw = 0.2 + contains_matched * 0.2 + token_matched * 0.1
+        return min(1.0, raw)

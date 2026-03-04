@@ -19,6 +19,7 @@ class DataAnalysisSkill(BaseSkill):
                 "테이블", "변경이력", "소스검색", "쿼리",
             ],
             suggested_tcodes=["ST03N", "SM20", "RSM37", "SE38", "SCU3", "ST05"],
+            priority=40,
         )
 
     def _get_system_prompt(self) -> str:
