@@ -37,7 +37,7 @@ export const KnowledgeForm: React.FC<KnowledgeFormProps> = ({
       setFormData({
         title: item.title,
         category: item.category,
-        tcode: item.tcode,
+        tcode: item.tcode || '',
         content: item.content || '',
       })
     } else {
@@ -72,11 +72,6 @@ export const KnowledgeForm: React.FC<KnowledgeFormProps> = ({
 
     if (!formData.category.trim()) {
       setError('카테고리를 선택해주세요.')
-      return
-    }
-
-    if (!formData.tcode.trim()) {
-      setError('T-code를 입력해주세요.')
       return
     }
 

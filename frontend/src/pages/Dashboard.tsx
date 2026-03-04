@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react'
-import { apiClient } from '../api/client'
+import { apiClient, type Statistics } from '../api/client'
 import './Dashboard.css'
 
-interface Stats {
-  total_queries: number
-  total_knowledge_items: number
-  categories: Record<string, number>
-}
-
 export const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<Stats | null>(null)
+  const [stats, setStats] = useState<Statistics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -17,13 +11,9 @@ export const Dashboard: React.FC = () => {
     const fetchStats = async () => {
       try {
         const data = await apiClient.getStats()
-        setStats({
-          total_queries: data.total_queries,
-          total_knowledge_items: data.total_knowledge_items,
-          categories: (data as unknown as Stats).categories ?? {},
-        })
+        setStats(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : '통계를 불러올 수 없습니다')
+        setError(err instanceof Error ? err.message : '통계를 불러올 수 없어요')
       } finally {
         setLoading(false)
       }
