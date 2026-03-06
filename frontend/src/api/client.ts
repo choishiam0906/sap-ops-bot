@@ -30,6 +30,26 @@ export interface Statistics {
   total_knowledge_items: number
   categories: Record<string, number>
   top_tcodes: Array<{ tcode: string; count: number }>
+  token_usage?: {
+    total_prompt_tokens: number
+    total_completion_tokens: number
+    total_tokens: number
+    request_count: number
+    uptime_seconds: number
+  }
+}
+
+export interface FeedbackStats {
+  total_feedbacks: number
+  positive_count: number
+  negative_count: number
+  satisfaction_rate: number
+  recent_daily: Array<{
+    date: string
+    count: number
+    positive: number
+    negative: number
+  }>
 }
 
 class ApiClient {
@@ -60,6 +80,9 @@ class ApiClient {
 
     if (response.status === 401) {
       localStorage.removeItem('auth_token')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
 
     if (!response.ok) {
@@ -72,6 +95,14 @@ class ApiClient {
     }
 
     return response.json() as Promise<T>
+  }
+
+  // Auth
+  async login(username: string, password: string): Promise<{ access_token: string; token_type: string }> {
+    return this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    })
   }
 
   // Statistics
@@ -131,6 +162,22 @@ class ApiClient {
   async deleteKnowledge(id: string): Promise<void> {
     return this.request<void>(`/knowledge/${id}`, {
       method: 'DELETE',
+    })
+  }
+
+  // Feedback
+  async getFeedbackStats(): Promise<FeedbackStats> {
+    return this.request<FeedbackStats>('/feedback/stats')
+  }
+
+  async submitFeedback(data: {
+    message_id: string
+    rating: 'positive' | 'negative'
+    comment?: string
+  }): Promise<{ id: string; status: string }> {
+    return this.request('/feedback', {
+      method: 'POST',
+      body: JSON.stringify(data),
     })
   }
 

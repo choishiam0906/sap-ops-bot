@@ -5,6 +5,7 @@ import { ToastProvider } from './components/Toast'
 import { Dashboard } from './pages/Dashboard'
 import { Knowledge } from './pages/Knowledge'
 import { History } from './pages/History'
+import { Login } from './pages/Login'
 import './App.css'
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Login />} />
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/knowledge" element={<Knowledge />} />
