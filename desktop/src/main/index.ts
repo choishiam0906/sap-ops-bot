@@ -32,6 +32,7 @@ import {
 } from "./storage/repositories.js";
 import { LocalDatabase } from "./storage/sqlite.js";
 import { loadConfig } from "./config.js";
+import { logger } from "./logger.js";
 
 let mainWindow: BrowserWindow | null = null;
 let chatRuntime: ChatRuntime;
@@ -223,9 +224,11 @@ function registerIpc(): void {
 }
 
 app.whenReady().then(() => {
+  logger.info({ version: app.getVersion() }, "앱 시작");
   initRuntime();
   registerIpc();
   createWindow();
+  logger.info("윈도우 생성 완료");
 });
 
 app.on("window-all-closed", () => {

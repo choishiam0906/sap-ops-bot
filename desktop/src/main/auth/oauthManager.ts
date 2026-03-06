@@ -9,6 +9,7 @@ import {
 import { ProviderAccountRepository } from "../storage/repositories.js";
 import { LlmProvider } from "../providers/base.js";
 import { SecureStore } from "./secureStore.js";
+import { logger } from "../logger.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -175,10 +176,10 @@ export class OAuthManager {
         refreshToken: result.refreshToken,
         expiresAt: result.expiresAt,
       });
-      console.log(`[OAuthManager] ${provider} 토큰 자동 갱신 완료`);
+      logger.info({ provider }, "토큰 자동 갱신 완료");
       return result.accessToken;
     } catch (err) {
-      console.error(`[OAuthManager] ${provider} 토큰 갱신 실패`, err);
+      logger.error({ provider, err }, "토큰 갱신 실패");
       this.saveStatus({
         provider,
         status: "expired",
