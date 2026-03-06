@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { ChatPage } from '../ChatPage'
 import { mockApi } from '../../__tests__/setup'
 import { useChatStore } from '../../stores/chatStore'
+import { useWorkspaceStore, DOMAIN_PACK_DETAILS } from '../../stores/workspaceStore'
 import type { ChatSession } from '../../../main/contracts'
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -21,17 +22,21 @@ const mockSession: ChatSession = {
   updatedAt: '2026-03-01T01:00:00Z',
 }
 
+// 기본 workspace: ops + secure-local
+const defaultPack = DOMAIN_PACK_DETAILS.ops
+
 describe('ChatPage', () => {
   beforeEach(() => {
     mockApi.listSessions.mockResolvedValue([])
     mockApi.getSessionMessages.mockResolvedValue([])
     useChatStore.setState({ input: '', error: '', isStreaming: false, streamingContent: '' })
+    useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'ops' })
   })
 
   it('빈 상태에서 안내 메시지를 표시한다', async () => {
     renderWithProviders(<ChatPage />)
     await waitFor(() => {
-      expect(screen.getByText('SAP 운영에 대해 질문해보세요')).toBeInTheDocument()
+      expect(screen.getByText(defaultPack.chatTitle)).toBeInTheDocument()
     })
   })
 
@@ -59,14 +64,14 @@ describe('ChatPage', () => {
     renderWithProviders(<ChatPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('SAP 운영에 대해 질문해보세요')).toBeInTheDocument()
+      expect(screen.getByText(defaultPack.chatTitle)).toBeInTheDocument()
     })
 
-    const chip = screen.getByText('T-code SE38의 용도가 뭐예요?')
+    const chip = screen.getByText(defaultPack.suggestions[0])
     await user.click(chip)
 
     const textarea = screen.getByLabelText('메시지 입력')
-    expect(textarea).toHaveValue('T-code SE38의 용도가 뭐예요?')
+    expect(textarea).toHaveValue(defaultPack.suggestions[0])
   })
 
   it('메시지 전송 시 API를 호출한다', async () => {

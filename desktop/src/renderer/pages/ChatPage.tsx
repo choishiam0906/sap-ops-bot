@@ -1,80 +1,64 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { MessageSquare, Sparkles, ShieldCheck, Code } from 'lucide-react'
-import type { ChatSession, ChatMessage } from '../../main/contracts.js'
+import type { ChatSession } from '../../main/contracts.js'
 import { useChatStore } from '../stores/chatStore.js'
+import { useSessions } from '../hooks/useSessions.js'
+import { useMessages } from '../hooks/useMessages.js'
+import { useSendMessage } from '../hooks/useSendMessage.js'
+import { Badge } from '../components/ui/Badge.js'
 import { SessionList } from '../components/chat/SessionList.js'
 import { MessageList } from '../components/chat/MessageList.js'
 import { Composer } from '../components/chat/Composer.js'
+import {
+  DOMAIN_PACK_DETAILS,
+  SECURITY_MODE_DETAILS,
+  useWorkspaceStore,
+} from '../stores/workspaceStore.js'
 import './ChatPage.css'
 
-const api = window.sapOpsDesktop
-
 export function ChatPage() {
-  const [sessions, setSessions] = useState<ChatSession[]>([])
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [sending, setSending] = useState(false)
-
-  const [loadingSessions, setLoadingSessions] = useState(true)
+  const queryClient = useQueryClient()
   const { input, provider, model, error, setInput, setProvider, setModel, setError, clearError } = useChatStore()
+  const securityMode = useWorkspaceStore((state) => state.securityMode)
+  const domainPack = useWorkspaceStore((state) => state.domainPack)
+  const modeDetail = SECURITY_MODE_DETAILS[securityMode]
+  const packDetail = DOMAIN_PACK_DETAILS[domainPack]
+  const suggestionIcons = [Code, ShieldCheck, Sparkles]
 
-  useEffect(() => {
-    loadSessions()
-  }, [])
+  const { data: sessions = [], isLoading: loadingSessions, error: sessionsError } = useSessions()
+  const { data: messages = [] } = useMessages(currentSession?.id ?? null)
+  const sendMutation = useSendMessage()
 
-  async function loadSessions() {
-    setLoadingSessions(true)
-    try {
-      const list = await api.listSessions(50)
-      setSessions(Array.isArray(list) ? list : [])
-    } catch (err) {
-      console.error('[ChatPage] 세션 목록 로드 실패', err)
-      setSessions([])
-      setError('세션 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.')
-    } finally {
-      setLoadingSessions(false)
-    }
-  }
+  const displayError = error || (sessionsError ? '세션 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.' : '')
 
-  async function selectSession(session: ChatSession) {
+  function selectSession(session: ChatSession) {
     setCurrentSession(session)
-    try {
-      const msgs = await api.getSessionMessages(session.id, 100)
-      setMessages(Array.isArray(msgs) ? msgs : [])
-    } catch (err) {
-      console.error('[ChatPage] 메시지 로드 실패', err)
-      setMessages([])
-      setError('대화 내용을 불러오지 못했어요')
-    }
   }
 
-  async function handleSend() {
+  function handleSend() {
     const text = input.trim()
-    if (!text || sending) return
+    if (!text || sendMutation.isPending) return
 
-    setSending(true)
     clearError()
-    try {
-      const result = await api.sendMessage({
-        sessionId: currentSession?.id,
-        provider,
-        model,
-        message: text,
-      })
-      setInput('')
-      setCurrentSession(result.session)
-      setMessages((prev) => [...prev, result.userMessage, result.assistantMessage])
-      await loadSessions()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '메시지 전송에 실패했어요')
-    } finally {
-      setSending(false)
-    }
+    sendMutation.mutate(
+      { sessionId: currentSession?.id, provider, model, message: text },
+      {
+        onSuccess: (result) => {
+          setInput('')
+          setCurrentSession(result.session)
+          queryClient.invalidateQueries({ queryKey: ['messages', result.session.id] })
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : '메시지 전송에 실패했어요')
+        },
+      }
+    )
   }
 
   function startNewChat() {
     setCurrentSession(null)
-    setMessages([])
     setInput('')
   }
 
@@ -89,31 +73,48 @@ export function ChatPage() {
       />
 
       <div className="chat-main">
+        <div className="chat-context-banner">
+          <div className="chat-context-copy">
+            <span className="chat-context-eyebrow">Active Workspace</span>
+            <strong>{packDetail.label}</strong>
+            <p>
+              {packDetail.description} 현재 전송 정책은 <b>{modeDetail.outboundPolicy}</b>입니다.
+            </p>
+          </div>
+          <div className="chat-context-badges">
+            <Badge variant={modeDetail.badgeVariant}>{modeDetail.label}</Badge>
+            <Badge variant="neutral">{packDetail.label}</Badge>
+          </div>
+        </div>
+
         <MessageList messages={messages} />
 
         {messages.length === 0 && !useChatStore.getState().isStreaming && (
           <div className="chat-empty page-enter">
             <MessageSquare size={48} className="empty-icon" aria-hidden="true" />
-            <h2>SAP 운영에 대해 질문해보세요</h2>
-            <p>T-code, 에러 분석, 권한 관리 등 무엇이든 물어보세요</p>
+            <h2>{packDetail.chatTitle}</h2>
+            <p>{packDetail.chatDescription}</p>
+            <div className="chat-empty-meta">
+              <Badge variant={modeDetail.badgeVariant}>{modeDetail.outboundPolicy}</Badge>
+              <Badge variant="neutral">{packDetail.label}</Badge>
+            </div>
             <div className="chat-suggestions">
-              {[
-                { icon: Code, text: 'T-code SE38의 용도가 뭐예요?' },
-                { icon: ShieldCheck, text: '권한 객체 S_TCODE 설정 방법' },
-                { icon: Sparkles, text: 'SAP 성능 튜닝 가이드' },
-              ].map(({ icon: Icon, text }) => (
-                <button key={text} className="suggestion-chip" onClick={() => { setInput(text) }}>
-                  <Icon size={14} aria-hidden="true" />
-                  {text}
-                </button>
-              ))}
+              {packDetail.suggestions.map((text, index) => {
+                const Icon = suggestionIcons[index % suggestionIcons.length]
+                return (
+                  <button key={text} className="suggestion-chip" onClick={() => { setInput(text) }}>
+                    <Icon size={14} aria-hidden="true" />
+                    {text}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
 
-        {error && (
+        {displayError && (
           <div className="chat-error" role="alert">
-            <span>{error}</span>
+            <span>{displayError}</span>
             <button className="chat-error-close" onClick={clearError} aria-label="에러 닫기">&times;</button>
           </div>
         )}
@@ -122,10 +123,11 @@ export function ChatPage() {
           input={input}
           provider={provider}
           model={model}
-          sending={sending}
+          sending={sendMutation.isPending}
           onInputChange={setInput}
           onProviderChange={setProvider}
           onModelChange={setModel}
+          placeholder={`${packDetail.inputPlaceholder} (${modeDetail.placeholderHint})`}
           onSend={handleSend}
         />
       </div>

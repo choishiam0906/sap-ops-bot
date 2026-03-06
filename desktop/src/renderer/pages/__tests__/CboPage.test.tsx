@@ -103,7 +103,7 @@ describe('CboPage', () => {
     await user.click(screen.getByRole('tab', { name: '실행 이력' }))
 
     await waitFor(() => {
-      expect(useCboStore.getState().error).toBe('실행 이력을 불러오지 못했어요')
+      expect(screen.getByRole('alert')).toHaveTextContent('실행 이력을 불러오지 못했어요')
     })
   })
 })

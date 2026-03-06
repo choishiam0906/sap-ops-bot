@@ -187,7 +187,8 @@ export class OAuthManager {
         updatedAt: nowIso(),
       });
       throw new Error(
-        `${provider} 토큰이 만료되었고 갱신에 실패했어요. 설정에서 다시 인증해주세요.`
+        `${provider} 토큰이 만료되었고 갱신에 실패했어요. 설정에서 다시 인증해주세요.`,
+        { cause: err }
       );
     }
   }
