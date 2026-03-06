@@ -13,7 +13,7 @@ import { MessageRepository, SessionRepository } from "./storage/repositories.js"
 export class ChatRuntime {
   private readonly providers: Map<ProviderType, LlmProvider>;
   // P4-5: 세션 생성 동시 요청 방지 — 동일 provider에 대한 중복 생성을 막는 Promise mutex
-  private readonly sessionMutex = new Map<string, Promise<any>>();
+  private readonly sessionMutex = new Map<string, Promise<unknown>>();
 
   constructor(
     providers: LlmProvider[],

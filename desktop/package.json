@@ -10,7 +10,7 @@
     "build:main": "tsc -p tsconfig.json && tsc -p tsconfig.preload.json",
     "build:renderer": "vite build --config vite.renderer.config.ts",
     "dev": "tsx src/main/index.ts",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src/",
     "start": "electron .",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
@@ -31,6 +31,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.12",
@@ -38,8 +39,12 @@
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^31.4.0",
     "electron-builder": "^25.1.8",
+    "eslint": "^9.39.3",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.56.1",
     "vite": "^6.0.7"
   },
   "build": {

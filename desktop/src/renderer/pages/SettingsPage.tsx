@@ -4,7 +4,7 @@ import {
   Eye, EyeOff, CheckCircle, MoreHorizontal,
 } from 'lucide-react'
 import type { ProviderType, AuthStatus } from '../../main/contracts.js'
-import { PROVIDER_MODELS, DEFAULT_MODELS } from '../../main/contracts.js'
+import { PROVIDER_MODELS } from '../../main/contracts.js'
 import { Button } from '../components/ui/Button.js'
 import { Badge } from '../components/ui/Badge.js'
 import { useSettingsStore } from '../stores/settingsStore.js'
