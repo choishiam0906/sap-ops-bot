@@ -180,3 +180,53 @@ async def test_skills_endpoint(client: AsyncClient):
     assert "CTS관리" in names
     assert "일반" in names
     assert all("priority" in s for s in skills)
+
+
+# ── P4-3: 스킬 키워드 매칭 정확도 보강 ──────────────
+
+
+def test_error_analysis_matches_multiple_keywords():
+    """오류분석 스킬이 다양한 에러 키워드에 매칭."""
+    skill = ErrorAnalysisSkill()
+    # ABAP 덤프 관련
+    assert skill.matches("런타임 에러 분석") > 0
+    # 에러코드 관련
+    assert skill.matches("MESSAGE_TYPE_X 에러 원인") > 0
+
+
+def test_data_analysis_matches_log_query():
+    """데이터분석 스킬이 로그/감사 질문에 매칭."""
+    skill = DataAnalysisSkill()
+    assert skill.matches("SM20 감사 로그 조회") > 0.5
+    assert skill.matches("SM21 시스템 로그 분석") > 0.5
+
+
+def test_auth_management_matches_su53():
+    """역할관리 스킬이 SU53 권한 오류에 매칭."""
+    skill = AuthManagementSkill()
+    assert skill.matches("SU53 권한 오류 확인") > 0.5
+
+
+def test_cts_management_matches_se09():
+    """CTS관리 스킬이 SE09 관련 질문에 매칭."""
+    skill = CTSManagementSkill()
+    assert skill.matches("SE09에서 전송 요청 생성") > 0.5
+
+
+def test_skill_score_is_bounded():
+    """모든 스킬 점수가 0.0~1.0 범위인지 검증."""
+    skills: list[BaseSkill] = [
+        DataAnalysisSkill(),
+        ErrorAnalysisSkill(),
+        AuthManagementSkill(),
+        CTSManagementSkill(),
+        GeneralSkill(),
+    ]
+    queries = [
+        "ST22 덤프 분석", "PFCG 역할 생성", "STMS 전송",
+        "SM21 로그", "SAP 설치", "",
+    ]
+    for skill in skills:
+        for query in queries:
+            score = skill.matches(query)
+            assert 0.0 <= score <= 1.0, f"{skill.metadata.name}: score={score} for '{query}'"
