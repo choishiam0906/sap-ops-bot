@@ -31,6 +31,7 @@ import {
   SessionRepository,
 } from "./storage/repositories.js";
 import { LocalDatabase } from "./storage/sqlite.js";
+import { loadConfig } from "./config.js";
 
 let mainWindow: BrowserWindow | null = null;
 let chatRuntime: ChatRuntime;
@@ -40,6 +41,7 @@ let cboBatchRuntime: CboBatchRuntime;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
 
 function initRuntime(): void {
+  const config = loadConfig();
   const dbPath = join(app.getPath("userData"), "sap-ops-bot.sqlite");
   const db = new LocalDatabase(dbPath);
 
@@ -50,14 +52,14 @@ function initRuntime(): void {
   const secureStore = new SecureStore("sap-ops-bot-desktop");
 
   const codexProvider = new CodexProvider(
-    process.env.CODEX_OAUTH_VERIFICATION_URL ?? "https://chat.openai.com/auth/device",
-    process.env.CODEX_OAUTH_TOKEN_URL ?? "https://api.openai.com/oauth/token",
-    process.env.CODEX_API_BASE_URL ?? "https://api.openai.com/v1"
+    config.codexOAuthVerificationUrl,
+    config.codexOAuthTokenUrl,
+    config.codexApiBaseUrl
   );
   const copilotProvider = new CopilotProvider(
-    process.env.COPILOT_OAUTH_VERIFICATION_URL ?? "https://github.com/login/device",
-    process.env.COPILOT_OAUTH_TOKEN_URL ?? "https://github.com/login/oauth/access_token",
-    process.env.COPILOT_API_BASE_URL ?? "https://api.githubcopilot.com"
+    config.copilotOAuthVerificationUrl,
+    config.copilotOAuthTokenUrl,
+    config.copilotApiBaseUrl
   );
 
   const providers = [codexProvider, copilotProvider];
@@ -67,14 +69,15 @@ function initRuntime(): void {
   cboBatchRuntime = new CboBatchRuntime(
     cboAnalyzer,
     analysisRepo,
-    process.env.SAP_OPS_BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1"
+    config.backendApiBaseUrl
   );
 }
 
 function createWindow(): void {
+  const config = loadConfig();
   mainWindow = new BrowserWindow({
-    width: 1320,
-    height: 860,
+    width: config.windowWidth,
+    height: config.windowHeight,
     webPreferences: {
       preload: join(mainDir, "../preload/index.js"),
     },
