@@ -1,8 +1,12 @@
 """지식 베이스 API — SAP 운영 지식 CRUD 엔드포인트."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import get_current_user
+from app.core.rate_limiter import KNOWLEDGE_RATE_LIMIT, limiter
 from app.core.knowledge_base import (
     create_knowledge,
     create_many_knowledge,
@@ -12,7 +16,7 @@ from app.core.knowledge_base import (
     update_knowledge,
 )
 from app.core.rag_engine import index_knowledge_item, remove_from_vector_store
-from app.models.database import get_db
+from app.models.database import User, get_db
 from app.models.schemas import (
     KnowledgeBase,
     KnowledgeBulkCreateRequest,
@@ -22,11 +26,15 @@ from app.models.schemas import (
     KnowledgeUpdate,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/knowledge", tags=["Knowledge Base"])
 
 
 @router.get("", response_model=KnowledgeListResponse)
+@limiter.limit(KNOWLEDGE_RATE_LIMIT)
 async def list_knowledge(
+    request: Request,
     category: str | None = Query(None, description="카테고리 필터"),
     source_type: str | None = Query(
         None, description="소스유형 필터 (guide, source_code, error_pattern)"
@@ -67,6 +75,7 @@ async def get_knowledge(
 async def add_knowledge(
     data: KnowledgeCreate,
     db: AsyncSession = Depends(get_db),
+    _user: User | None = Depends(get_current_user),
 ) -> KnowledgeBase:
     """새 지식 항목을 추가한다."""
     item = await create_knowledge(db, data)
@@ -89,7 +98,9 @@ async def add_knowledge(
             solutions=item.solutions,
         )
     except Exception:
-        pass  # 벡터 인덱싱 실패 시에도 DB 저장은 유지
+        logger.warning(
+            "벡터 인덱싱 실패 (신규 항목)", extra={"item_id": item.id, "title": item.title},
+        )
 
     return _to_schema(item)
 
@@ -98,6 +109,7 @@ async def add_knowledge(
 async def add_knowledge_bulk(
     payload: KnowledgeBulkCreateRequest,
     db: AsyncSession = Depends(get_db),
+    _user: User | None = Depends(get_current_user),
 ) -> KnowledgeBulkCreateResponse:
     """지식 항목을 일괄 추가한다."""
     items = await create_many_knowledge(db, payload.items)
@@ -120,7 +132,10 @@ async def add_knowledge_bulk(
                 solutions=item.solutions,
             )
         except Exception:
-            # 벡터 인덱싱 실패 시에도 DB 저장은 유지
+            logger.warning(
+                "벡터 인덱싱 실패 (대량 생성)",
+                extra={"item_id": item.id, "title": item.title},
+            )
             continue
 
     return KnowledgeBulkCreateResponse(
@@ -134,6 +149,7 @@ async def edit_knowledge(
     item_id: str,
     data: KnowledgeUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: User | None = Depends(get_current_user),
 ) -> KnowledgeBase:
     """기존 지식 항목을 수정한다."""
     item = await update_knowledge(db, item_id, data)
@@ -158,7 +174,9 @@ async def edit_knowledge(
             solutions=item.solutions,
         )
     except Exception:
-        pass
+        logger.warning(
+            "벡터 인덱싱 실패 (수정)", extra={"item_id": item.id, "title": item.title},
+        )
 
     return _to_schema(item)
 
@@ -167,13 +185,14 @@ async def edit_knowledge(
 async def remove_knowledge(
     item_id: str,
     db: AsyncSession = Depends(get_db),
+    _user: User | None = Depends(get_current_user),
 ) -> None:
     """지식 항목을 삭제한다."""
     success = await delete_knowledge(db, item_id)
     if not success:
         raise HTTPException(status_code=404, detail="지식 항목을 찾을 수 없습니다")
 
-    remove_from_vector_store(item_id)
+    await remove_from_vector_store(item_id)
 
 
 def _to_schema(item) -> KnowledgeBase:

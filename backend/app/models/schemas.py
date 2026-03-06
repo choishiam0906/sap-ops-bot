@@ -110,6 +110,23 @@ class KnowledgeBulkCreateResponse(BaseModel):
     items: list[KnowledgeBase] = Field(default_factory=list)
 
 
+# ── Feedback ──────────────────────────────────────
+
+
+class FeedbackCreate(BaseModel):
+    message_id: str = Field(..., description="평가 대상 메시지 ID")
+    rating: str = Field(..., pattern="^(positive|negative)$", description="positive 또는 negative")
+    comment: str | None = Field(default=None, max_length=500, description="추가 의견")
+
+
+class FeedbackStats(BaseModel):
+    total_feedbacks: int
+    positive_count: int
+    negative_count: int
+    satisfaction_rate: float = Field(description="만족률 (0.0~1.0)")
+    recent_daily: list[dict] = Field(default=[], description="최근 7일 일별 통계")
+
+
 # ── System ────────────────────────────────────────
 
 

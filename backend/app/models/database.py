@@ -15,6 +15,22 @@ class Base(DeclarativeBase):
     pass
 
 
+class User(Base):
+    """사용자 계정."""
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(256), nullable=False)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+
 class KnowledgeItem(Base):
     """SAP 운영 지식 항목."""
 
@@ -46,6 +62,24 @@ class KnowledgeItem(Base):
     )
 
 
+class MemoryEntryRecord(Base):
+    """MCP 진단/메모 기록 (영속)."""
+
+    __tablename__ = "memory_entries"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    kind: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    skill: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    suggested_tcodes: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), index=True
+    )
+
+
 class ChatSession(Base):
     """채팅 세션."""
 
@@ -74,6 +108,24 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     sources: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     feedback: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+
+class Feedback(Base):
+    """사용자 피드백 (assistant 메시지 평가)."""
+
+    __tablename__ = "feedbacks"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    message_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    rating: Mapped[str] = mapped_column(
+        String(10), nullable=False
+    )  # positive, negative
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now()
     )

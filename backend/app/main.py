@@ -1,14 +1,19 @@
 """FastAPI 앱 엔트리포인트 — SAP 운영 자동화 AI 봇."""
 
 import logging
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
-from app.api import chat, copilot, knowledge
+from app.api import auth, chat, copilot, feedback, knowledge
 from app.config import settings
 from app.core.knowledge_base import load_seed_data
+from app.core.rate_limiter import limiter
 from app.core.rag_engine import initialize_vector_store
 from app.models.database import async_session, init_db
 
@@ -26,6 +31,31 @@ async def lifespan(app: FastAPI):
         loaded = await load_seed_data(db)
         if loaded > 0:
             logger.info(f"시드 데이터 {loaded}건 로드 완료")
+
+    # 초기 관리자 계정 생성
+    if settings.auth_enabled:
+        from sqlalchemy import select
+
+        from app.core.auth import hash_password
+        from app.models.database import User
+
+        async with async_session() as db:
+            result = await db.execute(select(User).where(User.username == settings.admin_username))
+            if result.scalar_one_or_none() is None:
+                admin = User(
+                    username=settings.admin_username,
+                    hashed_password=hash_password(settings.admin_password),
+                )
+                db.add(admin)
+                await db.commit()
+                logger.info("초기 관리자 계정 생성 완료: %s", settings.admin_username)
+
+    # MemoryStore DB 복원
+    from app.core.memory_store import get_memory_store
+    mem_store = get_memory_store()
+    loaded_memories = await mem_store.load_from_db()
+    if loaded_memories > 0:
+        logger.info(f"MemoryStore에서 {loaded_memories}건 복원 완료")
 
     # 벡터 스토어 초기화 (Azure OpenAI 연결 시)
     if settings.azure_openai_api_key:
@@ -51,6 +81,10 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Rate Limiter 등록
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
@@ -61,9 +95,11 @@ app.add_middleware(
 )
 
 # 라우터 등록
+app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(chat.router, prefix=settings.api_v1_prefix)
 app.include_router(copilot.router, prefix=settings.api_v1_prefix)
 app.include_router(knowledge.router, prefix=settings.api_v1_prefix)
+app.include_router(feedback.router, prefix=settings.api_v1_prefix)
 
 
 @app.get(f"{settings.api_v1_prefix}/health")
@@ -91,36 +127,50 @@ async def runtime_mode() -> dict:
     }
 
 
+# stats TTL 캐시 (10초)
+_stats_cache: dict | None = None
+_stats_cache_ts: float = 0.0
+_STATS_TTL = 10.0
+
+
 @app.get(f"{settings.api_v1_prefix}/stats")
 async def get_stats() -> dict:
-    """사용 통계 엔드포인트."""
+    """사용 통계 엔드포인트 (10초 TTL 캐시)."""
+    global _stats_cache, _stats_cache_ts
+
+    now = time.monotonic()
+    if _stats_cache is not None and (now - _stats_cache_ts) < _STATS_TTL:
+        return _stats_cache
+
     from sqlalchemy import func, select
 
     from app.models.database import ChatMessage, KnowledgeItem
 
     async with async_session() as db:
-        # 총 질의 수
         query_count = await db.execute(
             select(func.count()).select_from(ChatMessage).where(ChatMessage.role == "user")
         )
         total_queries = query_count.scalar() or 0
 
-        # 총 지식 항목 수
         knowledge_count = await db.execute(
             select(func.count()).select_from(KnowledgeItem)
         )
         total_knowledge = knowledge_count.scalar() or 0
 
-        # 카테고리별 분포
         category_result = await db.execute(
             select(KnowledgeItem.category, func.count())
             .group_by(KnowledgeItem.category)
         )
         categories = dict(category_result.all())
 
-    return {
+    from app.core.llm_client import get_token_usage
+
+    _stats_cache = {
         "total_queries": total_queries,
         "total_knowledge_items": total_knowledge,
         "categories": categories,
         "top_tcodes": [],
+        "token_usage": get_token_usage(),
     }
+    _stats_cache_ts = now
+    return _stats_cache

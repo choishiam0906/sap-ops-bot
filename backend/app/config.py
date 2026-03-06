@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # JWT 인증
+    jwt_secret_key: str = "dev-secret-change-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+    auth_enabled: bool = False  # 개발 환경에서는 비활성화 가능
+
+    # 초기 관리자 계정 (최초 시작 시 자동 생성)
+    admin_username: str = "admin"
+    admin_password: str = "admin"
+
     # Copilot Studio
     copilot_connector_secret: str = ""
 

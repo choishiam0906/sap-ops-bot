@@ -5,11 +5,14 @@ stdio 기반으로 동작하며, 6개 Tools + 4개 Resources를 제공한다.
 """
 
 import json
+import logging
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
 from app.core.memory_store import get_memory_store
+
+logger = logging.getLogger(__name__)
 
 # MCP 서버 인스턴스
 mcp = FastMCP(
@@ -41,23 +44,11 @@ def _get_all_knowledge() -> list[dict]:
 # ── MCP Tools ──────────────────────────────────────
 
 
-@mcp.tool()
-def search_knowledge(
-    query: str,
-    source_type: str | None = None,
-    top_k: int = 5,
-) -> str:
-    """SAP 운영 지식을 키워드로 검색합니다.
-
-    Args:
-        query: 검색 키워드 (예: "ST22 덤프", "메모리 부족", "CTS 전송")
-        source_type: 소스 유형 필터 (guide, source_code, error_pattern)
-        top_k: 반환할 최대 결과 수 (기본값: 5)
-    """
+def _keyword_search(query: str, source_type: str | None, top_k: int) -> list[tuple[float, dict]]:
+    """키워드 기반 폴백 검색."""
     items = _get_all_knowledge()
     query_lower = query.lower()
 
-    # 간단한 키워드 매칭 (MCP 서버는 벡터 DB 없이 독립 동작)
     scored = []
     for item in items:
         if source_type and item.get("source_type", "guide") != source_type:
@@ -71,20 +62,22 @@ def search_knowledge(
             " ".join(item.get("tags", [])),
         ]).lower()
 
-        # 쿼리 단어 매칭 점수
         words = query_lower.split()
         matched = sum(1 for w in words if w in searchable)
         if matched > 0:
             scored.append((matched / len(words), item))
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    results = scored[:top_k]
+    return scored[:top_k]
 
+
+def _format_search_results(results: list[tuple[float, dict]]) -> str:
+    """검색 결과를 마크다운 형식으로 포맷한다."""
     if not results:
         return "관련 지식을 찾지 못했습니다."
 
     parts = []
-    for score, item in results:
+    for _score, item in results:
         entry = f"## {item['title']}"
         if item.get("tcode"):
             entry += f" (T-code: {item['tcode']})"
@@ -109,6 +102,49 @@ def search_knowledge(
         parts.append(entry)
 
     return "\n\n---\n\n".join(parts)
+
+
+@mcp.tool()
+def search_knowledge(
+    query: str,
+    source_type: str | None = None,
+    top_k: int = 5,
+) -> str:
+    """SAP 운영 지식을 벡터 유사도 기반으로 검색합니다.
+
+    벡터 검색이 불가능한 경우 키워드 매칭으로 폴백합니다.
+
+    Args:
+        query: 검색 키워드 (예: "ST22 덤프", "메모리 부족", "CTS 전송")
+        source_type: 소스 유형 필터 (guide, source_code, error_pattern)
+        top_k: 반환할 최대 결과 수 (기본값: 5)
+    """
+    # 하이브리드 검색 시도 (벡터 + 키워드 RRF 통합)
+    try:
+        import anyio.from_thread
+
+        from app.core.rag_engine import hybrid_search_knowledge
+
+        hybrid_results = anyio.from_thread.run(
+            hybrid_search_knowledge, query, top_k, None, source_type,
+        )
+        if hybrid_results:
+            parts = []
+            for r in hybrid_results:
+                entry = f"## {r['title']}"
+                if r.get("tcode"):
+                    entry += f" (T-code: {r['tcode']})"
+                entry += f"\n카테고리: {r['category']}"
+                entry += f" | RRF 점수: {r['relevance_score']}"
+                entry += f"\n\n{r['document']}"
+                parts.append(entry)
+            return "\n\n---\n\n".join(parts)
+    except Exception as exc:
+        logger.debug("하이브리드 검색 폴백 → 키워드 검색: %s", exc)
+
+    # 키워드 폴백
+    results = _keyword_search(query, source_type, top_k)
+    return _format_search_results(results)
 
 
 @mcp.tool()
