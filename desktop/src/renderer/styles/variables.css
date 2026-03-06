@@ -1,4 +1,5 @@
 :root {
+  /* Colors */
   --color-bg: #f8fbff;
   --color-bg-secondary: #ffffff;
   --color-bg-tertiary: #eef6ff;
@@ -7,6 +8,7 @@
   --color-text-muted: #829ab1;
   --color-primary: #006edc;
   --color-primary-hover: #005bb5;
+  --color-primary-subtle: rgba(0, 110, 220, 0.08);
   --color-border: #d9e2ec;
   --color-border-light: #e8ecf1;
   --color-success: #0b6b38;
@@ -15,20 +17,81 @@
   --color-error-bg: #fef2f2;
   --color-warning: #b45309;
   --color-warning-bg: #fef3c7;
+  --color-info: #0ea5e9;
+  --color-info-bg: #f0f9ff;
   --color-code-bg: #0f172a;
   --color-code-text: #e2e8f0;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+
+  /* Typography */
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+
+  /* Radius */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+
+  /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px rgba(0, 110, 220, 0.3);
+
+  /* Layout */
   --sidebar-width: 220px;
+  --sidebar-width-collapsed: 56px;
+
+  /* Fonts */
   --font-sans: "Pretendard", "Segoe UI", -apple-system, sans-serif;
   --font-mono: "Consolas", "Courier New", monospace;
 }
 
+/* 다크모드: data-theme 속성 기반 (사용자 제어) */
+[data-theme="dark"] {
+  --color-bg: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-subtle: rgba(59, 130, 246, 0.12);
+  --color-border: #334155;
+  --color-border-light: #475569;
+  --color-success: #22c55e;
+  --color-success-bg: #052e16;
+  --color-error: #f43f5e;
+  --color-error-bg: #4c0519;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #451a03;
+  --color-info: #38bdf8;
+  --color-info-bg: #0c4a6e;
+  --color-code-bg: #1e293b;
+  --color-code-text: #e2e8f0;
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.4);
+}
+
+/* 시스템 테마 폴백: data-theme 미지정 시 OS 설정 따름 */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --color-bg: #0f172a;
     --color-bg-secondary: #1e293b;
     --color-bg-tertiary: #334155;
@@ -37,6 +100,7 @@
     --color-text-muted: #64748b;
     --color-primary: #3b82f6;
     --color-primary-hover: #2563eb;
+    --color-primary-subtle: rgba(59, 130, 246, 0.12);
     --color-border: #334155;
     --color-border-light: #475569;
     --color-success: #22c55e;
@@ -45,7 +109,10 @@
     --color-error-bg: #4c0519;
     --color-warning: #f59e0b;
     --color-warning-bg: #451a03;
+    --color-info: #38bdf8;
+    --color-info-bg: #0c4a6e;
     --color-code-bg: #1e293b;
     --color-code-text: #e2e8f0;
+    --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.4);
   }
 }

@@ -1,0 +1,22 @@
+.ui-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-tooltip {
+  position: absolute;
+  z-index: 100;
+  padding: 6px 10px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fadeIn var(--transition-fast);
+}
+
+.ui-tooltip-top    { bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
+.ui-tooltip-bottom { top: calc(100% + 6px);    left: 50%; transform: translateX(-50%); }
+.ui-tooltip-left   { right: calc(100% + 6px);  top: 50%;  transform: translateY(-50%); }
+.ui-tooltip-right  { left: calc(100% + 6px);   top: 50%;  transform: translateY(-50%); }

@@ -1,5 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
-import type { ChatSession, ChatMessage, ProviderType } from '../../main/contracts.js'
+import { useState, useEffect } from 'react'
+import { MessageSquare, Sparkles, ShieldCheck, Code } from 'lucide-react'
+import type { ChatSession, ChatMessage } from '../../main/contracts.js'
+import { useChatStore } from '../stores/chatStore.js'
+import { SessionList } from '../components/chat/SessionList.js'
+import { MessageList } from '../components/chat/MessageList.js'
+import { Composer } from '../components/chat/Composer.js'
 import './ChatPage.css'
 
 const api = window.sapOpsDesktop
@@ -8,26 +13,24 @@ export function ChatPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
-  const [provider, setProvider] = useState<ProviderType>('codex')
-  const [model, setModel] = useState('gpt-4.1-mini')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const [loadingSessions, setLoadingSessions] = useState(true)
+  const { input, provider, model, error, setInput, setProvider, setModel, setError, clearError } = useChatStore()
 
   useEffect(() => {
     loadSessions()
   }, [])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
   async function loadSessions() {
+    setLoadingSessions(true)
     try {
       const list = await api.listSessions(50)
       setSessions(Array.isArray(list) ? list : [])
     } catch {
       setSessions([])
+    } finally {
+      setLoadingSessions(false)
     }
   }
 
@@ -46,6 +49,7 @@ export function ChatPage() {
     if (!text || sending) return
 
     setSending(true)
+    clearError()
     try {
       const result = await api.sendMessage({
         sessionId: currentSession?.id,
@@ -58,17 +62,9 @@ export function ChatPage() {
       setMessages((prev) => [...prev, result.userMessage, result.assistantMessage])
       await loadSessions()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '메시지 전송에 실패했어요'
-      alert(msg)
+      setError(err instanceof Error ? err.message : '메시지 전송에 실패했어요')
     } finally {
       setSending(false)
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
     }
   }
 
@@ -80,93 +76,54 @@ export function ChatPage() {
 
   return (
     <div className="chat-layout">
-      <div className="chat-sidebar">
-        <button className="btn-primary new-chat-btn" onClick={startNewChat}>
-          새 대화
-        </button>
-        <div className="session-list">
-          {sessions.map((s) => (
-            <button
-              key={s.id}
-              className={`session-item ${currentSession?.id === s.id ? 'active' : ''}`}
-              onClick={() => selectSession(s)}
-            >
-              <span className="session-title">{s.title || '새 대화'}</span>
-              <span className="session-date">
-                {new Date(s.updatedAt).toLocaleDateString('ko-KR')}
-              </span>
-            </button>
-          ))}
-          {sessions.length === 0 && (
-            <div className="session-empty">대화 이력이 없어요</div>
-          )}
-        </div>
-      </div>
+      <SessionList
+        sessions={sessions}
+        currentSessionId={currentSession?.id ?? null}
+        loading={loadingSessions}
+        onSelect={selectSession}
+        onNewChat={startNewChat}
+      />
 
       <div className="chat-main">
-        <div className="chat-messages">
-          {messages.length === 0 ? (
-            <div className="chat-empty">
-              <h2>SAP 운영에 대해 질문해보세요</h2>
-              <p>T-code, 에러 분석, 권한 관리 등 무엇이든 물어보세요</p>
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div key={msg.id} className={`message ${msg.role}`}>
-                <div className="message-bubble">
-                  <div className="message-content">{msg.content}</div>
-                </div>
-                <span className="message-time">
-                  {new Date(msg.createdAt).toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+        <MessageList messages={messages} />
 
-        <div className="chat-input-area">
-          <div className="chat-options">
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value as ProviderType)}
-              className="chat-select"
-              aria-label="Provider 선택"
-            >
-              <option value="codex">Codex</option>
-              <option value="copilot">Copilot</option>
-            </select>
-            <input
-              type="text"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="chat-model-input"
-              placeholder="모델명"
-              aria-label="모델명 입력"
-            />
+        {messages.length === 0 && !useChatStore.getState().isStreaming && (
+          <div className="chat-empty page-enter">
+            <MessageSquare size={48} className="empty-icon" aria-hidden="true" />
+            <h2>SAP 운영에 대해 질문해보세요</h2>
+            <p>T-code, 에러 분석, 권한 관리 등 무엇이든 물어보세요</p>
+            <div className="chat-suggestions">
+              {[
+                { icon: Code, text: 'T-code SE38의 용도가 뭐예요?' },
+                { icon: ShieldCheck, text: '권한 객체 S_TCODE 설정 방법' },
+                { icon: Sparkles, text: 'SAP 성능 튜닝 가이드' },
+              ].map(({ icon: Icon, text }) => (
+                <button key={text} className="suggestion-chip" onClick={() => { setInput(text) }}>
+                  <Icon size={14} aria-hidden="true" />
+                  {text}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="chat-input-row">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="메시지를 입력하세요... (Enter로 전송)"
-              className="chat-textarea"
-              disabled={sending}
-              rows={2}
-            />
-            <button
-              className="btn-primary send-btn"
-              onClick={handleSend}
-              disabled={sending || !input.trim()}
-            >
-              {sending ? '전송 중...' : '전송'}
-            </button>
+        )}
+
+        {error && (
+          <div className="chat-error" role="alert">
+            <span>{error}</span>
+            <button className="chat-error-close" onClick={clearError} aria-label="에러 닫기">&times;</button>
           </div>
-        </div>
+        )}
+
+        <Composer
+          input={input}
+          provider={provider}
+          model={model}
+          sending={sending}
+          onInputChange={setInput}
+          onProviderChange={setProvider}
+          onModelChange={setModel}
+          onSend={handleSend}
+        />
       </div>
     </div>
   )
