@@ -19,6 +19,11 @@ interface AppConfig {
   // CBO
   cboMaxFileSizeBytes: number;
   cboSupportedExtensions: string[];
+
+  // OAuth Client IDs
+  oauthOpenaiClientId: string;
+  oauthAnthropicClientId: string;
+  oauthGoogleClientId: string;
 }
 
 function parseIntSafe(value: string | undefined, fallback: number): number {
@@ -52,6 +57,12 @@ export function loadConfig(): AppConfig {
       process.env.CBO_SUPPORTED_EXTENSIONS,
       [".txt", ".md", ".abap", ".cbo"]
     ),
+
+    oauthOpenaiClientId:
+      process.env.OAUTH_OPENAI_CLIENT_ID ?? "app_EMoamEEZ73f0CkXp7hrann",
+    oauthAnthropicClientId:
+      process.env.OAUTH_ANTHROPIC_CLIENT_ID ?? "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
+    oauthGoogleClientId: process.env.OAUTH_GOOGLE_CLIENT_ID ?? "",
   };
 }
 

@@ -15,6 +15,9 @@ import type {
   SendMessageInput,
   SetApiKeyInput,
   VaultClassification,
+  OAuthAvailability,
+  OAuthInitResult,
+  ProviderAccount,
 } from "../main/contracts.js";
 
 const desktopApi = {
@@ -26,6 +29,21 @@ const desktopApi = {
   },
   logout(provider: ProviderType) {
     return ipcRenderer.invoke("auth:logout", provider);
+  },
+  getOAuthAvailability(): Promise<OAuthAvailability[]> {
+    return ipcRenderer.invoke("auth:oauthAvailability");
+  },
+  initiateOAuth(provider: ProviderType): Promise<OAuthInitResult> {
+    return ipcRenderer.invoke("auth:initiateOAuth", provider);
+  },
+  waitOAuthCallback(provider: ProviderType): Promise<ProviderAccount> {
+    return ipcRenderer.invoke("auth:waitOAuthCallback", provider);
+  },
+  cancelOAuth(provider: ProviderType): Promise<void> {
+    return ipcRenderer.invoke("auth:cancelOAuth", provider);
+  },
+  submitOAuthCode(provider: ProviderType, code: string): Promise<ProviderAccount> {
+    return ipcRenderer.invoke("auth:submitOAuthCode", provider, code);
   },
   sendMessage(input: SendMessageInput) {
     return ipcRenderer.invoke("chat:send", input);

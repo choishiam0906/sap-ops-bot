@@ -79,7 +79,7 @@ function initRuntime(): void {
     providers, secureStore, sessionRepo, messageRepo,
     policyEngine, auditRepo
   );
-  oauthManager = new OAuthManager(secureStore, accountRepo);
+  oauthManager = new OAuthManager(secureStore, accountRepo, config);
   const vaultRepo = new VaultRepository(db);
   vaultRepoRef = vaultRepo;
 
@@ -119,6 +119,26 @@ function registerIpc(): void {
 
   ipcMain.handle("auth:logout", async (_event, provider: ProviderType) => {
     return oauthManager.logout(provider);
+  });
+
+  ipcMain.handle("auth:oauthAvailability", async () => {
+    return oauthManager.getOAuthAvailability();
+  });
+
+  ipcMain.handle("auth:initiateOAuth", async (_event, provider: ProviderType) => {
+    return oauthManager.initiateOAuth(provider);
+  });
+
+  ipcMain.handle("auth:waitOAuthCallback", async (_event, provider: ProviderType) => {
+    return oauthManager.waitForOAuthCallback(provider);
+  });
+
+  ipcMain.handle("auth:cancelOAuth", async (_event, provider: ProviderType) => {
+    return oauthManager.cancelOAuth(provider);
+  });
+
+  ipcMain.handle("auth:submitOAuthCode", async (_event, provider: ProviderType, code: string) => {
+    return oauthManager.submitOAuthCode(provider, code);
   });
 
   ipcMain.handle("chat:send", async (_event, input: SendMessageInput) => {

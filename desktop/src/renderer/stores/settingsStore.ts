@@ -6,6 +6,7 @@ type Theme = 'system' | 'light' | 'dark'
 type FontFamily = 'pretendard' | 'system'
 type SendKey = 'enter' | 'ctrl-enter'
 type Language = 'ko' | 'en'
+export type ThinkingLevel = 'off' | 'low' | 'medium' | 'high'
 
 interface SettingsState {
   theme: Theme
@@ -18,6 +19,7 @@ interface SettingsState {
   notificationsEnabled: boolean
   userName: string
   language: Language
+  thinkingLevel: ThinkingLevel
 
   setTheme: (theme: Theme) => void
   setDefaultProvider: (provider: ProviderType) => void
@@ -29,6 +31,7 @@ interface SettingsState {
   setNotificationsEnabled: (v: boolean) => void
   setUserName: (n: string) => void
   setLanguage: (l: Language) => void
+  setThinkingLevel: (l: ThinkingLevel) => void
 }
 
 function getInitialTheme(): Theme {
@@ -88,6 +91,14 @@ function getInitialString(key: string, defaultValue: string): string {
   return defaultValue
 }
 
+function getInitialThinkingLevel(): ThinkingLevel {
+  try {
+    const stored = localStorage.getItem('sap-ops-thinking-level')
+    if (stored === 'off' || stored === 'low' || stored === 'medium' || stored === 'high') return stored
+  } catch { /* 무시 */ }
+  return 'medium'
+}
+
 function getInitialLanguage(): Language {
   try {
     const stored = localStorage.getItem('sap-ops-language')
@@ -141,6 +152,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   notificationsEnabled: getInitialBoolean('sap-ops-notifications', true),
   userName: getInitialString('sap-ops-user-name', ''),
   language: getInitialLanguage(),
+  thinkingLevel: getInitialThinkingLevel(),
   setTheme: (theme) => {
     applyTheme(theme)
     set({ theme })
@@ -184,5 +196,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setLanguage: (language) => {
     persistValue('sap-ops-language', language)
     set({ language })
+  },
+  setThinkingLevel: (thinkingLevel) => {
+    persistValue('sap-ops-thinking-level', thinkingLevel)
+    set({ thinkingLevel })
   },
 }))

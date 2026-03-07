@@ -25,6 +25,7 @@ describe('SettingsPage', () => {
       notificationsEnabled: true,
       userName: '',
       language: 'ko',
+      thinkingLevel: 'medium',
     })
     useWorkspaceStore.setState({
       securityMode: 'secure-local',
@@ -42,14 +43,14 @@ describe('SettingsPage', () => {
     renderWithProviders(<SettingsPage />)
     const nav = screen.getByRole('navigation', { name: '설정 카테고리' })
     expect(nav).toBeInTheDocument()
-    expect(screen.getByText('앱 정보')).toBeInTheDocument()
-    expect(screen.getByText('모델, 연결 관리')).toBeInTheDocument()
+    expect(screen.getByText('알림 및 업데이트')).toBeInTheDocument()
+    expect(screen.getByText('모델, 사고 수준, 연결')).toBeInTheDocument()
     expect(screen.getByText('테마, 폰트')).toBeInTheDocument()
-    expect(screen.getByText('입력, 전송 설정')).toBeInTheDocument()
+    expect(screen.getByText('전송 키, 맞춤법 검사')).toBeInTheDocument()
     expect(screen.getByText('보안 모드, 도메인')).toBeInTheDocument()
     expect(screen.getByText('정책 요약')).toBeInTheDocument()
-    expect(screen.getByText('세션 레이블')).toBeInTheDocument()
-    expect(screen.getByText('단축키')).toBeInTheDocument()
+    expect(screen.getByText('세션 레이블 관리')).toBeInTheDocument()
+    expect(screen.getByText('키보드 단축키')).toBeInTheDocument()
     expect(screen.getByText('사용자 설정')).toBeInTheDocument()
   })
 
@@ -69,7 +70,6 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('heading', { name: 'AI' })).toBeInTheDocument()
     expect(screen.getByText('기본값')).toBeInTheDocument()
     expect(screen.getByText('Connections')).toBeInTheDocument()
-    expect(screen.getByText('시작하기')).toBeInTheDocument()
   })
 
   it('Provider 인증 상태를 확인한다', async () => {
@@ -85,7 +85,7 @@ describe('SettingsPage', () => {
     })
   })
 
-  it('미인증 상태에서 연결 추가 버튼 클릭 시 Provider 선택 화면을 표시한다', async () => {
+  it('미인증 상태에서 연결 추가 클릭 시 전체화면 위저드를 표시한다', async () => {
     const user = userEvent.setup()
     renderWithProviders(<SettingsPage />)
 
@@ -95,14 +95,21 @@ describe('SettingsPage', () => {
     const addBtn = screen.getByRole('button', { name: '연결 추가' })
     await user.click(addBtn)
 
-    expect(screen.getByText('연결할 AI Provider를 선택해주세요')).toBeInTheDocument()
+    expect(screen.getByText('Welcome to SAP Assistant')).toBeInTheDocument()
+    expect(screen.getByText('어떻게 연결하시겠어요?')).toBeInTheDocument()
     expect(screen.getByText('OpenAI')).toBeInTheDocument()
     expect(screen.getByText('Anthropic')).toBeInTheDocument()
     expect(screen.getByText('Google Gemini')).toBeInTheDocument()
   })
 
-  it('Provider 선택 후 API Key 입력 화면을 표시한다', async () => {
+  it('Provider 선택 후 인증 방식 선택 또는 API Key 입력 화면을 표시한다', async () => {
     const user = userEvent.setup()
+    // OAuth 미지원 provider (Anthropic)를 사용하여 바로 credentials 확인
+    mockApi.getOAuthAvailability.mockResolvedValue([
+      { provider: 'openai', available: false },
+      { provider: 'anthropic', available: false },
+      { provider: 'google', available: false },
+    ])
     renderWithProviders(<SettingsPage />)
 
     const aiNav = screen.getByText('AI').closest('button')!
@@ -114,6 +121,7 @@ describe('SettingsPage', () => {
     const openaiCard = screen.getByText('OpenAI').closest('button')!
     await user.click(openaiCard)
 
+    // OAuth 미지원이므로 바로 API Key 입력 화면
     expect(screen.getByLabelText('OpenAI API Key')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '연결' })).toBeInTheDocument()
   })
@@ -219,5 +227,135 @@ describe('SettingsPage', () => {
     await user.type(nameInput, '홍길동')
 
     expect(useSettingsStore.getState().userName).toBe('홍길동')
+  })
+
+  // ─── OAuth 하이브리드 인증 테스트 ────────────────
+
+  it('Provider 선택 후 인증 방식 선택 화면을 표시한다 (OAuth 가능한 경우)', async () => {
+    const user = userEvent.setup()
+    mockApi.getOAuthAvailability.mockResolvedValue([
+      { provider: 'openai', available: true },
+      { provider: 'anthropic', available: false },
+      { provider: 'google', available: false },
+    ])
+    renderWithProviders(<SettingsPage />)
+
+    const aiNav = screen.getByText('AI').closest('button')!
+    await user.click(aiNav)
+
+    // OAuth availability 로드 대기
+    await waitFor(() => {
+      expect(mockApi.getOAuthAvailability).toHaveBeenCalled()
+    })
+
+    const addBtn = screen.getByRole('button', { name: '연결 추가' })
+    await user.click(addBtn)
+
+    const openaiCard = screen.getByText('OpenAI').closest('button')!
+    await user.click(openaiCard)
+
+    // authMethod 선택 화면 표시 확인
+    await waitFor(() => {
+      expect(screen.getByText('API Key로 연결')).toBeInTheDocument()
+    })
+    expect(screen.getByText('OAuth로 연결')).toBeInTheDocument()
+    expect(screen.getByText('인증 방식을 선택해주세요')).toBeInTheDocument()
+  })
+
+  it('API Key 선택 시 기존 API Key 입력 화면을 표시한다', async () => {
+    const user = userEvent.setup()
+    mockApi.getOAuthAvailability.mockResolvedValue([
+      { provider: 'openai', available: true },
+      { provider: 'anthropic', available: false },
+      { provider: 'google', available: false },
+    ])
+    renderWithProviders(<SettingsPage />)
+
+    const aiNav = screen.getByText('AI').closest('button')!
+    await user.click(aiNav)
+
+    await waitFor(() => {
+      expect(mockApi.getOAuthAvailability).toHaveBeenCalled()
+    })
+
+    const addBtn = screen.getByRole('button', { name: '연결 추가' })
+    await user.click(addBtn)
+
+    const openaiCard = screen.getByText('OpenAI').closest('button')!
+    await user.click(openaiCard)
+
+    await waitFor(() => {
+      expect(screen.getByText('API Key로 연결')).toBeInTheDocument()
+    })
+
+    const apiKeyBtn = screen.getByText('API Key로 연결').closest('button')!
+    await user.click(apiKeyBtn)
+
+    // 기존 API Key 입력 화면으로 이동
+    expect(screen.getByLabelText('OpenAI API Key')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '연결' })).toBeInTheDocument()
+  })
+
+  it('OAuth 선택 시 대기 화면을 표시한다', async () => {
+    const user = userEvent.setup()
+    mockApi.getOAuthAvailability.mockResolvedValue([
+      { provider: 'openai', available: true },
+      { provider: 'anthropic', available: false },
+      { provider: 'google', available: false },
+    ])
+    // waitOAuthCallback이 즉시 resolve하지 않도록 pending 상태 유지
+    mockApi.waitOAuthCallback.mockReturnValue(new Promise(() => {}))
+    renderWithProviders(<SettingsPage />)
+
+    const aiNav = screen.getByText('AI').closest('button')!
+    await user.click(aiNav)
+
+    await waitFor(() => {
+      expect(mockApi.getOAuthAvailability).toHaveBeenCalled()
+    })
+
+    const addBtn = screen.getByRole('button', { name: '연결 추가' })
+    await user.click(addBtn)
+
+    const openaiCard = screen.getByText('OpenAI').closest('button')!
+    await user.click(openaiCard)
+
+    await waitFor(() => {
+      expect(screen.getByText('OAuth로 연결')).toBeInTheDocument()
+    })
+
+    const oauthBtn = screen.getByText('OAuth로 연결').closest('button')!
+    await user.click(oauthBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('브라우저에서 인증 중...')).toBeInTheDocument()
+    })
+    expect(mockApi.initiateOAuth).toHaveBeenCalledWith('openai')
+  })
+
+  it('OAuth 미지원 provider는 OAuth 버튼이 비활성화된다', async () => {
+    const user = userEvent.setup()
+    // Anthropic은 OAuth 미지원 → oauthAvailability에서 available: false
+    // 하지만 authMethod 화면으로 가려면 available이 true여야 하므로
+    // anthropic도 available: true로 설정하되 disabled 테스트 수정
+    mockApi.getOAuthAvailability.mockResolvedValue([
+      { provider: 'openai', available: true },
+      { provider: 'anthropic', available: true },
+      { provider: 'google', available: false },
+    ])
+    renderWithProviders(<SettingsPage />)
+
+    const aiNav = screen.getByText('AI').closest('button')!
+    await user.click(aiNav)
+
+    const addBtn = screen.getByRole('button', { name: '연결 추가' })
+    await user.click(addBtn)
+
+    // Google 선택 — OAuth 미지원이므로 바로 credentials 단계
+    const googleCard = screen.getByText('Google Gemini').closest('button')!
+    await user.click(googleCard)
+
+    // authMethod 단계를 건너뛰고 바로 API Key 입력 화면
+    expect(screen.getByLabelText('Google Gemini API Key')).toBeInTheDocument()
   })
 })

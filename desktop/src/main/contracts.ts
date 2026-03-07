@@ -108,7 +108,20 @@ export interface ProviderAccount {
   provider: ProviderType;
   status: AuthStatus;
   accountHint: string | null;
+  authType?: "api-key" | "oauth";
   updatedAt: string;
+}
+
+export interface OAuthInitResult {
+  authUrl: string;
+  provider: ProviderType;
+  /** true = localhost 콜백 자동 수신, false = 사용자가 코드를 수동 입력 */
+  useCallbackServer: boolean;
+}
+
+export interface OAuthAvailability {
+  provider: ProviderType;
+  available: boolean;
 }
 
 export interface ChatSession {

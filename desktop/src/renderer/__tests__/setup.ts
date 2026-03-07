@@ -29,6 +29,31 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
   listVaultEntries: vi.fn().mockResolvedValue([]),
   searchVaultByClassification: vi.fn().mockResolvedValue([]),
   listVaultByDomainPack: vi.fn().mockResolvedValue([]),
+  getOAuthAvailability: vi.fn().mockResolvedValue([
+    { provider: 'openai', available: true },
+    { provider: 'anthropic', available: false },
+    { provider: 'google', available: false },
+  ]),
+  initiateOAuth: vi.fn().mockResolvedValue({
+    authUrl: 'https://auth.openai.com/authorize?...',
+    provider: 'openai',
+    useCallbackServer: true,
+  }),
+  waitOAuthCallback: vi.fn().mockResolvedValue({
+    provider: 'openai',
+    status: 'authenticated',
+    accountHint: 'user@example.com',
+    authType: 'oauth',
+    updatedAt: new Date().toISOString(),
+  }),
+  cancelOAuth: vi.fn().mockResolvedValue(undefined),
+  submitOAuthCode: vi.fn().mockResolvedValue({
+    provider: 'anthropic',
+    status: 'authenticated',
+    accountHint: 'user@anthropic.com',
+    authType: 'oauth',
+    updatedAt: new Date().toISOString(),
+  }),
 }
 
 Object.defineProperty(window, 'sapOpsDesktop', {

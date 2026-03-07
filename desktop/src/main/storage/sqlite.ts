@@ -40,6 +40,7 @@ export class LocalDatabase {
         provider TEXT PRIMARY KEY,
         status TEXT NOT NULL,
         account_hint TEXT,
+        auth_type TEXT,
         updated_at TEXT NOT NULL
       );
 
@@ -144,6 +145,13 @@ export class LocalDatabase {
       CREATE INDEX IF NOT EXISTS idx_vault_domain
       ON knowledge_vault (domain_pack);
     `);
+
+    // 마이그레이션: 기존 DB에 auth_type 컬럼 추가
+    try {
+      this.db.exec(`ALTER TABLE provider_accounts ADD COLUMN auth_type TEXT`);
+    } catch {
+      // 이미 존재하면 무시 (duplicate column name 에러)
+    }
   }
 
   prepare(sql: string): Database.Statement {
