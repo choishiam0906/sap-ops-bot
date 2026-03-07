@@ -16,6 +16,36 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe('CboPage', () => {
   beforeEach(() => {
+    mockApi.searchSourceDocuments.mockResolvedValue([
+      {
+        id: 'doc1',
+        sourceId: 'src1',
+        relativePath: 'billing/zsd_billing.txt',
+        absolutePath: 'C:/sap/cbo/billing/zsd_billing.txt',
+        title: 'zsd_billing.txt',
+        excerpt: 'FORM validate_authority ...',
+        contentText: 'REPORT ZSD_BILLING.',
+        contentHash: 'hash-1',
+        domainPack: 'cbo-maintenance',
+        classification: 'confidential',
+        tags: ['local-folder', 'cbo-maintenance'],
+        indexedAt: new Date().toISOString(),
+      },
+    ])
+    mockApi.getSourceDocument.mockResolvedValue({
+      id: 'doc1',
+      sourceId: 'src1',
+      relativePath: 'billing/zsd_billing.txt',
+      absolutePath: 'C:/sap/cbo/billing/zsd_billing.txt',
+      title: 'zsd_billing.txt',
+      excerpt: 'FORM validate_authority ...',
+      contentText: 'REPORT ZSD_BILLING.',
+      contentHash: 'hash-1',
+      domainPack: 'cbo-maintenance',
+      classification: 'confidential',
+      tags: ['local-folder', 'cbo-maintenance'],
+      indexedAt: new Date().toISOString(),
+    })
     useCboStore.setState({
       tab: 'text',
       busy: false,
@@ -55,6 +85,7 @@ describe('CboPage', () => {
   it('텍스트 탭에서 소스 코드 입력란이 표시된다', () => {
     renderWithProviders(<CboPage />)
     expect(screen.getByPlaceholderText(/CBO 소스/)).toBeInTheDocument()
+    expect(screen.getByText('Source Library에서 가져오기')).toBeInTheDocument()
   })
 
   it('빈 텍스트로 분석 시 에러 메시지를 표시한다', async () => {
@@ -159,5 +190,23 @@ describe('CboPage', () => {
     )
     expect(useChatStore.getState().caseContext?.filePath).toBe('zsd_billing.txt')
     expect(useChatStore.getState().input).toContain('현업 사용자에게 비기술 용어로 설명')
+  })
+
+  it('Source Library 문서를 textarea로 불러온다', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<CboPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('zsd_billing.txt')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: '불러오기' }))
+
+    await waitFor(() => {
+      expect(mockApi.getSourceDocument).toHaveBeenCalled()
+    })
+
+    expect(useCboStore.getState().fileName).toBe('zsd_billing.txt')
+    expect(useCboStore.getState().sourceText).toBe('REPORT ZSD_BILLING.')
   })
 })

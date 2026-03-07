@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { FileText, FolderSearch, RefreshCw, GitCompare, Database, XCircle } from 'lucide-react'
 import { useCboStore } from '../stores/cboStore.js'
 import { useCboRuns } from '../hooks/useCboRuns.js'
@@ -24,6 +25,9 @@ type Tab = 'text' | 'file' | 'history'
 
 export function CboPage() {
   const store = useCboStore()
+  const [librarySearch, setLibrarySearch] = useState('')
+  const [loadingDocumentId, setLoadingDocumentId] = useState<string | null>(null)
+  const [activeLibrarySourceId, setActiveLibrarySourceId] = useState('')
   const { data: runs = [], refetch: refetchRuns, error: runsError } = useCboRuns(20, store.tab === 'history')
   const securityMode = useWorkspaceStore((state) => state.securityMode)
   const domainPack = useWorkspaceStore((state) => state.domainPack)
@@ -39,6 +43,18 @@ export function CboPage() {
   const modeDetail = SECURITY_MODE_DETAILS[securityMode]
   const packDetail = DOMAIN_PACK_DETAILS[domainPack]
   const cboWorkspaceReady = securityMode === 'secure-local' && domainPack === 'cbo-maintenance'
+  const { data: libraryDocuments = [] } = useQuery({
+    queryKey: ['sources', 'documents', 'cbo-library', librarySearch, domainPack],
+    queryFn: () =>
+      api.searchSourceDocuments({
+        query: librarySearch.trim() || undefined,
+        sourceKind: 'local-folder',
+        domainPack,
+        limit: 8,
+      }),
+    enabled: store.tab === 'text',
+    staleTime: 10_000,
+  })
 
   const displayError = store.error || (runsError ? '실행 이력을 불러오지 못했어요' : '')
 
@@ -72,6 +88,7 @@ export function CboPage() {
       new Set([
         'workspace-context',
         ...(store.sourceText.trim() ? ['local-imported-files'] : []),
+        ...(activeLibrarySourceId ? [`configured-source:${activeLibrarySourceId}`] : []),
         ...(activeResult.sourceIds ?? []),
       ])
     )
@@ -89,6 +106,27 @@ export function CboPage() {
     }
     setChatInput(prompt)
     setCurrentPage('chat')
+  }
+
+  async function loadLibraryDocument(documentId: string) {
+    setLoadingDocumentId(documentId)
+    store.setError('')
+    try {
+      const document = await api.getSourceDocument(documentId)
+      if (!document) {
+        store.setError('선택한 Source Library 문서를 찾지 못했어요')
+        return
+      }
+      store.setFileName(document.title)
+      store.setSourceText(document.contentText)
+      store.setResult(null)
+      setActiveLibrarySourceId(document.sourceId)
+      store.setStatus(`Source Library에서 ${document.title} 문서를 불러왔어요`)
+    } catch (error) {
+      store.setError(error instanceof Error ? error.message : '문서를 불러오지 못했어요')
+    } finally {
+      setLoadingDocumentId(null)
+    }
   }
 
   async function analyzeText() {
@@ -227,6 +265,43 @@ export function CboPage() {
               CBO 소스 텍스트를 붙여넣고 분석한 뒤, 결과 패널에서 현업 설명, 검증 체크리스트, 운영 메모 초안으로
               바로 넘길 수 있습니다.
             </p>
+          </div>
+          <div className="cbo-library-panel">
+            <div className="cbo-library-header">
+              <div>
+                <strong>Source Library에서 가져오기</strong>
+                <p>Local Folder로 색인한 문서를 바로 textarea에 불러와 CBO 분석에 사용할 수 있습니다.</p>
+              </div>
+              <Badge variant="neutral">{libraryDocuments.length} docs</Badge>
+            </div>
+            <input
+              value={librarySearch}
+              onChange={(event) => setLibrarySearch(event.target.value)}
+              className="cbo-input cbo-library-search"
+              placeholder="파일명, 경로, 본문으로 검색"
+            />
+            <div className="cbo-library-list">
+              {libraryDocuments.length === 0 && (
+                <div className="cbo-library-empty">현재 Domain Pack에서 사용할 Source Library 문서가 없습니다.</div>
+              )}
+              {libraryDocuments.map((document) => (
+                <article key={document.id} className="cbo-library-card">
+                  <div>
+                    <strong>{document.title}</strong>
+                    <p>{document.relativePath}</p>
+                    {document.excerpt && <span>{document.excerpt}</span>}
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => loadLibraryDocument(document.id)}
+                    loading={loadingDocumentId === document.id}
+                  >
+                    불러오기
+                  </Button>
+                </article>
+              ))}
+            </div>
           </div>
           <div className="form-row">
             <label>파일명</label>

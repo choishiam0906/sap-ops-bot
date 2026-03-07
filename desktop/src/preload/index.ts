@@ -11,8 +11,10 @@ import type {
   CboAnalyzeTextInput,
   CboRunDiffInput,
   CboSyncKnowledgeInput,
+  ConfiguredSource,
   CockpitStats,
   DomainPack,
+  PickAndAddLocalFolderSourceInput,
   ProviderType,
   SapLabel,
   SendMessageInput,
@@ -25,6 +27,9 @@ import type {
   ProviderAccount,
   SapSkillDefinition,
   SapSourceDefinition,
+  SkillPackDefinition,
+  SourceDocument,
+  SourceDocumentSearchInput,
   SkillExecutionContext,
   SkillRecommendation,
 } from "../main/contracts.js";
@@ -60,6 +65,9 @@ const desktopApi = {
   listSkills(): Promise<SapSkillDefinition[]> {
     return ipcRenderer.invoke("skills:list");
   },
+  listSkillPacks(): Promise<SkillPackDefinition[]> {
+    return ipcRenderer.invoke("skills:listPacks");
+  },
   recommendSkills(context: SkillExecutionContext): Promise<SkillRecommendation[]> {
     return ipcRenderer.invoke("skills:recommend", context);
   },
@@ -68,6 +76,21 @@ const desktopApi = {
   },
   searchSources(query: string, context: SkillExecutionContext): Promise<SapSourceDefinition[]> {
     return ipcRenderer.invoke("sources:search", query, context);
+  },
+  listConfiguredSources(): Promise<ConfiguredSource[]> {
+    return ipcRenderer.invoke("sources:listConfigured");
+  },
+  pickAndAddLocalFolderSource(input: PickAndAddLocalFolderSourceInput) {
+    return ipcRenderer.invoke("sources:pickAndAddLocalFolder", input);
+  },
+  reindexSource(sourceId: string) {
+    return ipcRenderer.invoke("sources:reindex", sourceId);
+  },
+  searchSourceDocuments(input: SourceDocumentSearchInput): Promise<SourceDocument[]> {
+    return ipcRenderer.invoke("sources:searchDocuments", input);
+  },
+  getSourceDocument(documentId: string): Promise<SourceDocument | null> {
+    return ipcRenderer.invoke("sources:getDocument", documentId);
   },
   listSessions(limit = 50) {
     return ipcRenderer.invoke("sessions:list", limit);

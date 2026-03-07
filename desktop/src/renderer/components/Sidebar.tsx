@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MessageSquare, Search, LayoutDashboard, Database, Settings, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { MessageSquare, Search, LayoutDashboard, Database, Settings, PanelLeftClose, PanelLeft, FolderSearch, Sparkles } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AppPage } from '../stores/appShellStore'
 import './Sidebar.css'
@@ -13,6 +13,8 @@ const NAV_ITEMS: { page: AppPage; label: string; Icon: LucideIcon }[] = [
   { page: 'audit', label: 'SAP Cockpit', Icon: LayoutDashboard },
   { page: 'chat', label: 'Case Assistant', Icon: MessageSquare },
   { page: 'cbo', label: 'Impact Analysis', Icon: Search },
+  { page: 'sources', label: 'Sources', Icon: FolderSearch },
+  { page: 'skills', label: 'Skills', Icon: Sparkles },
   { page: 'vault', label: 'Vault', Icon: Database },
   { page: 'settings', label: 'Settings', Icon: Settings },
 ]

@@ -1,9 +1,12 @@
 import type {
   CboAnalysisRepository,
+  ConfiguredSourceRepository,
+  SourceDocumentRepository,
   VaultRepository,
 } from "../storage/repositories.js";
 import type {
   DomainPack,
+  SkillPackDefinition,
   SapSkillDefinition,
   SapSourceDefinition,
   SkillExecutionContext,
@@ -123,6 +126,24 @@ const SKILLS: SapSkillDefinition[] = [
   },
 ];
 
+const SKILL_PACKS: SkillPackDefinition[] = [
+  {
+    id: "cbo-ops-starter",
+    title: "CBO + Ops Starter Pack",
+    description: "CBO 유지보수, transport, incident, runbook 흐름을 데스크톱 앱에 맞게 묶은 기본 pack입니다.",
+    audience: "mixed",
+    domainPacks: ["ops", "cbo-maintenance", "functional"],
+    skillIds: [
+      "cbo-impact-analysis",
+      "transport-risk-review",
+      "incident-triage",
+      "ops-runbook-writer",
+      "sap-explainer",
+      "evidence-tagger",
+    ],
+  },
+];
+
 const SOURCE_TEMPLATES = {
   "vault-confidential": {
     id: "vault-confidential",
@@ -197,11 +218,21 @@ export function getSkillDefinition(skillId: string): SapSkillDefinition | null {
 export class SkillSourceRegistry {
   constructor(
     private readonly vaultRepo: VaultRepository,
-    private readonly analysisRepo: CboAnalysisRepository
+    private readonly analysisRepo: CboAnalysisRepository,
+    private readonly configuredSourceRepo: ConfiguredSourceRepository,
+    private readonly sourceDocumentRepo: SourceDocumentRepository
   ) {}
 
   listSkills(): SapSkillDefinition[] {
     return SKILLS.map(normalizeSkill);
+  }
+
+  listPacks(): SkillPackDefinition[] {
+    return SKILL_PACKS.map((pack) => ({
+      ...pack,
+      domainPacks: [...pack.domainPacks],
+      skillIds: [...pack.skillIds],
+    }));
   }
 
   recommendSkills(context: SkillExecutionContext): SkillRecommendation[] {
@@ -226,6 +257,22 @@ export class SkillSourceRegistry {
     const domainEntries = this.vaultRepo.listByDomainPack(context.domainPack, 20);
     const confidentialCount = domainEntries.filter((entry) => entry.classification === "confidential").length;
     const referenceCount = domainEntries.filter((entry) => entry.classification === "reference").length;
+    const configuredLocalSources = this.configuredSourceRepo
+      .list("local-folder")
+      .filter((source) => !source.domainPack || source.domainPack === context.domainPack)
+      .map((source) => ({
+        id: `configured-source:${source.id}`,
+        title: source.title,
+        description: source.rootPath ?? "Local Folder source",
+        kind: "local-folder" as const,
+        classification: source.classificationDefault,
+        domainPack: source.domainPack,
+        availability: source.documentCount > 0 ? "ready" as const : "empty" as const,
+        sourceType: "local_folder_library" as const,
+        configuredSourceId: source.id,
+        rootPath: source.rootPath,
+        documentCount: source.documentCount,
+      }));
 
     return [
       {
@@ -253,6 +300,7 @@ export class SkillSourceRegistry {
         domainPack: context.domainPack,
         availability: context.caseContext?.filePath ? "ready" : "unavailable",
       },
+      ...configuredLocalSources,
     ];
   }
 
@@ -391,6 +439,35 @@ export class SkillSourceRegistry {
           relevance_score: 0.88,
           description: input.context.caseContext.filePath,
         });
+      } else if (source.id.startsWith("configured-source:") && source.configuredSourceId) {
+        const documents = this.sourceDocumentRepo.search({
+          sourceId: source.configuredSourceId,
+          limit: 3,
+        });
+        if (documents.length > 0) {
+          promptContext.push(
+            `[근거 Source: ${source.title}]\n${documents
+              .map((document) => `- ${document.relativePath}: ${document.excerpt ?? "요약 없음"}`)
+              .join("\n")}`
+          );
+          sourceReferences.push(
+            ...documents.map((document, index) => ({
+              id: document.id,
+              title: document.title,
+              category: "configured-source",
+              relevance_score: Math.max(0.6, 0.9 - index * 0.1),
+              description: document.relativePath,
+            }))
+          );
+        } else {
+          sourceReferences.push({
+            id: source.id,
+            title: source.title,
+            category: "configured-source",
+            relevance_score: 0.45,
+            description: "색인된 문서가 없습니다.",
+          });
+        }
       }
     }
 

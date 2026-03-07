@@ -147,6 +147,47 @@ export class LocalDatabase {
 
       CREATE INDEX IF NOT EXISTS idx_vault_domain
       ON knowledge_vault (domain_pack);
+
+      CREATE TABLE IF NOT EXISTS configured_sources (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        title TEXT NOT NULL,
+        root_path TEXT,
+        domain_pack TEXT,
+        classification_default TEXT,
+        include_globs TEXT NOT NULL DEFAULT '[]',
+        enabled INTEGER NOT NULL DEFAULT 1,
+        sync_status TEXT NOT NULL DEFAULT 'idle',
+        last_indexed_at TEXT,
+        connection_meta_json TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS source_documents (
+        id TEXT PRIMARY KEY,
+        source_id TEXT NOT NULL,
+        relative_path TEXT NOT NULL,
+        absolute_path TEXT NOT NULL,
+        title TEXT NOT NULL,
+        excerpt TEXT,
+        content_text TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        domain_pack TEXT,
+        classification TEXT,
+        tags_json TEXT NOT NULL DEFAULT '[]',
+        indexed_at TEXT NOT NULL,
+        FOREIGN KEY (source_id) REFERENCES configured_sources(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_configured_sources_kind
+      ON configured_sources (kind, domain_pack, updated_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_source_documents_source
+      ON source_documents (source_id, indexed_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_source_documents_domain
+      ON source_documents (domain_pack, indexed_at DESC);
     `);
 
     // 마이그레이션: 기존 DB에 auth_type 컬럼 추가

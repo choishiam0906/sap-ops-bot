@@ -20,8 +20,10 @@ import {
   CboRunDiffInput,
   CboSyncKnowledgeInput,
   DomainPack,
+  PickAndAddLocalFolderSourceInput,
   ProviderType,
   SapLabel,
+  SourceDocumentSearchInput,
   SessionFilter,
   SkillExecutionContext,
   SendMessageInput,
@@ -39,15 +41,18 @@ import { PolicyEngine } from "./policy/policyEngine.js";
 import {
   AuditRepository,
   CboAnalysisRepository,
+  ConfiguredSourceRepository,
   MessageRepository,
   ProviderAccountRepository,
   SessionRepository,
+  SourceDocumentRepository,
   VaultRepository,
 } from "./storage/repositories.js";
 import { LocalDatabase } from "./storage/sqlite.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { SkillSourceRegistry } from "./skills/registry.js";
+import { LocalFolderSourceLibrary } from "./sources/localFolderLibrary.js";
 
 let mainWindow: BrowserWindow | null = null;
 let chatRuntime: ChatRuntime;
@@ -58,6 +63,9 @@ let auditRepo: AuditRepository;
 let vaultRepoRef: VaultRepository;
 let sessionRepoRef: SessionRepository;
 let skillRegistry: SkillSourceRegistry;
+let configuredSourceRepoRef: ConfiguredSourceRepository;
+let sourceDocumentRepoRef: SourceDocumentRepository;
+let localFolderLibrary: LocalFolderSourceLibrary;
 let folderAbortController: AbortController | null = null;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
 const productName = "SAP Assistant Desktop Platform";
@@ -72,6 +80,8 @@ function initRuntime(): void {
   const messageRepo = new MessageRepository(db);
   const accountRepo = new ProviderAccountRepository(db);
   const analysisRepo = new CboAnalysisRepository(db);
+  const configuredSourceRepo = new ConfiguredSourceRepository(db);
+  const sourceDocumentRepo = new SourceDocumentRepository(db);
   const secureStore = new SecureStore("sap-ops-bot-desktop");
 
   const openaiProvider = new OpenAiProvider(config.openaiApiBaseUrl);
@@ -80,12 +90,20 @@ function initRuntime(): void {
 
   auditRepo = new AuditRepository(db);
   sessionRepoRef = sessionRepo;
+  configuredSourceRepoRef = configuredSourceRepo;
+  sourceDocumentRepoRef = sourceDocumentRepo;
   const policyEngine = new PolicyEngine();
   const vaultRepo = new VaultRepository(db);
   vaultRepoRef = vaultRepo;
+  localFolderLibrary = new LocalFolderSourceLibrary(configuredSourceRepo, sourceDocumentRepo);
 
   const providers = [openaiProvider, anthropicProvider, googleProvider];
-  skillRegistry = new SkillSourceRegistry(vaultRepo, analysisRepo);
+  skillRegistry = new SkillSourceRegistry(
+    vaultRepo,
+    analysisRepo,
+    configuredSourceRepo,
+    sourceDocumentRepo
+  );
   chatRuntime = new ChatRuntime(
     providers, secureStore, sessionRepo, messageRepo,
     policyEngine, auditRepo, skillRegistry
@@ -158,6 +176,10 @@ function registerIpc(): void {
     return skillRegistry.listSkills();
   });
 
+  ipcMain.handle("skills:listPacks", async () => {
+    return skillRegistry.listPacks();
+  });
+
   ipcMain.handle("skills:recommend", async (_event, context: SkillExecutionContext) => {
     return skillRegistry.recommendSkills(context);
   });
@@ -168,6 +190,56 @@ function registerIpc(): void {
 
   ipcMain.handle("sources:search", async (_event, query: string, context: SkillExecutionContext) => {
     return skillRegistry.searchSources(query, context);
+  });
+
+  ipcMain.handle("sources:listConfigured", async () => {
+    return configuredSourceRepoRef.list();
+  });
+
+  ipcMain.handle(
+    "sources:pickAndAddLocalFolder",
+    async (_event, input: PickAndAddLocalFolderSourceInput) => {
+      const selection = mainWindow
+        ? await dialog.showOpenDialog(mainWindow, {
+            title: "Local Folder Source 선택",
+            properties: ["openDirectory"],
+          })
+        : await dialog.showOpenDialog({
+            title: "Local Folder Source 선택",
+            properties: ["openDirectory"],
+          });
+
+      if (selection.canceled || selection.filePaths.length === 0) {
+        return {
+          canceled: true,
+          source: null,
+          summary: null,
+        };
+      }
+
+      const output = await localFolderLibrary.addLocalFolder(selection.filePaths[0], input);
+      return {
+        canceled: false,
+        source: output.source,
+        summary: output.summary,
+      };
+    }
+  );
+
+  ipcMain.handle("sources:reindex", async (_event, sourceId: string) => {
+    const summary = await localFolderLibrary.reindexSource(sourceId);
+    return {
+      source: configuredSourceRepoRef.getById(sourceId),
+      summary,
+    };
+  });
+
+  ipcMain.handle("sources:searchDocuments", async (_event, input: SourceDocumentSearchInput) => {
+    return localFolderLibrary.searchDocuments(input);
+  });
+
+  ipcMain.handle("sources:getDocument", async (_event, documentId: string) => {
+    return sourceDocumentRepoRef.getById(documentId);
   });
 
   ipcMain.handle("sessions:list", async (_event, limit = 50) => {

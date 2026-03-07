@@ -5,6 +5,8 @@ import { ChatPage } from './pages/ChatPage'
 import { CboPage } from './pages/CboPage'
 import { KnowledgeVaultPage } from './pages/KnowledgeVaultPage'
 import { CockpitPage } from './pages/CockpitPage'
+import { SourcesPage } from './pages/SourcesPage'
+import { SkillsPage } from './pages/SkillsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { useAppShellStore } from './stores/appShellStore'
 import './components/ErrorBoundary.css'
@@ -37,6 +39,8 @@ export function App() {
               {currentPage === 'chat' && <ChatPage />}
               {currentPage === 'cbo' && <CboPage />}
               {currentPage === 'audit' && <CockpitPage />}
+              {currentPage === 'sources' && <SourcesPage />}
+              {currentPage === 'skills' && <SkillsPage />}
               {currentPage === 'vault' && <KnowledgeVaultPage />}
               {currentPage === 'settings' && <SettingsPage />}
             </div>
