@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type { ProviderType, AuthStatus, SecurityMode, DomainPack, OAuthAvailability } from '../../main/contracts.js'
 import { PROVIDER_LABELS, PROVIDER_MODELS } from '../../main/contracts.js'
-import { ProviderIcon, PROVIDER_ICONS } from '../lib/providerIcons.js'
+import { ProviderIcon } from '../lib/providerIcons.js'
 import { Button } from '../components/ui/Button.js'
 import { Badge } from '../components/ui/Badge.js'
 import { useSettingsStore, type ThinkingLevel } from '../stores/settingsStore.js'
@@ -175,7 +175,7 @@ function DropdownSelect({
   'aria-label': ariaLabel,
 }: {
   value: string
-  options: { value: string; label: string; description?: string; icon?: string }[]
+  options: { value: string; label: string; description?: string; icon?: React.ReactNode }[]
   onValueChange: (v: string) => void
   'aria-label'?: string
 }) {
@@ -205,7 +205,7 @@ function DropdownSelect({
         aria-haspopup="listbox"
         type="button"
       >
-        {selected?.icon && <img src={selected.icon} width={16} height={16} className="dropdown-icon" alt="" aria-hidden="true" />}
+        {selected?.icon && <span className="dropdown-icon">{selected.icon}</span>}
         <span className="dropdown-trigger-text">{selected?.label ?? value}</span>
         <ChevronDown size={14} className="dropdown-trigger-chevron" aria-hidden="true" />
       </button>
@@ -223,7 +223,7 @@ function DropdownSelect({
                 type="button"
               >
                 <div className="dropdown-option-content">
-                  {opt.icon && <img src={opt.icon} width={16} height={16} className="dropdown-option-icon" alt="" aria-hidden="true" />}
+                  {opt.icon && <span className="dropdown-option-icon">{opt.icon}</span>}
                   <span className="dropdown-option-label">{opt.label}</span>
                   {opt.description && (
                     <span className="dropdown-option-desc">{opt.description}</span>
@@ -649,7 +649,7 @@ export function SettingsPage() {
                               <DropdownSelect
                                 value={defaultProvider}
                                 onValueChange={(v) => setDefaultProvider(v as ProviderType)}
-                                options={authenticatedProviders.map((p) => ({ value: p.type, label: p.name, icon: PROVIDER_ICONS[p.type as ProviderType] }))}
+                                options={authenticatedProviders.map((p) => ({ value: p.type, label: p.name, icon: <ProviderIcon provider={p.type as ProviderType} size={16} /> }))}
                               />
                             </div>
                           </div>

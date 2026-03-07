@@ -193,14 +193,17 @@
 }
 
 .row-label {
+  display: block;
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--color-text);
 }
 
 .row-desc {
-  font-size: var(--font-size-sm);
+  display: block;
+  font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
+  margin-top: 2px;
 }
 
 .row-right {
@@ -395,13 +398,17 @@
 /* ─── Dropdown / Connection 아이콘 ── */
 
 .dropdown-icon {
-  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
+  border-radius: 3px;
 }
 
 .dropdown-option-icon {
-  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
+  border-radius: 3px;
 }
 
 /* ─── Segmented Control (craft SettingsSegmentedControl) ── */
@@ -449,7 +456,7 @@
 .connection-row {
   display: flex;
   width: 100%;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   text-align: left;
   padding: 14px 16px;
@@ -479,15 +486,18 @@
 }
 
 .connection-hint {
+  display: block;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  margin-top: 2px;
 }
 
 .connection-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   margin-left: 16px;
+  margin-top: 2px;
   flex-shrink: 0;
 }
 
@@ -505,15 +515,16 @@
   height: 32px;
   border: none;
   border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-muted);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.action-menu-trigger:hover {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text);
+.action-menu-trigger:hover,
+.action-menu-trigger[aria-expanded="true"] {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
 }
 
 .action-menu {
