@@ -5,6 +5,9 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { CboPage } from '../CboPage'
 import { mockApi } from '../../__tests__/setup'
 import { useCboStore } from '../../stores/cboStore'
+import { useChatStore } from '../../stores/chatStore'
+import { useAppShellStore } from '../../stores/appShellStore'
+import { useWorkspaceStore } from '../../stores/workspaceStore'
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -23,6 +26,22 @@ describe('CboPage', () => {
       sourceText: '',
       fileName: 'inline-cbo.md',
     })
+    useChatStore.setState({
+      currentSessionId: null,
+      input: '',
+      provider: 'openai',
+      model: 'gpt-4.1-mini',
+      error: '',
+      isStreaming: false,
+      streamingContent: '',
+      selectedSkillId: '',
+      selectedSourceIds: [],
+      caseContext: null,
+      lastExecutionMeta: null,
+      streamingMeta: null,
+    })
+    useAppShellStore.setState({ currentPage: 'cbo' })
+    useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'cbo-maintenance' })
   })
 
   it('페이지 타이틀과 3개 탭을 렌더링한다', () => {
@@ -72,6 +91,11 @@ describe('CboPage', () => {
     await waitFor(() => {
       expect(mockApi.analyzeCboText).toHaveBeenCalled()
     })
+
+    expect(mockApi.analyzeCboText).toHaveBeenCalledWith(expect.objectContaining({
+      securityMode: 'secure-local',
+      domainPack: 'cbo-maintenance',
+    }))
   })
 
   it('파일·폴더 탭으로 전환하면 파일/폴더 버튼이 표시된다', async () => {
@@ -105,5 +129,35 @@ describe('CboPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('실행 이력을 불러오지 못했어요')
     })
+  })
+
+  it('분석 결과에서 AI 후속 질문을 Chat으로 넘긴다', async () => {
+    const user = userEvent.setup()
+    useCboStore.setState({
+      result: {
+        summary: '이 변경은 전표 생성 로직과 권한 체크에 영향을 줄 수 있습니다.',
+        risks: [{ severity: 'high' as const, title: '권한 체크 누락', detail: 'AUTHORITY-CHECK가 빠질 수 있습니다.' }],
+        recommendations: [{ priority: 'p0' as const, action: '권한 체크 추가', rationale: '운영 오남용을 방지합니다.' }],
+        metadata: { fileName: 'zsd_billing.txt', charCount: 120, languageHint: 'abap' as const },
+        skillUsed: 'cbo-impact-analysis',
+        skillTitle: 'CBO 변경 영향 분석',
+        sourceIds: ['vault-confidential'],
+        suggestedTcodes: ['SE80'],
+      },
+      sourceText: 'REPORT ZSD_BILLING.',
+      fileName: 'zsd_billing.txt',
+    })
+
+    renderWithProviders(<CboPage />)
+
+    await user.click(screen.getByRole('button', { name: '현업 설명으로 이어가기' }))
+
+    expect(useAppShellStore.getState().currentPage).toBe('chat')
+    expect(useChatStore.getState().selectedSkillId).toBe('cbo-impact-analysis')
+    expect(useChatStore.getState().selectedSourceIds).toEqual(
+      expect.arrayContaining(['workspace-context', 'local-imported-files', 'vault-confidential'])
+    )
+    expect(useChatStore.getState().caseContext?.filePath).toBe('zsd_billing.txt')
+    expect(useChatStore.getState().input).toContain('현업 사용자에게 비기술 용어로 설명')
   })
 })

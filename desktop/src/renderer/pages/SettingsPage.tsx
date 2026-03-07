@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef, useCallback, Children } from 'react
 import {
   KeyRound, Sun, Moon, Monitor, AlertCircle,
   Eye, EyeOff, CheckCircle, MoreHorizontal, Check, ChevronDown,
-  Sparkles, Palette, Info, Plus, ArrowLeft, X,
+  Sparkles, Palette, Info, Plus, X,
   Keyboard, FolderCog, ShieldCheck, Tag, Command, User,
-  Globe, Loader2,
+  Globe,
 } from 'lucide-react'
 import type { ProviderType, AuthStatus, SecurityMode, DomainPack, OAuthAvailability } from '../../main/contracts.js'
 import { PROVIDER_LABELS, PROVIDER_MODELS } from '../../main/contracts.js'
+import { ProviderIcon, PROVIDER_ICONS } from '../lib/providerIcons.js'
 import { Button } from '../components/ui/Button.js'
 import { Badge } from '../components/ui/Badge.js'
 import { useSettingsStore, type ThinkingLevel } from '../stores/settingsStore.js'
@@ -84,9 +85,67 @@ const SHORTCUTS = {
 
 const APP_VERSION = '3.0.0'
 
+const WORKSPACE_SKILL_GUIDES: Record<DomainPack, {
+  skillId: string
+  title: string
+  outcome: string
+  primarySources: string[]
+}> = {
+  ops: {
+    skillId: 'incident-triage',
+    title: '운영 장애 트리아지',
+    outcome: '장애 증상과 운영 로그를 기준으로 원인 후보와 점검 순서를 정리합니다.',
+    primarySources: ['Reference Vault', 'Workspace Context', '운영 로그 요약'],
+  },
+  functional: {
+    skillId: 'sap-explainer',
+    title: '현업 문의 설명',
+    outcome: '오류와 프로세스를 현업 언어로 풀고, 업무 확인 항목으로 번역합니다.',
+    primarySources: ['Reference Vault', '업무 가이드', 'Workspace Context'],
+  },
+  'cbo-maintenance': {
+    skillId: 'cbo-impact-analysis',
+    title: 'CBO 변경 영향 분석',
+    outcome: 'CBO 소스 구조, 리스크, 검증 순서, 보고 포인트를 구조화합니다.',
+    primarySources: ['Local Imported Files', 'Current CBO Run', 'Confidential Vault', 'Workspace Context'],
+  },
+  'pi-integration': {
+    skillId: 'incident-triage',
+    title: '인터페이스 장애 트리아지',
+    outcome: '메시지 흐름, 어댑터, 채널, 모니터링 포인트를 운영 순서로 정리합니다.',
+    primarySources: ['Reference Vault', '운영 로그 요약', 'Workspace Context'],
+  },
+  'btp-rap-cap': {
+    skillId: 'sap-explainer',
+    title: 'BTP / RAP / CAP 설명',
+    outcome: '공개 지식을 기준으로 구조, 운영 포인트, 비교 설명을 제공합니다.',
+    primarySources: ['Reference Vault', 'Workspace Context', '공개 MCP Source'],
+  },
+}
+
 function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message
   return String(err)
+}
+
+function describeSourceBoundary(securityMode: SecurityMode): string {
+  if (securityMode === 'secure-local') {
+    return 'Local file, Current Run, Vault 중심으로 제한하며 외부 MCP connector는 차단합니다.'
+  }
+  if (securityMode === 'reference') {
+    return '공개 Reference source와 read-only connector를 우선 사용합니다.'
+  }
+  return '승인된 요약과 메타데이터만 connector로 넘기고, 원문 직접 전달은 제한합니다.'
+}
+
+function describeMcpGuardrail(securityMode: SecurityMode): string {
+  if (securityMode === 'secure-local') {
+    return 'MCP는 비활성 또는 로컬 전용 connector만 허용하는 구성이 안전합니다.'
+  }
+  if (securityMode === 'reference') {
+    return '공개 문서, 표준 가이드, read-only 검색형 MCP를 붙이기 좋은 모드입니다.'
+  }
+  return '운영 시스템 connector는 read-only + 승인형 요약 전달 정책으로 연결하는 것이 적합합니다.'
 }
 
 // ─── 재사용 헬퍼 컴포넌트 ────────────────────────────
@@ -116,7 +175,7 @@ function DropdownSelect({
   'aria-label': ariaLabel,
 }: {
   value: string
-  options: { value: string; label: string; description?: string }[]
+  options: { value: string; label: string; description?: string; icon?: string }[]
   onValueChange: (v: string) => void
   'aria-label'?: string
 }) {
@@ -146,6 +205,7 @@ function DropdownSelect({
         aria-haspopup="listbox"
         type="button"
       >
+        {selected?.icon && <img src={selected.icon} width={16} height={16} className="dropdown-icon" alt="" aria-hidden="true" />}
         <span className="dropdown-trigger-text">{selected?.label ?? value}</span>
         <ChevronDown size={14} className="dropdown-trigger-chevron" aria-hidden="true" />
       </button>
@@ -163,6 +223,7 @@ function DropdownSelect({
                 type="button"
               >
                 <div className="dropdown-option-content">
+                  {opt.icon && <img src={opt.icon} width={16} height={16} className="dropdown-option-icon" alt="" aria-hidden="true" />}
                   <span className="dropdown-option-label">{opt.label}</span>
                   {opt.description && (
                     <span className="dropdown-option-desc">{opt.description}</span>
@@ -203,7 +264,7 @@ export function SettingsPage() {
   const [setupLoading, setSetupLoading] = useState(false)
   const [setupError, setSetupError] = useState('')
   const [setupSuccess, setSetupSuccess] = useState(false)
-  const [setupAuthMethod, setSetupAuthMethod] = useState<'api-key' | 'oauth' | null>(null)
+  const [, setSetupAuthMethod] = useState<'api-key' | 'oauth' | null>(null)
   const [oauthAuthCode, setOauthAuthCode] = useState('')
   const [oauthAvailability, setOauthAvailability] = useState<Record<ProviderType, boolean>>({
     openai: false, anthropic: false, google: false,
@@ -238,15 +299,6 @@ export function SettingsPage() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [openMenu])
 
-  useEffect(() => {
-    checkAllStatus()
-    api.getOAuthAvailability().then((list: OAuthAvailability[]) => {
-      const map: Record<ProviderType, boolean> = { openai: false, anthropic: false, google: false }
-      for (const item of list) map[item.provider] = item.available
-      setOauthAvailability(map)
-    }).catch(() => {})
-  }, [])
-
   const checkAllStatus = useCallback(async () => {
     for (const p of PROVIDERS) {
       try {
@@ -264,6 +316,15 @@ export function SettingsPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    checkAllStatus()
+    api.getOAuthAvailability().then((list: OAuthAvailability[]) => {
+      const map: Record<ProviderType, boolean> = { openai: false, anthropic: false, google: false }
+      for (const item of list) map[item.provider] = item.available
+      setOauthAvailability(map)
+    }).catch(() => {})
+  }, [checkAllStatus])
 
   // ─── Setup wizard ───────────────────────────────
 
@@ -355,7 +416,16 @@ export function SettingsPage() {
       handleOAuthSuccess(result)
     } catch (err) {
       console.error(`[Settings] ${setupProvider} OAuth 코드 제출 실패:`, err)
-      setSetupError(`인증 코드가 올바르지 않아요: ${errorMessage(err)}`)
+      const msg = errorMessage(err)
+      // pending 만료/없음 → 자동으로 OAuth 재시작
+      if (msg.includes('요청이 없어요') || msg.includes('만료')) {
+        setSetupError('인증 세션이 만료되었어요. 다시 시도할게요...')
+        setOauthAuthCode('')
+        setSetupLoading(false)
+        startOAuthFlow()
+        return
+      }
+      setSetupError(`인증 코드가 올바르지 않아요: ${msg}`)
     } finally {
       setSetupLoading(false)
     }
@@ -440,6 +510,7 @@ export function SettingsPage() {
   const allUnauthenticated = authenticatedProviders.length === 0
 
   const currentModeDetail = SECURITY_MODE_DETAILS[securityMode]
+  const currentPackGuide = WORKSPACE_SKILL_GUIDES[domainPack]
   const permissionSummary = {
     outbound: securityMode === 'secure-local' ? '차단' : securityMode === 'reference' ? '허용' : '승인 후 전달',
     approval: securityMode === 'hybrid-approved' ? '요약본 승인 필요' : '필요 없음',
@@ -578,7 +649,7 @@ export function SettingsPage() {
                               <DropdownSelect
                                 value={defaultProvider}
                                 onValueChange={(v) => setDefaultProvider(v as ProviderType)}
-                                options={authenticatedProviders.map((p) => ({ value: p.type, label: p.name }))}
+                                options={authenticatedProviders.map((p) => ({ value: p.type, label: p.name, icon: PROVIDER_ICONS[p.type as ProviderType] }))}
                               />
                             </div>
                           </div>
@@ -614,10 +685,10 @@ export function SettingsPage() {
                   </section>
 
                   {/* Connections 섹션 */}
-                  <section className="settings-section">
-                    <div className="section-header-group">
-                      <h4 className="section-title">Connections</h4>
-                      <p className="section-desc">AI Provider 연결을 관리해요</p>
+                    <section className="settings-section">
+                      <div className="section-header-group">
+                        <h4 className="section-title">Connections</h4>
+                        <p className="section-desc">AI Provider 연결을 관리해요</p>
                     </div>
 
                     <SettingsCard>
@@ -633,7 +704,7 @@ export function SettingsPage() {
                             <div key={type} className="connection-row">
                               <div className="connection-label">
                                 <div className="connection-name-row">
-                                  <KeyRound size={16} className="connection-icon" aria-hidden="true" />
+                                  <ProviderIcon provider={type} size={16} className="connection-icon" />
                                   <span className="connection-name">{name}</span>
                                   {isDefault && <Badge variant="info" aria-label="기본 연결">Default</Badge>}
                                   <Badge variant="success" aria-label="인증 상태: 인증됨">인증됨</Badge>
@@ -680,16 +751,101 @@ export function SettingsPage() {
                     </SettingsCard>
 
                     {/* Add Connection 버튼 — craft 스타일 */}
-                    <div className="pt-0">
-                      <button className="add-connection-btn" onClick={() => openSetupWizard()}>
-                        <Plus size={14} aria-hidden="true" />
-                        <span>연결 추가</span>
-                      </button>
-                    </div>
-                  </section>
+                      <div className="pt-0">
+                        <button className="add-connection-btn" onClick={() => openSetupWizard()}>
+                          <Plus size={14} aria-hidden="true" />
+                          <span>연결 추가</span>
+                        </button>
+                      </div>
+                    </section>
 
+                    <section className="settings-section">
+                      <div className="section-header-group">
+                        <h4 className="section-title">Sources &amp; MCP</h4>
+                        <p className="section-desc">현재 워크스페이스에서 어떤 근거 source와 connector 전략이 맞는지 보여줍니다</p>
+                      </div>
+                      <SettingsCard>
+                        <div className="settings-row">
+                          <div className="row-label-group">
+                            <span className="row-label">권장 Skill 흐름</span>
+                            <span className="row-desc">{currentPackGuide.outcome}</span>
+                          </div>
+                          <div className="row-right">
+                            <Badge variant="info">{currentPackGuide.title}</Badge>
+                          </div>
+                        </div>
+                        <div className="settings-row">
+                          <div className="row-label-group">
+                            <span className="row-label">주요 Source</span>
+                            <span className="row-desc">{currentPackGuide.primarySources.join(' / ')}</span>
+                          </div>
+                          <div className="row-right">
+                            <span className="row-value">{domainPack}</span>
+                          </div>
+                        </div>
+                        <div className="settings-row">
+                          <div className="row-label-group">
+                            <span className="row-label">Source 경계</span>
+                            <span className="row-desc">{describeSourceBoundary(securityMode)}</span>
+                          </div>
+                          <div className="row-right">
+                            <Badge variant={currentModeDetail.badgeVariant}>{currentModeDetail.label}</Badge>
+                          </div>
+                        </div>
+                        <div className="settings-row">
+                          <div className="row-label-group">
+                            <span className="row-label">MCP 권장 정책</span>
+                            <span className="row-desc">{describeMcpGuardrail(securityMode)}</span>
+                          </div>
+                          <div className="row-right">
+                            <Badge variant="neutral">{currentPackGuide.skillId}</Badge>
+                          </div>
+                        </div>
+                      </SettingsCard>
+
+                      <div className="source-capability-grid">
+                        <article className="source-capability-card">
+                          <div className="source-capability-head">
+                            <strong>Local Files</strong>
+                            <Badge variant="success">ready</Badge>
+                          </div>
+                          <p>CBO TXT, 운영 메모, 추출 파일을 바로 근거 source로 연결합니다.</p>
+                        </article>
+                        <article className="source-capability-card">
+                          <div className="source-capability-head">
+                            <strong>Vault Evidence</strong>
+                            <Badge variant="success">ready</Badge>
+                          </div>
+                          <p>분석 결과와 운영 메모를 classification 기준으로 재사용합니다.</p>
+                        </article>
+                        <article className="source-capability-card">
+                          <div className="source-capability-head">
+                            <strong>Current Run</strong>
+                            <Badge variant={domainPack === 'cbo-maintenance' ? 'info' : 'neutral'}>
+                              {domainPack === 'cbo-maintenance' ? 'recommended' : 'optional'}
+                            </Badge>
+                          </div>
+                          <p>CBO 실행 이력과 최근 분석 run을 후속 질문의 근거로 연결합니다.</p>
+                        </article>
+                        <article className="source-capability-card">
+                          <div className="source-capability-head">
+                            <strong>MCP Connectors</strong>
+                            <Badge variant={securityMode === 'secure-local' ? 'warning' : 'info'}>
+                              {securityMode === 'secure-local' ? 'guarded' : 'expandable'}
+                            </Badge>
+                          </div>
+                          <p>SAP 문서, 티켓, 운영 시스템은 read-only 중심으로 단계적으로 붙이는 구성이 적합합니다.</p>
+                        </article>
+                      </div>
+
+                      <div className="info-card">
+                        <Globe size={16} className="info-card-icon" aria-hidden="true" />
+                        <p>MCP connector는 Workspace 정책과 함께 설계해야 해요. 특히 CBO 원문은 Secure Local에서 로컬 source 중심으로 유지하는 구성이 안전합니다.</p>
+                      </div>
+                    </section>
+
+                  </div>
                 </div>
-              </div>
             </div>
 
             {/* ── Fullscreen Setup Wizard (craft OnboardingWizard 패턴) ── */}
@@ -714,7 +870,7 @@ export function SettingsPage() {
                         {(setupMode === 'add' ? unconnectedProviders : PROVIDERS).map(({ type, name, desc }) => (
                           <button key={type} className="wizard-provider-card" onClick={() => selectSetupProvider(type)}>
                             <div className="wizard-provider-icon">
-                              <KeyRound size={20} />
+                              <ProviderIcon provider={type} size={20} />
                             </div>
                             <div className="wizard-provider-info">
                               <span className="wizard-provider-name">{name}</span>
@@ -731,7 +887,7 @@ export function SettingsPage() {
                 {setupStep === 'authMethod' && setupProvider && (
                   <div className="setup-wizard">
                     <div className="setup-wizard-icon">
-                      <KeyRound size={40} className="setup-wizard-icon-svg" />
+                      <ProviderIcon provider={setupProvider} size={40} className="setup-wizard-icon-svg" />
                     </div>
                     <h2 className="setup-wizard-title">{PROVIDER_LABELS[setupProvider]}에 연결하기</h2>
                     <p className="setup-wizard-desc">인증 방식을 선택해주세요</p>
@@ -791,8 +947,9 @@ export function SettingsPage() {
                   <div className="setup-wizard">
                     {setupSuccess ? (
                       <>
-                        <div className="setup-wizard-icon">
+                        <div className="setup-wizard-icon setup-success-icons">
                           <CheckCircle size={40} className="setup-wizard-icon-success" />
+                          <ProviderIcon provider={setupProvider} size={24} className="setup-success-provider" />
                         </div>
                         <h2 className="setup-wizard-title">연결 완료!</h2>
                         <p className="setup-wizard-desc">{PROVIDER_LABELS[setupProvider]}에 성공적으로 연결되었어요.</p>
@@ -827,8 +984,9 @@ export function SettingsPage() {
                   <div className="setup-wizard">
                     {setupSuccess ? (
                       <>
-                        <div className="setup-wizard-icon">
+                        <div className="setup-wizard-icon setup-success-icons">
                           <CheckCircle size={40} className="setup-wizard-icon-success" />
+                          <ProviderIcon provider={setupProvider} size={24} className="setup-success-provider" />
                         </div>
                         <h2 className="setup-wizard-title">연결 완료!</h2>
                         <p className="setup-wizard-desc">{PROVIDER_LABELS[setupProvider]}에 성공적으로 연결되었어요.</p>
@@ -836,7 +994,7 @@ export function SettingsPage() {
                     ) : (
                       <>
                         <div className="setup-wizard-icon">
-                          <KeyRound size={40} className="setup-wizard-icon-svg" />
+                          <ProviderIcon provider={setupProvider} size={40} className="setup-wizard-icon-svg" />
                         </div>
                         <h2 className="setup-wizard-title">인증 코드 입력</h2>
                         <p className="setup-wizard-desc">브라우저 페이지에서 코드를 복사해서 아래에 붙여넣어주세요</p>
@@ -907,7 +1065,7 @@ export function SettingsPage() {
                     ) : (
                       <>
                         <div className="setup-wizard-icon">
-                          <KeyRound size={40} className="setup-wizard-icon-svg" />
+                          <ProviderIcon provider={setupProvider} size={40} className="setup-wizard-icon-svg" />
                         </div>
                         <h2 className="setup-wizard-title">{PROVIDER_LABELS[setupProvider]} 연결</h2>
                         <p className="setup-wizard-desc">API Key를 입력해주세요</p>

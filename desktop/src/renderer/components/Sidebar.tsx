@@ -1,19 +1,18 @@
 import { useState } from 'react'
-import { MessageSquare, Search, Shield, Database, Settings, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { MessageSquare, Search, LayoutDashboard, Database, Settings, PanelLeftClose, PanelLeft } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { AppPage } from '../stores/appShellStore'
 import './Sidebar.css'
 
-type Page = 'chat' | 'cbo' | 'audit' | 'vault' | 'settings'
-
 interface SidebarProps {
-  currentPage: Page
-  onNavigate: (page: Page) => void
+  currentPage: AppPage
+  onNavigate: (page: AppPage) => void
 }
 
-const NAV_ITEMS: { page: Page; label: string; Icon: LucideIcon }[] = [
-  { page: 'chat', label: 'Ask SAP', Icon: MessageSquare },
-  { page: 'cbo', label: 'Analyze Source', Icon: Search },
-  { page: 'audit', label: 'Sessions', Icon: Shield },
+const NAV_ITEMS: { page: AppPage; label: string; Icon: LucideIcon }[] = [
+  { page: 'audit', label: 'SAP Cockpit', Icon: LayoutDashboard },
+  { page: 'chat', label: 'Case Assistant', Icon: MessageSquare },
+  { page: 'cbo', label: 'Impact Analysis', Icon: Search },
   { page: 'vault', label: 'Vault', Icon: Database },
   { page: 'settings', label: 'Settings', Icon: Settings },
 ]

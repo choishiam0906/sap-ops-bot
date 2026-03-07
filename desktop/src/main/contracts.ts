@@ -41,6 +41,9 @@ export interface AuditLogEntry {
   policyDecision: AuditPolicyDecision;
   provider: ProviderType | null;
   model: string | null;
+  skillId?: string | null;
+  sourceIds?: string[] | null;
+  sourceCount?: number;
 }
 
 export interface AuditSearchFilters {
@@ -143,6 +146,78 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export interface SourceReference {
+  id?: string;
+  title: string;
+  category: string;
+  relevance_score: number;
+  description?: string | null;
+}
+
+export type SkillOutputFormat =
+  | "chat-answer"
+  | "structured-report"
+  | "checklist"
+  | "explanation";
+
+export type SapSourceKind = "vault" | "run" | "local-file" | "workspace";
+export type SapSourceAvailability = "ready" | "empty" | "unavailable";
+
+export interface SapSkillDefinition {
+  id: string;
+  title: string;
+  description: string;
+  supportedDomainPacks: DomainPack[];
+  supportedDataTypes: Array<"chat" | "cbo">;
+  allowedSecurityModes: SecurityMode[];
+  defaultPromptTemplate: string;
+  outputFormat: SkillOutputFormat;
+  requiredSources: string[];
+  suggestedInputs: string[];
+  suggestedTcodes: string[];
+}
+
+export interface SapSourceDefinition {
+  id: string;
+  title: string;
+  description: string;
+  kind: SapSourceKind;
+  classification: VaultClassification | "mixed" | null;
+  domainPack: DomainPack | null;
+  availability: SapSourceAvailability;
+  sourceType: VaultSourceType | "current_run" | "local_file" | "workspace_context";
+  linkedId?: string | null;
+}
+
+export interface CaseContext {
+  runId?: string;
+  filePath?: string;
+  objectName?: string;
+}
+
+export interface SkillExecutionContext {
+  securityMode: SecurityMode;
+  domainPack: DomainPack;
+  dataType: "chat" | "cbo";
+  message?: string;
+  caseContext?: CaseContext;
+}
+
+export interface SkillRecommendation {
+  skill: SapSkillDefinition;
+  reason: string;
+  recommendedSourceIds: string[];
+}
+
+export interface SkillExecutionMeta {
+  skillUsed: string;
+  skillTitle: string;
+  sources: SourceReference[];
+  sourceIds: string[];
+  sourceCount: number;
+  suggestedTcodes: string[];
+}
+
 export interface SendMessageInput {
   sessionId?: string;
   provider: ProviderType;
@@ -150,12 +225,16 @@ export interface SendMessageInput {
   message: string;
   securityMode: SecurityMode;
   domainPack: DomainPack;
+  skillId?: string;
+  sourceIds?: string[];
+  caseContext?: CaseContext;
 }
 
 export interface SendMessageOutput {
   session: ChatSession;
   userMessage: ChatMessage;
   assistantMessage: ChatMessage;
+  meta: SkillExecutionMeta;
 }
 
 export interface StreamMessageInput {
@@ -164,13 +243,18 @@ export interface StreamMessageInput {
   model: string;
   message: string;
   apiBaseUrl?: string;
+  skillId?: string;
+  sourceIds?: string[];
+  caseContext?: CaseContext;
 }
 
 export interface StreamMetaEvent {
   type: "meta";
-  sources: Array<{ title: string; category: string; relevance_score: number }>;
+  sources: SourceReference[];
   suggested_tcodes: string[];
   skill_used: string;
+  skill_title: string;
+  source_count: number;
 }
 
 export interface StreamTokenEvent {
@@ -231,6 +315,11 @@ export interface CboAnalysisResult {
   risks: CboRisk[];
   recommendations: CboRecommendation[];
   metadata: CboAnalysisMetadata;
+  skillUsed?: string;
+  skillTitle?: string;
+  sources?: SourceReference[];
+  sourceIds?: string[];
+  suggestedTcodes?: string[];
 }
 
 export interface CboAnalyzeTextInput {
@@ -253,6 +342,8 @@ export interface CboAnalyzeFileInput {
 export interface CboAnalyzePickInput {
   provider?: ProviderType;
   model?: string;
+  securityMode?: SecurityMode;
+  domainPack?: DomainPack;
 }
 
 export interface CboAnalyzePickOutput {
@@ -328,6 +419,8 @@ export interface CboAnalyzeFolderPickInput {
   provider?: ProviderType;
   model?: string;
   skipUnchanged?: boolean;
+  securityMode?: SecurityMode;
+  domainPack?: DomainPack;
 }
 
 export interface CboAnalyzeFolderPickOutput {
@@ -386,4 +479,58 @@ export interface CboBatchProgressEvent {
   total: number;
   filePath: string;
   status: "analyzing" | "success" | "failed" | "skipped";
+}
+
+// ─── SAP Cockpit: 세션 운영 상태 관리 ───
+
+export type TodoStateKind = "open" | "analyzing" | "in-progress" | "resolved" | "closed";
+
+export interface TodoStateDef {
+  kind: TodoStateKind;
+  label: string;
+  icon: string;
+  color: string;
+  category: "open" | "closed";
+}
+
+export const TODO_STATES: Record<TodoStateKind, TodoStateDef> = {
+  open:          { kind: "open",        label: "접수",   icon: "CircleDot",   color: "#3B82F6", category: "open" },
+  analyzing:     { kind: "analyzing",   label: "분석중", icon: "Search",      color: "#F97316", category: "open" },
+  "in-progress": { kind: "in-progress", label: "처리중", icon: "Loader2",     color: "#EAB308", category: "open" },
+  resolved:      { kind: "resolved",    label: "해결",   icon: "CheckCircle", color: "#10B981", category: "closed" },
+  closed:        { kind: "closed",      label: "종료",   icon: "XCircle",     color: "#6B7280", category: "closed" },
+};
+
+export type SapLabel = "FI" | "CO" | "MM" | "SD" | "PP" | "BC" | "PI" | "BTP";
+export const SAP_LABELS: SapLabel[] = ["FI", "CO", "MM", "SD", "PP", "BC", "PI", "BTP"];
+
+export interface SessionFilter {
+  kind: "allSessions" | "state" | "label" | "flagged" | "archived";
+  value?: string;
+}
+
+export interface ChatSessionMeta extends ChatSession {
+  todoState: TodoStateKind;
+  isFlagged: boolean;
+  isArchived: boolean;
+  labels: SapLabel[];
+}
+
+export interface SessionUpdateInput {
+  sessionId: string;
+  todoState?: TodoStateKind;
+  isFlagged?: boolean;
+  isArchived?: boolean;
+  labels?: SapLabel[];
+}
+
+export interface CockpitStats {
+  all: number;
+  open: number;
+  analyzing: number;
+  "in-progress": number;
+  resolved: number;
+  closed: number;
+  flagged: number;
+  archived: number;
 }

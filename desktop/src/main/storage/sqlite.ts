@@ -118,7 +118,10 @@ export class LocalDatabase {
         external_transfer INTEGER NOT NULL DEFAULT 0,
         policy_decision TEXT NOT NULL,
         provider TEXT,
-        model TEXT
+        model TEXT,
+        skill_id TEXT,
+        source_ids TEXT,
+        source_count INTEGER NOT NULL DEFAULT 0
       );
 
       CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp
@@ -152,6 +155,36 @@ export class LocalDatabase {
     } catch {
       // 이미 존재하면 무시 (duplicate column name 에러)
     }
+    try {
+      this.db.exec(`ALTER TABLE audit_logs ADD COLUMN skill_id TEXT`);
+    } catch {
+      // 이미 존재하면 무시
+    }
+    try {
+      this.db.exec(`ALTER TABLE audit_logs ADD COLUMN source_ids TEXT`);
+    } catch {
+      // 이미 존재하면 무시
+    }
+    try {
+      this.db.exec(`ALTER TABLE audit_logs ADD COLUMN source_count INTEGER NOT NULL DEFAULT 0`);
+    } catch {
+      // 이미 존재하면 무시
+    }
+
+    // Cockpit 컬럼 마이그레이션
+    for (const col of [
+      "ALTER TABLE sessions ADD COLUMN todo_state TEXT DEFAULT 'open'",
+      "ALTER TABLE sessions ADD COLUMN is_flagged INTEGER DEFAULT 0",
+      "ALTER TABLE sessions ADD COLUMN is_archived INTEGER DEFAULT 0",
+      "ALTER TABLE sessions ADD COLUMN labels TEXT DEFAULT '[]'",
+    ]) {
+      try { this.db.exec(col); } catch { /* 이미 존재 */ }
+    }
+
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_sessions_cockpit
+      ON sessions (is_archived, todo_state, is_flagged, updated_at DESC)
+    `);
   }
 
   prepare(sql: string): Database.Statement {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useVaultByClassification } from '../hooks/useVault'
 import { Badge } from '../components/ui/Badge'
-import type { VaultClassification, VaultEntry } from '../../main/contracts'
+import type { DomainPack, VaultClassification, VaultEntry, VaultSourceType } from '../../main/contracts'
 import './KnowledgeVaultPage.css'
 
 function formatDate(iso: string): string {
@@ -40,11 +40,18 @@ function VaultCard({ entry }: { entry: VaultEntry }) {
 
 function VaultSection({ classification }: { classification: VaultClassification }) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [sourceType, setSourceType] = useState<'all' | VaultSourceType>('all')
+  const [domainPack, setDomainPack] = useState<'all' | DomainPack>('all')
   const { data: entries = [], isLoading } = useVaultByClassification(
     classification,
     searchQuery || undefined,
     50
   )
+  const filteredEntries = entries.filter((entry) => {
+    const matchesSource = sourceType === 'all' || entry.sourceType === sourceType
+    const matchesDomain = domainPack === 'all' || entry.domainPack === domainPack
+    return matchesSource && matchesDomain
+  })
 
   return (
     <div>
@@ -57,17 +64,41 @@ function VaultSection({ classification }: { classification: VaultClassification 
           onChange={(e) => setSearchQuery(e.target.value)}
           aria-label={`${classification} 검색`}
         />
+        <select
+          className="vault-filter-select"
+          value={sourceType}
+          onChange={(e) => setSourceType(e.target.value as 'all' | VaultSourceType)}
+          aria-label="source type 필터"
+        >
+          <option value="all">모든 Source</option>
+          <option value="cbo_analysis">CBO Analysis</option>
+          <option value="sap_standard">SAP Standard</option>
+          <option value="internal_memo">Internal Memo</option>
+        </select>
+        <select
+          className="vault-filter-select"
+          value={domainPack}
+          onChange={(e) => setDomainPack(e.target.value as 'all' | DomainPack)}
+          aria-label="domain pack 필터"
+        >
+          <option value="all">모든 Domain</option>
+          <option value="ops">ops</option>
+          <option value="functional">functional</option>
+          <option value="cbo-maintenance">cbo-maintenance</option>
+          <option value="pi-integration">pi-integration</option>
+          <option value="btp-rap-cap">btp-rap-cap</option>
+        </select>
       </div>
       {isLoading ? (
         <div className="vault-empty">불러오는 중...</div>
-      ) : entries.length === 0 ? (
+      ) : filteredEntries.length === 0 ? (
         <div className="vault-empty">
           {classification === 'confidential'
             ? '기밀 지식이 없어요. CBO 분석 후 자동으로 저장돼요.'
             : '공개 지식이 없어요'}
         </div>
       ) : (
-        entries.map((entry) => <VaultCard key={entry.id} entry={entry} />)
+        filteredEntries.map((entry) => <VaultCard key={entry.id} entry={entry} />)
       )}
     </div>
   )

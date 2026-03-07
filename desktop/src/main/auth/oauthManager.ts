@@ -224,7 +224,7 @@ export class OAuthManager {
       throw new Error("OAuth state 불일치 — CSRF 공격 가능성이 있어요.");
     }
 
-    return this.exchangeCodeForToken(provider, code);
+    return this.exchangeCodeForToken(provider, code, state);
   }
 
   /**
@@ -237,10 +237,29 @@ export class OAuthManager {
   ): Promise<ProviderAccount> {
     const pending = this.pendingOAuth.get(provider);
     if (!pending) {
-      throw new Error(`${provider}에 대한 OAuth 요청이 없어요.`);
+      throw new Error(
+        `${provider}에 대한 OAuth 요청이 없어요. 다시 OAuth 인증을 시작해주세요.`
+      );
     }
 
-    return this.exchangeCodeForToken(provider, code.trim());
+    // 만료 확인 — 5분 초과 시 안내
+    if (Date.now() > pending.expiresAt) {
+      this.cleanupPending(provider);
+      throw new Error(
+        `OAuth 요청이 만료되었어요 (5분 초과). 다시 인증을 시작해주세요.`
+      );
+    }
+
+    // Anthropic 콜백 페이지는 "code#state" 형식으로 표시
+    let actualCode = code.trim();
+    let extractedState: string | undefined;
+    if (actualCode.includes("#")) {
+      const parts = actualCode.split("#");
+      actualCode = parts[0];
+      extractedState = parts[1];
+    }
+
+    return this.exchangeCodeForToken(provider, actualCode, extractedState);
   }
 
   cancelOAuth(provider: ProviderType): void {
@@ -255,7 +274,8 @@ export class OAuthManager {
 
   private async exchangeCodeForToken(
     provider: ProviderType,
-    code: string
+    code: string,
+    codeState?: string
   ): Promise<ProviderAccount> {
     const pending = this.pendingOAuth.get(provider);
     if (!pending) {
@@ -271,10 +291,24 @@ export class OAuthManager {
     const tokenBody: Record<string, string> = {
       grant_type: "authorization_code",
       code,
-      code_verifier: pending.codeVerifier,
-      redirect_uri: pending.redirectUri,
       client_id: oauthConfig.clientId,
+      redirect_uri: pending.redirectUri,
+      code_verifier: pending.codeVerifier,
     };
+
+    // state: 코드에서 추출한 값 또는 pending에 저장된 값
+    if (codeState) {
+      tokenBody.state = codeState;
+    }
+
+    console.log(`[OAuth] ${provider} 토큰 교환 요청:`, {
+      url: oauthConfig.tokenUrl,
+      contentType: oauthConfig.tokenContentType,
+      codeLength: code.length,
+      codePrefix: code.slice(0, 8) + "...",
+      hasState: !!codeState,
+      redirectUri: pending.redirectUri,
+    });
 
     const tokenRes = await fetch(oauthConfig.tokenUrl, {
       method: "POST",
@@ -291,9 +325,16 @@ export class OAuthManager {
     });
 
     if (!tokenRes.ok) {
-      this.cleanupPending(provider);
       const errText = await tokenRes.text();
-      throw new Error(`토큰 교환 실패 (${tokenRes.status}): ${errText}`);
+      console.error(`[OAuth] ${provider} 토큰 교환 실패:`, {
+        status: tokenRes.status,
+        body: errText,
+        codeLength: code.length,
+        hasHash: code.includes("#"),
+      });
+      throw new Error(
+        `토큰 교환 실패 (${tokenRes.status}): ${errText} [code=${code.length}자, state=${codeState ? "있음" : "없음"}]`
+      );
     }
 
     const tokenData = (await tokenRes.json()) as {

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import type { DesktopApi } from '../../preload/index.js'
+import { useWorkspaceStore } from '../stores/workspaceStore'
 
 // window.sapOpsDesktop IPC 목킹
 const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
@@ -10,7 +11,72 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
     session: { id: 's1', title: '테스트', provider: 'openai', model: 'gpt-4.1-mini', createdAt: '', updatedAt: '' },
     userMessage: { id: 'm1', sessionId: 's1', role: 'user', content: '테스트', inputTokens: 0, outputTokens: 0, createdAt: '' },
     assistantMessage: { id: 'm2', sessionId: 's1', role: 'assistant', content: '응답', inputTokens: 0, outputTokens: 10, createdAt: '' },
+    meta: {
+      skillUsed: 'cbo-impact-analysis',
+      skillTitle: 'CBO 변경 영향 분석',
+      sources: [{ title: 'Workspace Context', category: 'workspace', relevance_score: 1 }],
+      sourceIds: ['workspace-context'],
+      sourceCount: 1,
+      suggestedTcodes: ['SE80'],
+    },
   }),
+  listSkills: vi.fn().mockResolvedValue([
+    {
+      id: 'cbo-impact-analysis',
+      title: 'CBO 변경 영향 분석',
+      description: 'CBO 영향 분석',
+      supportedDomainPacks: ['cbo-maintenance'],
+      supportedDataTypes: ['chat', 'cbo'],
+      allowedSecurityModes: ['secure-local', 'reference', 'hybrid-approved'],
+      defaultPromptTemplate: '',
+      outputFormat: 'structured-report',
+      requiredSources: ['workspace-context', 'vault-confidential'],
+      suggestedInputs: ['이 변경이 어떤 객체에 영향을 주는지 정리해줘'],
+      suggestedTcodes: ['SE80'],
+    },
+  ]),
+  recommendSkills: vi.fn().mockResolvedValue([
+    {
+      skill: {
+        id: 'cbo-impact-analysis',
+        title: 'CBO 변경 영향 분석',
+        description: 'CBO 영향 분석',
+        supportedDomainPacks: ['cbo-maintenance'],
+        supportedDataTypes: ['chat', 'cbo'],
+        allowedSecurityModes: ['secure-local', 'reference', 'hybrid-approved'],
+        defaultPromptTemplate: '',
+        outputFormat: 'structured-report',
+        requiredSources: ['workspace-context', 'vault-confidential'],
+        suggestedInputs: ['이 변경이 어떤 객체에 영향을 주는지 정리해줘'],
+        suggestedTcodes: ['SE80'],
+      },
+      reason: '현재 Domain Pack과 가장 잘 맞는 기본 작업입니다.',
+      recommendedSourceIds: ['workspace-context', 'vault-confidential'],
+    },
+  ]),
+  listSources: vi.fn().mockResolvedValue([
+    {
+      id: 'workspace-context',
+      title: 'Workspace Context',
+      description: '현재 워크스페이스 설정',
+      kind: 'workspace',
+      classification: 'mixed',
+      domainPack: 'cbo-maintenance',
+      availability: 'ready',
+      sourceType: 'workspace_context',
+    },
+    {
+      id: 'vault-confidential',
+      title: 'Confidential Vault',
+      description: '기밀 운영 지식',
+      kind: 'vault',
+      classification: 'confidential',
+      domainPack: 'cbo-maintenance',
+      availability: 'ready',
+      sourceType: 'internal_memo',
+    },
+  ]),
+  searchSources: vi.fn().mockResolvedValue([]),
   listSessions: vi.fn().mockResolvedValue([]),
   getSessionMessages: vi.fn().mockResolvedValue([]),
   analyzeCboText: vi.fn().mockResolvedValue({ summary: '', risks: [], recommendations: [], metadata: { fileName: '', charCount: 0, languageHint: 'unknown' } }),
@@ -29,6 +95,16 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
   listVaultEntries: vi.fn().mockResolvedValue([]),
   searchVaultByClassification: vi.fn().mockResolvedValue([]),
   listVaultByDomainPack: vi.fn().mockResolvedValue([]),
+  listSessionsFiltered: vi.fn().mockResolvedValue([]),
+  updateSessionTodoState: vi.fn().mockResolvedValue(undefined),
+  toggleSessionFlag: vi.fn().mockResolvedValue(undefined),
+  toggleSessionArchive: vi.fn().mockResolvedValue(undefined),
+  addSessionLabel: vi.fn().mockResolvedValue(undefined),
+  removeSessionLabel: vi.fn().mockResolvedValue(undefined),
+  getSessionStats: vi.fn().mockResolvedValue({
+    all: 0, open: 0, analyzing: 0, "in-progress": 0,
+    resolved: 0, closed: 0, flagged: 0, archived: 0,
+  }),
   getOAuthAvailability: vi.fn().mockResolvedValue([
     { provider: 'openai', available: true },
     { provider: 'anthropic', available: false },
@@ -68,7 +144,6 @@ beforeEach(() => {
 
 // workspaceStore 초기화를 위한 헬퍼
 export function resetWorkspaceStore() {
-  const { useWorkspaceStore } = require('../stores/workspaceStore')
   useWorkspaceStore.setState({
     securityMode: 'secure-local',
     domainPack: 'ops',

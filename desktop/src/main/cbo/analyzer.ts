@@ -4,15 +4,19 @@ import {
   CboAnalyzeTextInput,
   ProviderType,
   SecurityMode,
+  SourceReference,
 } from "../contracts.js";
 import { SecureStore } from "../auth/secureStore.js";
 import { LlmProvider } from "../providers/base.js";
 import { parseCboFile, parseCboText } from "./parser.js";
 import { analyzeByRules } from "./rules.js";
+import { getSkillDefinition } from "../skills/registry.js";
 
 function buildLlmPrompt(baseResult: CboAnalysisResult, source: string): string {
+  const skill = getSkillDefinition("cbo-impact-analysis");
   return [
-    "다음 CBO 소스를 검토하여 핵심 요약, 운영 리스크, 개선권고를 간결하게 제시하세요.",
+    skill?.defaultPromptTemplate ??
+      "다음 CBO 소스를 검토하여 핵심 요약, 운영 리스크, 개선권고를 간결하게 제시하세요.",
     "응답은 한국어로 작성하세요.",
     "이미 검출된 규칙기반 결과를 보완하는 관점으로 작성하세요.",
     "",
@@ -64,7 +68,7 @@ export class CboAnalyzer {
     model?: string,
     securityMode?: SecurityMode
   ): Promise<CboAnalysisResult> {
-    const baseResult = analyzeByRules(fileName, content);
+    const baseResult = withSkillMeta(analyzeByRules(fileName, content), fileName);
 
     // secure-local 모드: LLM 보강 건너뜀 — 규칙 분석만 반환
     if (securityMode === "secure-local") {
@@ -109,4 +113,33 @@ export class CboAnalyzer {
 
     return baseResult;
   }
+}
+
+function withSkillMeta(result: CboAnalysisResult, fileName: string): CboAnalysisResult {
+  const skill = getSkillDefinition("cbo-impact-analysis");
+  const sources: SourceReference[] = [
+    {
+      id: "workspace-context",
+      title: "CBO Maintenance Workspace",
+      category: "workspace",
+      relevance_score: 1,
+      description: "Secure Local + CBO Maintenance 권장 조합",
+    },
+    {
+      id: "local-imported-files",
+      title: fileName,
+      category: "local-file",
+      relevance_score: 0.95,
+      description: "현재 분석 중인 로컬 소스",
+    },
+  ];
+
+  return {
+    ...result,
+    skillUsed: skill?.id ?? "cbo-impact-analysis",
+    skillTitle: skill?.title ?? "CBO 변경 영향 분석",
+    sourceIds: ["workspace-context", "local-imported-files"],
+    sources,
+    suggestedTcodes: skill?.suggestedTcodes ?? ["SE80", "SE11", "SE38", "STMS"],
+  };
 }

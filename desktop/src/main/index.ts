@@ -21,8 +21,12 @@ import {
   CboSyncKnowledgeInput,
   DomainPack,
   ProviderType,
+  SapLabel,
+  SessionFilter,
+  SkillExecutionContext,
   SendMessageInput,
   SetApiKeyInput,
+  TodoStateKind,
   VaultClassification,
 } from "./contracts.js";
 import { OpenAiProvider } from "./providers/openaiProvider.js";
@@ -43,6 +47,7 @@ import {
 import { LocalDatabase } from "./storage/sqlite.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
+import { SkillSourceRegistry } from "./skills/registry.js";
 
 let mainWindow: BrowserWindow | null = null;
 let chatRuntime: ChatRuntime;
@@ -51,6 +56,8 @@ let cboAnalyzer: CboAnalyzer;
 let cboBatchRuntime: CboBatchRuntime;
 let auditRepo: AuditRepository;
 let vaultRepoRef: VaultRepository;
+let sessionRepoRef: SessionRepository;
+let skillRegistry: SkillSourceRegistry;
 let folderAbortController: AbortController | null = null;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
 const productName = "SAP Assistant Desktop Platform";
@@ -72,16 +79,18 @@ function initRuntime(): void {
   const googleProvider = new GoogleProvider(config.googleApiBaseUrl);
 
   auditRepo = new AuditRepository(db);
+  sessionRepoRef = sessionRepo;
   const policyEngine = new PolicyEngine();
-
-  const providers = [openaiProvider, anthropicProvider, googleProvider];
-  chatRuntime = new ChatRuntime(
-    providers, secureStore, sessionRepo, messageRepo,
-    policyEngine, auditRepo
-  );
-  oauthManager = new OAuthManager(secureStore, accountRepo, config);
   const vaultRepo = new VaultRepository(db);
   vaultRepoRef = vaultRepo;
+
+  const providers = [openaiProvider, anthropicProvider, googleProvider];
+  skillRegistry = new SkillSourceRegistry(vaultRepo, analysisRepo);
+  chatRuntime = new ChatRuntime(
+    providers, secureStore, sessionRepo, messageRepo,
+    policyEngine, auditRepo, skillRegistry
+  );
+  oauthManager = new OAuthManager(secureStore, accountRepo, config);
 
   cboAnalyzer = new CboAnalyzer(providers, secureStore);
   cboBatchRuntime = new CboBatchRuntime(
@@ -145,6 +154,22 @@ function registerIpc(): void {
     return chatRuntime.sendMessage(input);
   });
 
+  ipcMain.handle("skills:list", async () => {
+    return skillRegistry.listSkills();
+  });
+
+  ipcMain.handle("skills:recommend", async (_event, context: SkillExecutionContext) => {
+    return skillRegistry.recommendSkills(context);
+  });
+
+  ipcMain.handle("sources:list", async (_event, context: SkillExecutionContext) => {
+    return skillRegistry.listSources(context);
+  });
+
+  ipcMain.handle("sources:search", async (_event, query: string, context: SkillExecutionContext) => {
+    return skillRegistry.searchSources(query, context);
+  });
+
   ipcMain.handle("sessions:list", async (_event, limit = 50) => {
     return chatRuntime.listSessions(limit);
   });
@@ -202,11 +227,13 @@ function registerIpc(): void {
       }
 
       const filePath = selection.filePaths[0];
-      const result = await cboAnalyzer.analyzeFile({
-        filePath,
-        provider: input.provider,
-        model: input.model,
-      });
+        const result = await cboAnalyzer.analyzeFile({
+          filePath,
+          provider: input.provider,
+          model: input.model,
+          securityMode: input.securityMode,
+          domainPack: input.domainPack,
+        });
 
       return {
         canceled: false,
@@ -242,13 +269,15 @@ function registerIpc(): void {
       let output: Awaited<ReturnType<typeof cboBatchRuntime.analyzeFolder>>;
       try {
         output = await cboBatchRuntime.analyzeFolder(
-          {
-            rootPath,
-            recursive: input.recursive,
-            provider: input.provider,
-            model: input.model,
-            skipUnchanged: input.skipUnchanged,
-          },
+            {
+              rootPath,
+              recursive: input.recursive,
+              provider: input.provider,
+              model: input.model,
+              skipUnchanged: input.skipUnchanged,
+              securityMode: input.securityMode,
+              domainPack: input.domainPack,
+            },
           {
             signal: folderAbortController.signal,
             onProgress: (event) => mainWindow?.webContents.send("cbo:progress", event),
@@ -310,6 +339,29 @@ function registerIpc(): void {
   ipcMain.handle("vault:listByDomainPack", async (_event, pack: DomainPack, limit?: number) => {
     return vaultRepoRef.listByDomainPack(pack, limit);
   });
+
+  // ─── Cockpit IPC ───
+
+  ipcMain.handle("sessions:listFiltered", (_event, filter: SessionFilter, limit?: number) =>
+    sessionRepoRef.listFiltered(filter, limit));
+
+  ipcMain.handle("sessions:updateTodoState", (_event, sessionId: string, state: TodoStateKind) =>
+    sessionRepoRef.updateTodoState(sessionId, state));
+
+  ipcMain.handle("sessions:toggleFlag", (_event, sessionId: string) =>
+    sessionRepoRef.toggleFlag(sessionId));
+
+  ipcMain.handle("sessions:toggleArchive", (_event, sessionId: string) =>
+    sessionRepoRef.toggleArchive(sessionId));
+
+  ipcMain.handle("sessions:addLabel", (_event, sessionId: string, label: SapLabel) =>
+    sessionRepoRef.addLabel(sessionId, label));
+
+  ipcMain.handle("sessions:removeLabel", (_event, sessionId: string, label: SapLabel) =>
+    sessionRepoRef.removeLabel(sessionId, label));
+
+  ipcMain.handle("sessions:stats", () =>
+    sessionRepoRef.getStats());
 }
 
 function checkForUpdates(): void {

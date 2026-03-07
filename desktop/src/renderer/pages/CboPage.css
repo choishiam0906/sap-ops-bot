@@ -124,6 +124,24 @@
 .cbo-desc { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 16px; }
 .cbo-actions { display: flex; gap: 8px; margin-top: 12px; }
 .cbo-empty { color: var(--color-text-muted); font-size: 14px; text-align: center; padding: 30px 0; }
+.cbo-analysis-hint {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.cbo-analysis-hint strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cbo-analysis-hint p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
 
 .cbo-empty-state {
   display: flex;
@@ -200,6 +218,76 @@
 .result-summary { color: var(--color-text-secondary); margin-bottom: 16px; line-height: 1.6; }
 .result-section { margin-top: 16px; }
 .result-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.result-follow-up-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.result-follow-up-desc {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.result-follow-up-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.result-follow-up-chip {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.result-follow-up-chip:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+}
+
+.result-follow-up-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.result-follow-up-form label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.result-follow-up-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.result-follow-up-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.result-follow-up-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
 .risks-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .risks-table th, .risks-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--color-border-light); }

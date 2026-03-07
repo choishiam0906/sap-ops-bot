@@ -1,20 +1,18 @@
-import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
 import { ChatPage } from './pages/ChatPage'
 import { CboPage } from './pages/CboPage'
 import { KnowledgeVaultPage } from './pages/KnowledgeVaultPage'
-import { SessionsAuditPage } from './pages/SessionsAuditPage'
+import { CockpitPage } from './pages/CockpitPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { useAppShellStore } from './stores/appShellStore'
 import './components/ErrorBoundary.css'
 import './styles/animations.css'
 import './App.css'
 
 // settingsStore를 import하면 초기 테마가 자동 적용됨
 import './stores/settingsStore'
-
-type Page = 'chat' | 'cbo' | 'audit' | 'vault' | 'settings'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +24,8 @@ const queryClient = new QueryClient({
 })
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('chat')
+  const currentPage = useAppShellStore((state) => state.currentPage)
+  const setCurrentPage = useAppShellStore((state) => state.setCurrentPage)
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -37,7 +36,7 @@ export function App() {
             <div key={currentPage} className="app-page-shell page-enter">
               {currentPage === 'chat' && <ChatPage />}
               {currentPage === 'cbo' && <CboPage />}
-              {currentPage === 'audit' && <SessionsAuditPage />}
+              {currentPage === 'audit' && <CockpitPage />}
               {currentPage === 'vault' && <KnowledgeVaultPage />}
               {currentPage === 'settings' && <SettingsPage />}
             </div>

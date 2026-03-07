@@ -133,11 +133,13 @@ function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
         <tr>
           <th>시간</th>
           <th>액션</th>
+          <th>Skill</th>
           <th>보안 모드</th>
           <th>도메인 팩</th>
           <th>정책 결정</th>
           <th>외부 전송</th>
           <th>Provider</th>
+          <th>Sources</th>
         </tr>
       </thead>
       <tbody>
@@ -145,6 +147,7 @@ function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
           <tr key={entry.id}>
             <td>{formatTimestamp(entry.timestamp)}</td>
             <td>{entry.action}</td>
+            <td>{entry.skillId ?? '-'}</td>
             <td>
               <Badge variant={entry.securityMode === 'secure-local' ? 'success' : entry.securityMode === 'reference' ? 'info' : 'warning'}>
                 {entry.securityMode}
@@ -158,6 +161,7 @@ function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
             </td>
             <td>{entry.externalTransfer ? '예' : '아니오'}</td>
             <td>{entry.provider ?? '-'}</td>
+            <td>{entry.sourceCount ?? entry.sourceIds?.length ?? 0}</td>
           </tr>
         ))}
       </tbody>

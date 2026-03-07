@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type {
   AuditSearchFilters,
   CboBatchProgressEvent,
+  ChatSessionMeta,
   CboAnalyzeFileInput,
   CboAnalyzeFolderInput,
   CboAnalyzeFolderPickInput,
@@ -10,14 +11,22 @@ import type {
   CboAnalyzeTextInput,
   CboRunDiffInput,
   CboSyncKnowledgeInput,
+  CockpitStats,
   DomainPack,
   ProviderType,
+  SapLabel,
   SendMessageInput,
+  SessionFilter,
   SetApiKeyInput,
+  TodoStateKind,
   VaultClassification,
   OAuthAvailability,
   OAuthInitResult,
   ProviderAccount,
+  SapSkillDefinition,
+  SapSourceDefinition,
+  SkillExecutionContext,
+  SkillRecommendation,
 } from "../main/contracts.js";
 
 const desktopApi = {
@@ -47,6 +56,18 @@ const desktopApi = {
   },
   sendMessage(input: SendMessageInput) {
     return ipcRenderer.invoke("chat:send", input);
+  },
+  listSkills(): Promise<SapSkillDefinition[]> {
+    return ipcRenderer.invoke("skills:list");
+  },
+  recommendSkills(context: SkillExecutionContext): Promise<SkillRecommendation[]> {
+    return ipcRenderer.invoke("skills:recommend", context);
+  },
+  listSources(context: SkillExecutionContext): Promise<SapSourceDefinition[]> {
+    return ipcRenderer.invoke("sources:list", context);
+  },
+  searchSources(query: string, context: SkillExecutionContext): Promise<SapSourceDefinition[]> {
+    return ipcRenderer.invoke("sources:search", query, context);
   },
   listSessions(limit = 50) {
     return ipcRenderer.invoke("sessions:list", limit);
@@ -106,6 +127,30 @@ const desktopApi = {
   },
   listVaultByDomainPack(pack: DomainPack, limit?: number) {
     return ipcRenderer.invoke("vault:listByDomainPack", pack, limit);
+  },
+
+  // ─── Cockpit API ───
+
+  listSessionsFiltered(filter: SessionFilter, limit = 50): Promise<ChatSessionMeta[]> {
+    return ipcRenderer.invoke("sessions:listFiltered", filter, limit);
+  },
+  updateSessionTodoState(sessionId: string, state: TodoStateKind): Promise<void> {
+    return ipcRenderer.invoke("sessions:updateTodoState", sessionId, state);
+  },
+  toggleSessionFlag(sessionId: string): Promise<void> {
+    return ipcRenderer.invoke("sessions:toggleFlag", sessionId);
+  },
+  toggleSessionArchive(sessionId: string): Promise<void> {
+    return ipcRenderer.invoke("sessions:toggleArchive", sessionId);
+  },
+  addSessionLabel(sessionId: string, label: SapLabel): Promise<void> {
+    return ipcRenderer.invoke("sessions:addLabel", sessionId, label);
+  },
+  removeSessionLabel(sessionId: string, label: SapLabel): Promise<void> {
+    return ipcRenderer.invoke("sessions:removeLabel", sessionId, label);
+  },
+  getSessionStats(): Promise<CockpitStats> {
+    return ipcRenderer.invoke("sessions:stats");
   },
 };
 

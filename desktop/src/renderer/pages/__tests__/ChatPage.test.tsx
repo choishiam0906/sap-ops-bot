@@ -29,14 +29,81 @@ describe('ChatPage', () => {
   beforeEach(() => {
     mockApi.listSessions.mockResolvedValue([])
     mockApi.getSessionMessages.mockResolvedValue([])
-    useChatStore.setState({ input: '', error: '', isStreaming: false, streamingContent: '' })
-    useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'ops' })
+    mockApi.listSkills.mockResolvedValue([
+      {
+        id: 'incident-triage',
+        title: '운영 장애 트리아지',
+        description: '장애 증상을 분석합니다.',
+        supportedDomainPacks: ['ops'],
+        supportedDataTypes: ['chat'],
+        allowedSecurityModes: ['reference', 'hybrid-approved'],
+        defaultPromptTemplate: '',
+        outputFormat: 'checklist',
+        requiredSources: ['vault-reference'],
+        suggestedInputs: ['현재 장애 로그를 기준으로 먼저 볼 항목을 알려줘'],
+        suggestedTcodes: ['ST22'],
+      },
+    ])
+    mockApi.recommendSkills.mockResolvedValue([
+      {
+        skill: {
+          id: 'incident-triage',
+          title: '운영 장애 트리아지',
+          description: '장애 증상을 분석합니다.',
+          supportedDomainPacks: ['ops'],
+          supportedDataTypes: ['chat'],
+          allowedSecurityModes: ['reference', 'hybrid-approved'],
+          defaultPromptTemplate: '',
+          outputFormat: 'checklist',
+          requiredSources: ['workspace-context', 'vault-reference'],
+          suggestedInputs: ['현재 장애 로그를 기준으로 먼저 볼 항목을 알려줘'],
+          suggestedTcodes: ['ST22'],
+        },
+        reason: 'ops 워크스페이스에서 바로 사용할 수 있는 작업입니다.',
+        recommendedSourceIds: ['workspace-context', 'vault-reference'],
+      },
+    ])
+    mockApi.listSources.mockResolvedValue([
+      {
+        id: 'workspace-context',
+        title: 'Workspace Context',
+        description: '현재 워크스페이스 설정',
+        kind: 'workspace',
+        classification: 'mixed',
+        domainPack: 'ops',
+        availability: 'ready',
+        sourceType: 'workspace_context',
+      },
+      {
+        id: 'vault-reference',
+        title: 'Reference Vault',
+        description: '공개 참조 지식',
+        kind: 'vault',
+        classification: 'reference',
+        domainPack: 'ops',
+        availability: 'ready',
+        sourceType: 'sap_standard',
+      },
+    ])
+    useChatStore.setState({
+      input: '',
+      error: '',
+      isStreaming: false,
+      streamingContent: '',
+      selectedSkillId: '',
+      selectedSourceIds: [],
+      lastExecutionMeta: null,
+    })
+    useWorkspaceStore.setState({ securityMode: 'reference', domainPack: 'ops' })
   })
 
   it('빈 상태에서 안내 메시지를 표시한다', async () => {
     renderWithProviders(<ChatPage />)
     await waitFor(() => {
       expect(screen.getByText(defaultPack.chatTitle)).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(screen.getAllByText('운영 장애 트리아지').length).toBeGreaterThan(0)
     })
   })
 
@@ -64,14 +131,15 @@ describe('ChatPage', () => {
     renderWithProviders(<ChatPage />)
 
     await waitFor(() => {
-      expect(screen.getByText(defaultPack.chatTitle)).toBeInTheDocument()
+      expect(screen.getAllByText('운영 장애 트리아지').length).toBeGreaterThan(0)
     })
 
-    const chip = screen.getByText(defaultPack.suggestions[0])
+    const skillSuggestion = '현재 장애 로그를 기준으로 먼저 볼 항목을 알려줘'
+    const chip = screen.getByText(skillSuggestion)
     await user.click(chip)
 
     const textarea = screen.getByLabelText('메시지 입력')
-    expect(textarea).toHaveValue(defaultPack.suggestions[0])
+    expect(textarea).toHaveValue(skillSuggestion)
   })
 
   it('메시지 전송 시 API를 호출한다', async () => {
@@ -100,6 +168,8 @@ describe('ChatPage', () => {
     // 호출된 인자의 message 필드 검증
     const callArgs = mockApi.sendMessage.mock.calls[0][0]
     expect(callArgs.message).toBe('테스트 질문')
+    expect(callArgs.skillId).toBe('incident-triage')
+    expect(callArgs.sourceIds).toEqual(['workspace-context', 'vault-reference'])
   })
 
   it('메시지 전송 실패 시 에러를 표시한다', async () => {

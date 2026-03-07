@@ -368,6 +368,9 @@
 .dropdown-option-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .dropdown-option-label {
@@ -387,6 +390,18 @@
   flex-shrink: 0;
   margin-left: 12px;
   color: var(--color-primary);
+}
+
+/* ─── Dropdown / Connection 아이콘 ── */
+
+.dropdown-icon {
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.dropdown-option-icon {
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 /* ─── Segmented Control (craft SettingsSegmentedControl) ── */
@@ -455,6 +470,7 @@
 .connection-icon {
   color: var(--color-text-muted);
   flex-shrink: 0;
+  border-radius: 3px;
 }
 
 .connection-name {
@@ -705,6 +721,10 @@
   background: var(--color-bg-tertiary);
   color: var(--color-text-muted);
   flex-shrink: 0;
+}
+
+.wizard-provider-icon img {
+  border-radius: 4px;
 }
 
 .wizard-provider-info {
@@ -1052,6 +1072,41 @@
   color: var(--color-text-muted);
 }
 
+.source-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.source-capability-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+}
+
+.source-capability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.source-capability-card strong {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.source-capability-card p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
 /* ─── Error/Success Messages ─────────────── */
 
 .provider-error {
@@ -1155,4 +1210,16 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* 성공 화면 Provider 아이콘 */
+
+.setup-success-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setup-success-provider {
+  border-radius: 4px;
 }

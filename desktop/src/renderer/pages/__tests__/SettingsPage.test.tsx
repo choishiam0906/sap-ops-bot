@@ -70,6 +70,7 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('heading', { name: 'AI' })).toBeInTheDocument()
     expect(screen.getByText('기본값')).toBeInTheDocument()
     expect(screen.getByText('Connections')).toBeInTheDocument()
+    expect(screen.getByText('Sources & MCP')).toBeInTheDocument()
   })
 
   it('Provider 인증 상태를 확인한다', async () => {

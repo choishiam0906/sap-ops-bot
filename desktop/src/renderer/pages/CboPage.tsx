@@ -9,6 +9,8 @@ import { RunsTable } from '../components/cbo/RunsTable.js'
 import { DiffPanel } from '../components/cbo/DiffPanel.js'
 import { Button } from '../components/ui/Button.js'
 import { SkeletonText } from '../components/ui/Skeleton.js'
+import { useAppShellStore } from '../stores/appShellStore.js'
+import { useChatStore } from '../stores/chatStore.js'
 import {
   DOMAIN_PACK_DETAILS,
   SECURITY_MODE_DETAILS,
@@ -26,6 +28,14 @@ export function CboPage() {
   const securityMode = useWorkspaceStore((state) => state.securityMode)
   const domainPack = useWorkspaceStore((state) => state.domainPack)
   const applyRecommendedCboWorkspace = useWorkspaceStore((state) => state.applyRecommendedCboWorkspace)
+  const setCurrentPage = useAppShellStore((state) => state.setCurrentPage)
+  const setCurrentSessionId = useChatStore((state) => state.setCurrentSessionId)
+  const setChatInput = useChatStore((state) => state.setInput)
+  const setChatProvider = useChatStore((state) => state.setProvider)
+  const setChatModel = useChatStore((state) => state.setModel)
+  const setSelectedSkillId = useChatStore((state) => state.setSelectedSkillId)
+  const setSelectedSourceIds = useChatStore((state) => state.setSelectedSourceIds)
+  const setCaseContext = useChatStore((state) => state.setCaseContext)
   const modeDetail = SECURITY_MODE_DETAILS[securityMode]
   const packDetail = DOMAIN_PACK_DETAILS[domainPack]
   const cboWorkspaceReady = securityMode === 'secure-local' && domainPack === 'cbo-maintenance'
@@ -48,16 +58,44 @@ export function CboPage() {
     store.setBusy(false)
   }
 
-  function llmOpts() {
-    if (!store.useLlm) return {}
-    return { provider: store.provider, model: store.model }
+  function analysisOpts() {
+    const workspaceContext = { securityMode, domainPack }
+    if (!store.useLlm) return workspaceContext
+    return { ...workspaceContext, provider: store.provider, model: store.model }
+  }
+
+  function handoffToChat(prompt: string) {
+    const activeResult = useCboStore.getState().result
+    if (!activeResult) return
+
+    const sourceIds = Array.from(
+      new Set([
+        'workspace-context',
+        ...(store.sourceText.trim() ? ['local-imported-files'] : []),
+        ...(activeResult.sourceIds ?? []),
+      ])
+    )
+
+    setCurrentSessionId(null)
+    setSelectedSkillId(activeResult.skillUsed ?? 'cbo-impact-analysis')
+    setSelectedSourceIds(sourceIds)
+    setCaseContext({
+      filePath: activeResult.metadata.fileName || store.fileName,
+      objectName: (activeResult.metadata.fileName || store.fileName).replace(/\.[^.]+$/, ''),
+    })
+    if (store.useLlm) {
+      setChatProvider(store.provider)
+      setChatModel(store.model)
+    }
+    setChatInput(prompt)
+    setCurrentPage('chat')
   }
 
   async function analyzeText() {
     if (!store.sourceText.trim()) { store.setError('분석할 텍스트를 입력하세요'); return }
     store.setBusy(true); store.setError(''); store.setStatus('텍스트 분석 중...')
     try {
-      const res = await api.analyzeCboText({ fileName: store.fileName, content: store.sourceText, ...llmOpts() })
+      const res = await api.analyzeCboText({ fileName: store.fileName, content: store.sourceText, ...analysisOpts() })
       store.setResult(res)
       store.setStatus('텍스트 분석 완료')
     } catch (e) { store.setError(e instanceof Error ? e.message : '분석 실패') }
@@ -67,7 +105,7 @@ export function CboPage() {
   async function pickFile() {
     store.setBusy(true); store.setError(''); store.setStatus('파일 선택 대기 중...')
     try {
-      const res = await api.pickAndAnalyzeCboFile(llmOpts())
+      const res = await api.pickAndAnalyzeCboFile(analysisOpts())
       if (!res || res.canceled) { store.setStatus('파일 선택 취소됨'); return }
       store.setResult(res.result)
       store.setStatus(`파일 분석 완료: ${res.filePath}`)
@@ -78,7 +116,7 @@ export function CboPage() {
   async function pickFolder() {
     store.setBusy(true); store.setError(''); store.setProgress(null); store.setStatus('폴더 선택 대기 중...')
     try {
-      const res = await api.pickAndAnalyzeCboFolder({ recursive: true, skipUnchanged: true, ...llmOpts() })
+      const res = await api.pickAndAnalyzeCboFolder({ recursive: true, skipUnchanged: true, ...analysisOpts() })
       if (!res || res.canceled || !res.output) { store.setStatus('폴더 선택 취소됨'); return }
       store.setSelectedRunId(res.output.run.id)
       store.setStatus(`배치 분석 완료: ${res.output.run.successFiles}건 성공`)
@@ -183,6 +221,13 @@ export function CboPage() {
       {/* 텍스트 분석 탭 */}
       {store.tab === 'text' && (
         <div className="cbo-section">
+          <div className="cbo-analysis-hint">
+            <strong>분석 후 바로 AI 후속 질문까지 이어질 수 있습니다.</strong>
+            <p>
+              CBO 소스 텍스트를 붙여넣고 분석한 뒤, 결과 패널에서 현업 설명, 검증 체크리스트, 운영 메모 초안으로
+              바로 넘길 수 있습니다.
+            </p>
+          </div>
           <div className="form-row">
             <label>파일명</label>
             <input value={store.fileName} onChange={(e) => store.setFileName(e.target.value)} className="cbo-input" />
@@ -298,7 +343,13 @@ export function CboPage() {
       )}
 
       {/* 분석 결과 */}
-      {store.result && <ResultPanel result={store.result} />}
+      {store.result && (
+        <ResultPanel
+          result={store.result}
+          analysisLabel={store.result.metadata.fileName || store.fileName}
+          onAskAi={handoffToChat}
+        />
+      )}
 
       {/* Diff 결과 */}
       {store.diffResult && <DiffPanel diffResult={store.diffResult} />}

@@ -38,7 +38,7 @@ export function getOAuthConfig(
         tokenUrl: "https://console.anthropic.com/v1/oauth/token",
         clientId,
         scopes: ["org:create_api_key", "user:profile", "user:inference"],
-        tokenContentType: "json",
+        tokenContentType: "form",
         useCallbackServer: false,
         redirectUri: "https://console.anthropic.com/oauth/code/callback",
       };

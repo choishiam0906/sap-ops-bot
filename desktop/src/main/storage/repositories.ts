@@ -9,13 +9,17 @@ import {
   CboBatchFileErrorCode,
   ChatMessage,
   ChatSession,
+  ChatSessionMeta,
+  CockpitStats,
   DomainPack,
   ProviderAccount,
   ProviderType,
+  SapLabel,
   SecurityMode,
+  SessionFilter,
+  TodoStateKind,
   VaultClassification,
   VaultEntry,
-  VaultSourceType,
 } from "../contracts.js";
 import { LocalDatabase } from "./sqlite.js";
 
@@ -81,6 +85,150 @@ export class SessionRepository {
         `UPDATE sessions SET updated_at = ? WHERE id = ?`
       )
       .run(nowIso(), sessionId);
+  }
+
+  // ─── Cockpit 메서드 ───
+
+  listFiltered(filter: SessionFilter, limit = 50): ChatSessionMeta[] {
+    let where: string;
+    const params: unknown[] = [];
+
+    switch (filter.kind) {
+      case "state":
+        where = "WHERE todo_state = ? AND is_archived = 0";
+        params.push(filter.value);
+        break;
+      case "label":
+        where = `WHERE labels LIKE ? AND is_archived = 0`;
+        params.push(`%"${filter.value}"%`);
+        break;
+      case "flagged":
+        where = "WHERE is_flagged = 1 AND is_archived = 0";
+        break;
+      case "archived":
+        where = "WHERE is_archived = 1";
+        break;
+      default:
+        where = "WHERE is_archived = 0";
+    }
+
+    params.push(limit);
+    const rows = this.db
+      .prepare(
+        `SELECT id, title, provider, model,
+                created_at AS createdAt, updated_at AS updatedAt,
+                todo_state AS todoState, is_flagged AS isFlagged,
+                is_archived AS isArchived, labels
+         FROM sessions
+         ${where}
+         ORDER BY updated_at DESC
+         LIMIT ?`
+      )
+      .all(...params) as SessionMetaRow[];
+
+    return rows.map(toSessionMeta);
+  }
+
+  updateTodoState(sessionId: string, state: TodoStateKind): void {
+    this.db
+      .prepare(`UPDATE sessions SET todo_state = ?, updated_at = ? WHERE id = ?`)
+      .run(state, nowIso(), sessionId);
+  }
+
+  toggleFlag(sessionId: string): void {
+    this.db
+      .prepare(`UPDATE sessions SET is_flagged = CASE WHEN is_flagged = 1 THEN 0 ELSE 1 END, updated_at = ? WHERE id = ?`)
+      .run(nowIso(), sessionId);
+  }
+
+  toggleArchive(sessionId: string): void {
+    this.db
+      .prepare(`UPDATE sessions SET is_archived = CASE WHEN is_archived = 1 THEN 0 ELSE 1 END, updated_at = ? WHERE id = ?`)
+      .run(nowIso(), sessionId);
+  }
+
+  setLabels(sessionId: string, labels: SapLabel[]): void {
+    this.db
+      .prepare(`UPDATE sessions SET labels = ?, updated_at = ? WHERE id = ?`)
+      .run(JSON.stringify(labels), nowIso(), sessionId);
+  }
+
+  addLabel(sessionId: string, label: SapLabel): void {
+    const row = this.db
+      .prepare(`SELECT labels FROM sessions WHERE id = ?`)
+      .get(sessionId) as { labels: string } | undefined;
+    const current: SapLabel[] = row ? parseLabels(row.labels) : [];
+    if (!current.includes(label)) {
+      current.push(label);
+      this.setLabels(sessionId, current);
+    }
+  }
+
+  removeLabel(sessionId: string, label: SapLabel): void {
+    const row = this.db
+      .prepare(`SELECT labels FROM sessions WHERE id = ?`)
+      .get(sessionId) as { labels: string } | undefined;
+    const current: SapLabel[] = row ? parseLabels(row.labels) : [];
+    const filtered = current.filter((l) => l !== label);
+    if (filtered.length !== current.length) {
+      this.setLabels(sessionId, filtered);
+    }
+  }
+
+  getStats(): CockpitStats {
+    const row = this.db
+      .prepare(
+        `SELECT
+          COUNT(*) AS "all",
+          SUM(CASE WHEN todo_state = 'open' AND is_archived = 0 THEN 1 ELSE 0 END) AS "open",
+          SUM(CASE WHEN todo_state = 'analyzing' AND is_archived = 0 THEN 1 ELSE 0 END) AS analyzing,
+          SUM(CASE WHEN todo_state = 'in-progress' AND is_archived = 0 THEN 1 ELSE 0 END) AS "in-progress",
+          SUM(CASE WHEN todo_state = 'resolved' AND is_archived = 0 THEN 1 ELSE 0 END) AS resolved,
+          SUM(CASE WHEN todo_state = 'closed' AND is_archived = 0 THEN 1 ELSE 0 END) AS closed,
+          SUM(CASE WHEN is_flagged = 1 AND is_archived = 0 THEN 1 ELSE 0 END) AS flagged,
+          SUM(CASE WHEN is_archived = 1 THEN 1 ELSE 0 END) AS archived
+        FROM sessions`
+      )
+      .get() as CockpitStats;
+
+    return row;
+  }
+}
+
+interface SessionMetaRow {
+  id: string;
+  title: string;
+  provider: ProviderType;
+  model: string;
+  createdAt: string;
+  updatedAt: string;
+  todoState: string;
+  isFlagged: number;
+  isArchived: number;
+  labels: string;
+}
+
+function toSessionMeta(row: SessionMetaRow): ChatSessionMeta {
+  return {
+    id: row.id,
+    title: row.title,
+    provider: row.provider,
+    model: row.model,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    todoState: (row.todoState || "open") as TodoStateKind,
+    isFlagged: Boolean(row.isFlagged),
+    isArchived: Boolean(row.isArchived),
+    labels: parseLabels(row.labels),
+  };
+}
+
+function parseLabels(raw: string): SapLabel[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((e): e is SapLabel => typeof e === "string") : [];
+  } catch {
+    return [];
   }
 }
 
@@ -605,12 +753,16 @@ interface AuditRow {
   policyDecision: string;
   provider: string | null;
   model: string | null;
+  skillId: string | null;
+  sourceIds: string | null;
+  sourceCount: number;
 }
 
 function toAuditLogEntry(row: AuditRow): AuditLogEntry {
   return {
     ...row,
     externalTransfer: Boolean(row.externalTransfer),
+    sourceIds: row.sourceIds ? parseSourceIds(row.sourceIds) : null,
   } as AuditLogEntry;
 }
 
@@ -622,9 +774,10 @@ export class AuditRepository {
       .prepare(
         `INSERT INTO audit_logs(
           id, session_id, run_id, timestamp, security_mode, domain_pack,
-          action, external_transfer, policy_decision, provider, model
+          action, external_transfer, policy_decision, provider, model,
+          skill_id, source_ids, source_count
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         entry.id,
@@ -637,7 +790,10 @@ export class AuditRepository {
         entry.externalTransfer ? 1 : 0,
         entry.policyDecision,
         entry.provider,
-        entry.model
+        entry.model,
+        entry.skillId ?? null,
+        entry.sourceIds ? JSON.stringify(entry.sourceIds) : null,
+        entry.sourceCount ?? entry.sourceIds?.length ?? 0
       );
   }
 
@@ -655,7 +811,10 @@ export class AuditRepository {
           external_transfer AS externalTransfer,
           policy_decision AS policyDecision,
           provider,
-          model
+          model,
+          skill_id AS skillId,
+          source_ids AS sourceIds,
+          source_count AS sourceCount
          FROM audit_logs
          ORDER BY timestamp DESC
          LIMIT ?`
@@ -678,7 +837,10 @@ export class AuditRepository {
           external_transfer AS externalTransfer,
           policy_decision AS policyDecision,
           provider,
-          model
+          model,
+          skill_id AS skillId,
+          source_ids AS sourceIds,
+          source_count AS sourceCount
          FROM audit_logs
          WHERE session_id = ?
          ORDER BY timestamp DESC`
@@ -722,7 +884,10 @@ export class AuditRepository {
           external_transfer AS externalTransfer,
           policy_decision AS policyDecision,
           provider,
-          model
+          model,
+          skill_id AS skillId,
+          source_ids AS sourceIds,
+          source_count AS sourceCount
          FROM audit_logs
          ${where}
          ORDER BY timestamp DESC
@@ -826,5 +991,29 @@ export class VaultRepository {
          LIMIT ?`
       )
       .all(limit) as VaultEntry[];
+  }
+
+  getById(id: string): VaultEntry | null {
+    const row = this.db
+      .prepare(
+        `SELECT
+          id, classification, source_type AS sourceType,
+          domain_pack AS domainPack, title, excerpt,
+          source_id AS sourceId, file_path AS filePath,
+          indexed_at AS indexedAt
+         FROM knowledge_vault
+         WHERE id = ?`
+      )
+      .get(id) as VaultEntry | undefined;
+    return row ?? null;
+  }
+}
+
+function parseSourceIds(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string") : [];
+  } catch {
+    return [];
   }
 }

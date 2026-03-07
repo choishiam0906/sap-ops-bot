@@ -13,6 +13,7 @@ import { SecureStore } from "./auth/secureStore.js";
 import { PolicyEngine } from "./policy/policyEngine.js";
 import { LlmProvider } from "./providers/base.js";
 import { AuditRepository, MessageRepository, SessionRepository } from "./storage/repositories.js";
+import { SkillSourceRegistry } from "./skills/registry.js";
 
 export class ChatRuntime {
   private readonly providers: Map<ProviderType, LlmProvider>;
@@ -25,7 +26,8 @@ export class ChatRuntime {
     private readonly sessionRepo: SessionRepository,
     private readonly messageRepo: MessageRepository,
     private readonly policyEngine: PolicyEngine,
-    private readonly auditRepo: AuditRepository
+    private readonly auditRepo: AuditRepository,
+    private readonly skillRegistry: SkillSourceRegistry
   ) {
     this.providers = new Map(
       providers.map((provider) => [provider.type, provider])
@@ -48,6 +50,18 @@ export class ChatRuntime {
       dataType: "chat",
     });
 
+    const execution = this.skillRegistry.resolveSkillExecution({
+      skillId: input.skillId,
+      sourceIds: input.sourceIds,
+      context: {
+        securityMode: input.securityMode,
+        domainPack: input.domainPack,
+        dataType: "chat",
+        message: input.message,
+        caseContext: input.caseContext,
+      },
+    });
+
     if (!decision.allowed && !decision.requiresApproval) {
       this.auditRepo.append({
         id: randomUUID(),
@@ -61,6 +75,9 @@ export class ChatRuntime {
         policyDecision: "BLOCKED",
         provider: input.provider,
         model: input.model,
+        skillId: execution.meta.skillUsed,
+        sourceIds: execution.meta.sourceIds,
+        sourceCount: execution.meta.sourceCount,
       });
       throw new Error(decision.reason);
     }
@@ -96,9 +113,10 @@ export class ChatRuntime {
       );
     }
 
+    const message = this.composeMessage(input.message, execution.promptContext);
     const llmResult = await provider.sendMessage(tokenRecord, {
       model: input.model,
-      message: input.message,
+      message,
       history,
     });
 
@@ -123,6 +141,9 @@ export class ChatRuntime {
       policyDecision: decision.requiresApproval ? "PENDING_APPROVAL" : "ALLOWED",
       provider: input.provider,
       model: input.model,
+      skillId: execution.meta.skillUsed,
+      sourceIds: execution.meta.sourceIds,
+      sourceCount: execution.meta.sourceCount,
     });
 
     this.sessionRepo.touch(session.id);
@@ -130,6 +151,7 @@ export class ChatRuntime {
       session: this.sessionRepo.getById(session.id) ?? session,
       userMessage,
       assistantMessage,
+      meta: execution.meta,
     };
   }
 
@@ -243,5 +265,14 @@ export class ChatRuntime {
     return normalized.length > 30
       ? `${normalized.slice(0, 30)}...`
       : normalized;
+  }
+
+  private composeMessage(message: string, promptContext: string[]): string {
+    const sections = [
+      ...promptContext,
+      "[사용자 요청]",
+      message,
+    ].filter(Boolean);
+    return sections.join("\n\n");
   }
 }
