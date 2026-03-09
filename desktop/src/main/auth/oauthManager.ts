@@ -137,7 +137,7 @@ export class OAuthManager {
   // ── OAuth 메서드 ──
 
   async getOAuthAvailability(): Promise<OAuthAvailability[]> {
-    const providers: ProviderType[] = ["openai", "anthropic", "google", "copilot"];
+    const providers: ProviderType[] = ["openai", "anthropic", "google"];
     return providers.map((provider) => ({
       provider,
       available: getOAuthConfig(provider, this.config) !== null,
@@ -162,8 +162,13 @@ export class OAuthManager {
 
     if (oauthConfig.useCallbackServer) {
       // 콜백 서버 흐름 (OpenAI, Google)
-      callbackServer = await createCallbackServer();
-      redirectUri = `${callbackServer.url}/callback`;
+      const cbPath = oauthConfig.callbackPath ?? "/callback";
+      callbackServer = await createCallbackServer({
+        port: oauthConfig.callbackPort,
+        host: oauthConfig.callbackHost,
+        callbackPath: cbPath,
+      });
+      redirectUri = `${callbackServer.url}${cbPath}`;
     } else {
       // 수동 코드 입력 흐름 (Anthropic)
       redirectUri = oauthConfig.redirectUri!;
@@ -177,9 +182,12 @@ export class OAuthManager {
       code_challenge_method: "S256",
       state,
       scope: oauthConfig.scopes.join(" "),
+      ...oauthConfig.extraAuthParams,
     });
 
     const authUrl = `${oauthConfig.authorizationUrl}?${params.toString()}`;
+
+    console.log(`[OAuth] ${provider} 인증 URL:`, authUrl);
 
     this.pendingOAuth.set(provider, {
       provider,
@@ -344,16 +352,6 @@ export class OAuthManager {
       id_token?: string;
     };
 
-    const expiresAt = tokenData.expires_in
-      ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
-      : undefined;
-
-    await this.secureStore.set(provider, {
-      accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      expiresAt,
-    });
-
     // 이메일 힌트 추출 (id_token이 있으면 JWT payload에서)
     let accountHint: string | null = null;
     if (tokenData.id_token) {
@@ -365,6 +363,33 @@ export class OAuthManager {
       } catch {
         // id_token 파싱 실패 시 무시
       }
+    }
+
+    // OpenAI Codex: id_token → API Key 변환 (RFC 8693 Token Exchange)
+    if (oauthConfig.requiresTokenExchange && tokenData.id_token) {
+      console.log(`[OAuth] ${provider} id_token → API Key 변환 시작`);
+      const apiKey = await this.exchangeIdTokenForApiKey(
+        oauthConfig,
+        tokenData.id_token
+      );
+
+      await this.secureStore.set(provider, {
+        accessToken: apiKey,
+        refreshToken: tokenData.refresh_token,
+        // API Key는 만료되지 않음 (refresh_token으로 갱신)
+      });
+
+      console.log(`[OAuth] ${provider} API Key 변환 완료`);
+    } else {
+      const expiresAt = tokenData.expires_in
+        ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+        : undefined;
+
+      await this.secureStore.set(provider, {
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt,
+      });
     }
 
     this.cleanupPending(provider);
@@ -439,6 +464,60 @@ export class OAuthManager {
       refreshToken: data.refresh_token ?? record.refreshToken,
       expiresAt,
     });
+
+    return data.access_token;
+  }
+
+  // ── RFC 8693 Token Exchange (id_token → API Key) ──
+
+  /**
+   * OpenAI Codex: id_token을 API Key로 변환.
+   * Craft Agents OSS와 동일한 RFC 8693 Token Exchange 방식.
+   */
+  private async exchangeIdTokenForApiKey(
+    oauthConfig: import("./oauthProviders.js").OAuthProviderConfig,
+    idToken: string
+  ): Promise<string> {
+    const exchangeBody = new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+      subject_token: idToken,
+      subject_token_type: "urn:ietf:params:oauth:token-type:id_token",
+      client_id: oauthConfig.clientId,
+    });
+
+    console.log(`[OAuth] Token Exchange 요청:`, {
+      url: oauthConfig.tokenUrl,
+      grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+      subject_token_type: "urn:ietf:params:oauth:token-type:id_token",
+    });
+
+    const res = await fetch(oauthConfig.tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: exchangeBody.toString(),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[OAuth] Token Exchange 실패:`, {
+        status: res.status,
+        body: errText,
+      });
+      throw new Error(
+        `API Key 변환 실패 (${res.status}): ${errText}`
+      );
+    }
+
+    const data = (await res.json()) as {
+      access_token: string;
+      token_type?: string;
+    };
+
+    if (!data.access_token) {
+      throw new Error("Token Exchange 응답에 access_token이 없어요.");
+    }
 
     return data.access_token;
   }

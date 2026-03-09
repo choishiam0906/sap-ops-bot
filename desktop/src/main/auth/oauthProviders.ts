@@ -11,6 +11,16 @@ export interface OAuthProviderConfig {
   useCallbackServer: boolean;
   /** 수동 코드 입력 시 사용할 고정 redirect URI */
   redirectUri?: string;
+  /** 콜백 서버 고정 포트 (OAuth 앱에 등록된 redirect URI와 일치해야 함) */
+  callbackPort?: number;
+  /** 콜백 서버 호스트 (기본: "127.0.0.1", OpenAI 등은 "localhost" 필요) */
+  callbackHost?: string;
+  /** 콜백 경로 (기본: "/callback", OpenAI는 "/auth/callback") */
+  callbackPath?: string;
+  /** 추가 authorization 쿼리 파라미터 (audience 등) */
+  extraAuthParams?: Record<string, string>;
+  /** OAuth 후 id_token → API Key 변환이 필요한 provider (OpenAI Codex) */
+  requiresTokenExchange?: boolean;
 }
 
 export function getOAuthConfig(
@@ -22,12 +32,19 @@ export function getOAuthConfig(
       const clientId = config.oauthOpenaiClientId;
       if (!clientId) return null;
       return {
-        authorizationUrl: "https://auth.openai.com/authorize",
+        authorizationUrl: "https://auth.openai.com/oauth/authorize",
         tokenUrl: "https://auth.openai.com/oauth/token",
         clientId,
         scopes: ["openid", "profile", "email", "offline_access"],
         tokenContentType: "form",
         useCallbackServer: true,
+        callbackPort: 1455,
+        callbackHost: "localhost",
+        callbackPath: "/auth/callback",
+        extraAuthParams: {
+          audience: "https://api.openai.com/v1",
+        },
+        requiresTokenExchange: true,
       };
     }
     case "anthropic": {
@@ -56,18 +73,6 @@ export function getOAuthConfig(
           "https://www.googleapis.com/auth/userinfo.profile",
         ],
         tokenContentType: "form",
-        useCallbackServer: true,
-      };
-    }
-    case "copilot": {
-      const clientId = config.oauthCopilotClientId;
-      if (!clientId) return null;
-      return {
-        authorizationUrl: "https://github.com/login/oauth/authorize",
-        tokenUrl: "https://github.com/login/oauth/access_token",
-        clientId,
-        scopes: ["copilot", "read:user"],
-        tokenContentType: "json",
         useCallbackServer: true,
       };
     }

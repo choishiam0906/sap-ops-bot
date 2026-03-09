@@ -23,14 +23,25 @@ const SUCCESS_HTML = `<!DOCTYPE html>
 h1{font-size:24px;margin:0 0 8px}p{color:#666;margin:0}</style>
 </head><body><div class="card"><h1>인증 완료!</h1><p>이 창을 닫고 앱으로 돌아가세요.</p></div></body></html>`;
 
-async function tryListen(server: Server, port: number): Promise<boolean> {
+async function tryListen(server: Server, port: number, host = "127.0.0.1"): Promise<boolean> {
   return new Promise((resolve) => {
     server.once("error", () => resolve(false));
-    server.listen(port, "127.0.0.1", () => resolve(true));
+    server.listen(port, host, () => resolve(true));
   });
 }
 
-export async function createCallbackServer(): Promise<CallbackServer> {
+export interface CallbackServerOptions {
+  /** 고정 포트 (지정 시 해당 포트만 시도) */
+  port?: number;
+  /** 호스트 (기본: "127.0.0.1") */
+  host?: string;
+  /** 콜백 경로 (기본: "/callback", OpenAI는 "/auth/callback") */
+  callbackPath?: string;
+}
+
+export async function createCallbackServer(
+  options?: CallbackServerOptions
+): Promise<CallbackServer> {
   let settled = false;
   let resolveCallback: (result: CallbackResult) => void;
   let rejectCallback: (err: Error) => void;
@@ -40,6 +51,8 @@ export async function createCallbackServer(): Promise<CallbackServer> {
     rejectCallback = reject;
   });
 
+  const expectedPath = options?.callbackPath ?? "/callback";
+
   const server = createServer((req, res) => {
     if (!req.url || settled) {
       res.writeHead(404);
@@ -48,7 +61,7 @@ export async function createCallbackServer(): Promise<CallbackServer> {
     }
 
     const parsed = new URL(req.url, `http://127.0.0.1`);
-    if (parsed.pathname !== "/callback") {
+    if (parsed.pathname !== expectedPath) {
       res.writeHead(404);
       res.end();
       return;
@@ -95,22 +108,35 @@ export async function createCallbackServer(): Promise<CallbackServer> {
     server.close();
   }
 
-  // 포트 바인딩 시도 (PORT_MIN ~ PORT_MAX)
+  const host = options?.host ?? "127.0.0.1";
+
+  // 포트 바인딩 시도
   let boundPort = 0;
-  for (let port = PORT_MIN; port <= PORT_MAX; port++) {
-    if (await tryListen(server, port)) {
-      boundPort = port;
-      break;
+  if (options?.port) {
+    // 고정 포트 지정 시 해당 포트만 시도
+    if (await tryListen(server, options.port, host)) {
+      boundPort = options.port;
+    }
+    if (boundPort === 0) {
+      clearTimeout(timer);
+      throw new Error(`포트 ${options.port}을(를) 사용할 수 없어요. 다른 프로세스가 사용 중일 수 있습니다.`);
+    }
+  } else {
+    // 범위 내 포트 자동 탐색
+    for (let port = PORT_MIN; port <= PORT_MAX; port++) {
+      if (await tryListen(server, port, host)) {
+        boundPort = port;
+        break;
+      }
+    }
+    if (boundPort === 0) {
+      clearTimeout(timer);
+      throw new Error(`포트 ${PORT_MIN}~${PORT_MAX} 범위에서 사용 가능한 포트를 찾지 못했어요.`);
     }
   }
 
-  if (boundPort === 0) {
-    clearTimeout(timer);
-    throw new Error(`포트 ${PORT_MIN}~${PORT_MAX} 범위에서 사용 가능한 포트를 찾지 못했어요.`);
-  }
-
   return {
-    url: `http://127.0.0.1:${boundPort}`,
+    url: `http://${host}:${boundPort}`,
     promise,
     close: () => {
       if (!settled) {

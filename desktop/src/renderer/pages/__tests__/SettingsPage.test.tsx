@@ -101,7 +101,6 @@ describe('SettingsPage', () => {
     // Craft-style 연결 방법 카드
     expect(screen.getByText('Claude Pro / Max')).toBeInTheDocument()
     expect(screen.getByText('Codex · ChatGPT Plus')).toBeInTheDocument()
-    expect(screen.getByText('GitHub Copilot')).toBeInTheDocument()
     expect(screen.getByText('API Key로 연결')).toBeInTheDocument()
     expect(screen.getByText('Local model')).toBeInTheDocument()
   })

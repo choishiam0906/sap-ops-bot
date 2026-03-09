@@ -70,17 +70,9 @@ const CONNECTION_METHODS: ConnectionMethod[] = [
     authFlow: 'subscription',
   },
   {
-    id: 'copilot',
-    title: 'GitHub Copilot',
-    description: 'GitHub Copilot 구독을 사용해요.',
-    icon: <ProviderIcon provider="copilot" size={22} />,
-    provider: 'copilot',
-    authFlow: 'subscription',
-  },
-  {
     id: 'api-key',
     title: 'API Key로 연결',
-    description: 'Anthropic, OpenRouter, Google 또는 호환 provider.',
+    description: 'Copilot, OpenRouter, Google 또는 호환 provider.',
     icon: <KeyRound size={22} />,
     authFlow: 'api-key-select',
   },
@@ -99,6 +91,7 @@ const API_KEY_PROVIDERS: { type: ProviderType; name: string; placeholder: string
   { type: 'anthropic', name: 'Anthropic', placeholder: 'sk-ant-...', desc: 'Claude Sonnet, Opus, Haiku' },
   { type: 'openai', name: 'OpenAI', placeholder: 'sk-...', desc: 'GPT-4.1, GPT-4o, o4-mini' },
   { type: 'google', name: 'Google Gemini', placeholder: 'AIza...', desc: 'Gemini 2.5 Flash, Pro' },
+  { type: 'copilot', name: 'GitHub Copilot', placeholder: 'ghu_...', desc: 'GPT-4o, Claude, Gemini' },
   { type: 'openrouter', name: 'OpenRouter', placeholder: 'sk-or-...', desc: '100+ 모델, 통합 API' },
 ]
 
