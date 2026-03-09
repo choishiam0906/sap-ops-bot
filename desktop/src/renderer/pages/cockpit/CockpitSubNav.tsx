@@ -1,42 +1,49 @@
-import { LayoutDashboard, Clock, AlertTriangle, CalendarDays, AlertCircle } from 'lucide-react'
+import { LayoutList, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useAppShellStore } from '../../stores/appShellStore.js'
-import type { CockpitSubPage } from '../../stores/appShellStore.js'
+import { useCockpitStore } from '../../stores/cockpitStore'
+import type { PlanFilter } from '../../stores/cockpitStore'
+import { useClosingStats } from '../../hooks/useClosingPlans'
 
-interface QueueItem {
-  id: CockpitSubPage
+interface FilterItem {
+  id: PlanFilter
   label: string
   Icon: LucideIcon
+  countKey?: keyof NonNullable<ReturnType<typeof useClosingStats>['data']>
 }
 
-const QUEUE_ITEMS: QueueItem[] = [
-  { id: 'overview', label: 'Overview', Icon: LayoutDashboard },
-  { id: 'pending', label: '승인 대기', Icon: Clock },
-  { id: 'high-risk', label: '고위험 분석', Icon: AlertTriangle },
-  { id: 'today', label: '오늘 작업', Icon: CalendarDays },
-  { id: 'issues', label: '최근 이슈', Icon: AlertCircle },
+const FILTER_ITEMS: FilterItem[] = [
+  { id: 'all', label: '전체 Plan', Icon: LayoutList, countKey: 'totalPlans' },
+  { id: 'in-progress', label: '진행 중', Icon: Loader2, countKey: 'inProgressPlans' },
+  { id: 'completed', label: '완료', Icon: CheckCircle2, countKey: 'completedPlans' },
+  { id: 'delayed', label: '지연', Icon: AlertTriangle, countKey: 'delayedPlans' },
 ]
 
 export function CockpitSubNav() {
-  const subPage = useAppShellStore((state) => state.subPage) as CockpitSubPage | null
-  const setSubPage = useAppShellStore((state) => state.setSubPage)
-  const activeQueue = subPage ?? 'overview'
+  const { filter, setFilter } = useCockpitStore()
+  const { data: stats } = useClosingStats()
 
   return (
-    <aside className="cockpit-q-subnav">
-      <nav aria-label="Cockpit 큐 내비게이션">
-        {QUEUE_ITEMS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            className={`cockpit-q-subnav-item ${activeQueue === id ? 'active' : ''}`}
-            onClick={() => setSubPage(id)}
-            aria-current={activeQueue === id ? 'page' : undefined}
-          >
-            <Icon size={16} aria-hidden="true" />
-            <span>{label}</span>
-          </button>
-        ))}
+    <aside className="closing-subnav">
+      <div className="closing-subnav-title">마감 관리</div>
+      <nav aria-label="마감 필터 네비게이션">
+        {FILTER_ITEMS.map(({ id, label, Icon, countKey }) => {
+          const count = stats && countKey ? stats[countKey] : undefined
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`closing-subnav-item ${filter === id ? 'active' : ''}`}
+              onClick={() => setFilter(id)}
+              aria-current={filter === id ? 'page' : undefined}
+            >
+              <Icon size={15} aria-hidden="true" />
+              <span>{label}</span>
+              {count !== undefined && count > 0 && (
+                <span className="closing-subnav-badge">{count}</span>
+              )}
+            </button>
+          )
+        })}
       </nav>
     </aside>
   )

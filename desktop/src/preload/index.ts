@@ -11,11 +11,16 @@ import type {
   CboAnalyzeTextInput,
   CboRunDiffInput,
   CboSyncKnowledgeInput,
+  ClosingPlanInput,
+  ClosingPlanUpdate,
+  ClosingStepInput,
+  ClosingStepUpdate,
   ConfiguredSource,
   CockpitStats,
   DomainPack,
   McpResourceInfo,
   McpServerConfigInput,
+  PlanStatus,
   PickAndAddLocalFolderSourceInput,
   ProviderType,
   SapLabel,
@@ -179,7 +184,7 @@ const desktopApi = {
     return ipcRenderer.invoke("mcp:syncSource", sourceId);
   },
 
-  // ─── Cockpit API ───
+  // ─── Cockpit: 세션 API (Ask SAP 등에서 사용) ───
 
   listSessionsFiltered(filter: SessionFilter, limit = 50): Promise<ChatSessionMeta[]> {
     return ipcRenderer.invoke("sessions:listFiltered", filter, limit);
@@ -201,6 +206,48 @@ const desktopApi = {
   },
   getSessionStats(): Promise<CockpitStats> {
     return ipcRenderer.invoke("sessions:stats");
+  },
+
+  // ─── Closing (마감 관리) API ───
+
+  listPlans(limit?: number) {
+    return ipcRenderer.invoke("cockpit:plans:list", limit);
+  },
+  getPlan(planId: string) {
+    return ipcRenderer.invoke("cockpit:plans:get", planId);
+  },
+  createPlan(input: ClosingPlanInput) {
+    return ipcRenderer.invoke("cockpit:plans:create", input);
+  },
+  updatePlan(planId: string, update: ClosingPlanUpdate) {
+    return ipcRenderer.invoke("cockpit:plans:update", { planId, update });
+  },
+  deletePlan(planId: string) {
+    return ipcRenderer.invoke("cockpit:plans:delete", planId);
+  },
+  listPlansByStatus(status: PlanStatus) {
+    return ipcRenderer.invoke("cockpit:plans:listByStatus", status);
+  },
+  listOverduePlans() {
+    return ipcRenderer.invoke("cockpit:plans:listOverdue");
+  },
+  listSteps(planId: string) {
+    return ipcRenderer.invoke("cockpit:steps:list", planId);
+  },
+  createStep(input: ClosingStepInput) {
+    return ipcRenderer.invoke("cockpit:steps:create", input);
+  },
+  updateStep(stepId: string, update: ClosingStepUpdate) {
+    return ipcRenderer.invoke("cockpit:steps:update", { stepId, update });
+  },
+  deleteStep(stepId: string) {
+    return ipcRenderer.invoke("cockpit:steps:delete", stepId);
+  },
+  reorderSteps(planId: string, stepIds: string[]) {
+    return ipcRenderer.invoke("cockpit:steps:reorder", { planId, stepIds });
+  },
+  getClosingStats() {
+    return ipcRenderer.invoke("cockpit:stats");
   },
 };
 

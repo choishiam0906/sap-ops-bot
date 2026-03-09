@@ -8,6 +8,8 @@ import type { LocalFolderSourceLibrary } from "../sources/localFolderLibrary.js"
 import type { McpConnector } from "../sources/mcpConnector.js";
 import type {
   AuditRepository,
+  ClosingPlanRepository,
+  ClosingStepRepository,
   ConfiguredSourceRepository,
   SessionRepository,
   SourceDocumentRepository,
@@ -27,5 +29,7 @@ export interface IpcContext {
   sourceDocumentRepo: SourceDocumentRepository;
   localFolderLibrary: LocalFolderSourceLibrary;
   mcpConnector: McpConnector;
+  closingPlanRepo: ClosingPlanRepository;
+  closingStepRepo: ClosingStepRepository;
   getMainWindow: () => BrowserWindow | null;
 }

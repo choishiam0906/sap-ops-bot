@@ -19,6 +19,8 @@ import { PolicyEngine } from "./policy/policyEngine.js";
 import {
   AuditRepository,
   CboAnalysisRepository,
+  ClosingPlanRepository,
+  ClosingStepRepository,
   ConfiguredSourceRepository,
   MessageRepository,
   ProviderAccountRepository,
@@ -62,6 +64,8 @@ function initRuntime(): void {
   const policyEngine = new PolicyEngine();
   const auditRepo = new AuditRepository(db);
   const vaultRepo = new VaultRepository(db);
+  const closingPlanRepo = new ClosingPlanRepository(db);
+  const closingStepRepo = new ClosingStepRepository(db);
   const localFolderLibrary = new LocalFolderSourceLibrary(configuredSourceRepo, sourceDocumentRepo);
   const mcpConnector = new McpConnector(configuredSourceRepo, sourceDocumentRepo);
 
@@ -99,6 +103,8 @@ function initRuntime(): void {
     sourceDocumentRepo,
     localFolderLibrary,
     mcpConnector,
+    closingPlanRepo,
+    closingStepRepo,
     getMainWindow: () => mainWindow,
   };
 }

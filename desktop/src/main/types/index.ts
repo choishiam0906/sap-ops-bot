@@ -6,3 +6,4 @@ export * from './vault.js';
 export * from './session.js';
 export * from './source.js';
 export * from './cbo.js';
+export * from './closing.js';

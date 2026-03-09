@@ -233,6 +233,42 @@ export class LocalDatabase {
     } catch {
       // 이미 존재하면 무시
     }
+
+    // ─── Closing (마감 관리) 테이블 ───
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS closing_plans (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        type TEXT NOT NULL,
+        target_date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'in-progress',
+        progress_percent INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS closing_steps (
+        id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        assignee TEXT,
+        module TEXT,
+        deadline TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        sort_order INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (plan_id) REFERENCES closing_plans(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_closing_plans_target_date ON closing_plans(target_date);
+      CREATE INDEX IF NOT EXISTS idx_closing_plans_status ON closing_plans(status);
+      CREATE INDEX IF NOT EXISTS idx_closing_steps_plan_id ON closing_steps(plan_id);
+      CREATE INDEX IF NOT EXISTS idx_closing_steps_deadline ON closing_steps(deadline);
+      CREATE INDEX IF NOT EXISTS idx_closing_steps_plan_order ON closing_steps(plan_id, sort_order);
+    `);
   }
 
   prepare(sql: string): Database.Statement {

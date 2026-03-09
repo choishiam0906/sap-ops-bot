@@ -4,6 +4,7 @@ import { create } from 'zustand'
 
 export type AppSection = 'cockpit' | 'ask-sap' | 'cbo' | 'knowledge' | 'settings'
 
+/** @deprecated Cockpit이 마감 관리 대시보드로 교체됨 — 필터는 cockpitStore에서 관리 */
 export type CockpitSubPage = 'overview' | 'pending' | 'high-risk' | 'today' | 'issues'
 export type AskSapSubPage = 'all' | 'flagged' | 'cases' | 'archive'
 export type CboSubPage = 'new' | 'history' | 'batch' | 'diff'
@@ -51,7 +52,7 @@ function sectionToPage(section: AppSection): AppPage {
 
 export const useAppShellStore = create<AppShellState>((set) => ({
   currentSection: 'cockpit',
-  subPage: 'overview',
+  subPage: null,
   sidebarCollapsed: false,
 
   setSection: (currentSection, subPage) =>
