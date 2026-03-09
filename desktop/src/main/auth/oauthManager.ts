@@ -16,6 +16,12 @@ import {
   type CallbackServer,
 } from "./callbackServer.js";
 import { getOAuthConfig } from "./oauthProviders.js";
+import {
+  initiateDeviceCode as ghInitiateDeviceCode,
+  pollDeviceCode as ghPollDeviceCode,
+  cancelDeviceCode as ghCancelDeviceCode,
+  type DeviceCodeInitResult,
+} from "./githubDeviceCode.js";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -276,6 +282,47 @@ export class OAuthManager {
       pending.callbackServer?.close();
       this.pendingOAuth.delete(provider);
     }
+  }
+
+  // ── GitHub Device Code (Copilot) ──
+
+  async initiateDeviceCode(): Promise<DeviceCodeInitResult> {
+    return ghInitiateDeviceCode(this.config);
+  }
+
+  async pollDeviceCode(): Promise<ProviderAccount> {
+    const accessToken = await ghPollDeviceCode();
+
+    // GitHub 사용자 정보로 accountHint 추출
+    let accountHint: string | null = null;
+    try {
+      const userRes = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      });
+      if (userRes.ok) {
+        const user = (await userRes.json()) as { login?: string; email?: string };
+        accountHint = user.login ?? user.email ?? null;
+      }
+    } catch {
+      // 사용자 정보 가져오기 실패 시 무시
+    }
+
+    await this.secureStore.set("copilot", { accessToken });
+
+    return this.saveStatus({
+      provider: "copilot",
+      status: "authenticated",
+      accountHint,
+      authType: "oauth",
+      updatedAt: nowIso(),
+    });
+  }
+
+  cancelDeviceCode(): void {
+    ghCancelDeviceCode();
   }
 
   // ── 토큰 교환 (공통) ──

@@ -34,4 +34,17 @@ export function registerAuthHandlers(ctx: IpcContext): void {
   ipcMain.handle("auth:submitOAuthCode", async (_event, provider: ProviderType, code: string) => {
     return ctx.oauthManager.submitOAuthCode(provider, code);
   });
+
+  // GitHub Device Code (Copilot)
+  ipcMain.handle("auth:initiateDeviceCode", async () => {
+    return ctx.oauthManager.initiateDeviceCode();
+  });
+
+  ipcMain.handle("auth:pollDeviceCode", async () => {
+    return ctx.oauthManager.pollDeviceCode();
+  });
+
+  ipcMain.handle("auth:cancelDeviceCode", async () => {
+    ctx.oauthManager.cancelDeviceCode();
+  });
 }

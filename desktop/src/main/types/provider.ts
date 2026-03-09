@@ -90,6 +90,13 @@ export interface SetApiKeyInput {
   apiKey: string;
 }
 
+export interface DeviceCodeInitResult {
+  userCode: string;
+  verificationUri: string;
+  expiresIn: number;
+  interval: number;
+}
+
 export interface SubmitFeedbackInput {
   messageId: string;
   rating: "positive" | "negative";

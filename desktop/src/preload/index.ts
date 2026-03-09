@@ -17,6 +17,7 @@ import type {
   ClosingStepUpdate,
   ConfiguredSource,
   CockpitStats,
+  DeviceCodeInitResult,
   DomainPack,
   McpResourceInfo,
   McpServerConfigInput,
@@ -66,6 +67,16 @@ const desktopApi = {
   },
   submitOAuthCode(provider: ProviderType, code: string): Promise<ProviderAccount> {
     return ipcRenderer.invoke("auth:submitOAuthCode", provider, code);
+  },
+  // GitHub Device Code (Copilot)
+  initiateDeviceCode(): Promise<DeviceCodeInitResult> {
+    return ipcRenderer.invoke("auth:initiateDeviceCode");
+  },
+  pollDeviceCode(): Promise<ProviderAccount> {
+    return ipcRenderer.invoke("auth:pollDeviceCode");
+  },
+  cancelDeviceCode(): Promise<void> {
+    return ipcRenderer.invoke("auth:cancelDeviceCode");
   },
   sendMessage(input: SendMessageInput) {
     return ipcRenderer.invoke("chat:send", input);

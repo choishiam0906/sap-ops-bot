@@ -269,6 +269,21 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
     authType: 'oauth',
     updatedAt: new Date().toISOString(),
   }),
+  // GitHub Device Code (Copilot)
+  initiateDeviceCode: vi.fn().mockResolvedValue({
+    userCode: 'ABCD-1234',
+    verificationUri: 'https://github.com/login/device',
+    expiresIn: 900,
+    interval: 5,
+  }),
+  pollDeviceCode: vi.fn().mockResolvedValue({
+    provider: 'copilot',
+    status: 'authenticated',
+    accountHint: 'github-user',
+    authType: 'oauth',
+    updatedAt: new Date().toISOString(),
+  }),
+  cancelDeviceCode: vi.fn().mockResolvedValue(undefined),
 }
 
 Object.defineProperty(window, 'sapOpsDesktop', {

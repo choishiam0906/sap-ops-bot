@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   KeyRound, AlertCircle, Eye, EyeOff, CheckCircle,
-  Sparkles, Plus, X, Globe, Monitor,
+  Sparkles, Plus, X, Globe, Monitor, Github, Copy,
 } from 'lucide-react'
 import type {
   ProviderType, AuthStatus, SecurityMode, DomainPack,
@@ -31,6 +31,7 @@ type SetupStep =
   | 'authMethod'         // OAuth/API Key 선택 (구독 방식에서 OAuth 불가 시)
   | 'oauthWaiting'       // OAuth 브라우저 대기
   | 'oauthCodeEntry'     // OAuth 코드 입력
+  | 'deviceCodeWaiting'  // GitHub Device Code 대기
   | 'ollamaSetup'        // Ollama 로컬 설정
 
 type SetupMode = 'add' | 'edit'
@@ -49,7 +50,7 @@ interface ConnectionMethod {
   description: string
   icon: React.ReactNode
   provider?: ProviderType         // 구독 기반은 바로 provider 지정
-  authFlow: 'subscription' | 'api-key-select' | 'local'
+  authFlow: 'subscription' | 'api-key-select' | 'local' | 'device-code'
 }
 
 const CONNECTION_METHODS: ConnectionMethod[] = [
@@ -70,9 +71,17 @@ const CONNECTION_METHODS: ConnectionMethod[] = [
     authFlow: 'subscription',
   },
   {
+    id: 'copilot',
+    title: 'GitHub Copilot',
+    description: 'GitHub 계정으로 Copilot을 연결해요.',
+    icon: <Github size={22} />,
+    provider: 'copilot',
+    authFlow: 'device-code',
+  },
+  {
     id: 'api-key',
     title: 'API Key로 연결',
-    description: 'Copilot, OpenRouter, Google 또는 호환 provider.',
+    description: 'OpenRouter, Google 또는 호환 provider.',
     icon: <KeyRound size={22} />,
     authFlow: 'api-key-select',
   },
@@ -205,6 +214,10 @@ export function SettingsAiSection() {
   const [oauthAvailability, setOauthAvailability] = useState<Record<string, boolean>>({
     openai: false, anthropic: false, google: false, openrouter: false, ollama: false,
   })
+  // Device Code (GitHub Copilot)
+  const [deviceUserCode, setDeviceUserCode] = useState('')
+  const [deviceVerificationUri, setDeviceVerificationUri] = useState('')
+  const [deviceCodeCopied, setDeviceCodeCopied] = useState(false)
   // Ollama 설정
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434')
 
@@ -273,6 +286,9 @@ export function SettingsAiSection() {
     if (setupProvider && (setupStep === 'oauthWaiting' || setupStep === 'oauthCodeEntry')) {
       api.cancelOAuth(setupProvider)
     }
+    if (setupStep === 'deviceCodeWaiting') {
+      api.cancelDeviceCode()
+    }
     setShowSetup(false)
     setSetupProvider(null)
     setSetupStep('connectionMethod')
@@ -282,6 +298,9 @@ export function SettingsAiSection() {
     setSetupSuccess(false)
     setSetupAuthMethod(null)
     setOauthAuthCode('')
+    setDeviceUserCode('')
+    setDeviceVerificationUri('')
+    setDeviceCodeCopied(false)
   }
 
   // Craft-style: 연결 방법 선택
@@ -296,6 +315,9 @@ export function SettingsAiSection() {
         // OAuth 불가 → auth method 선택 화면 (API Key / OAuth 준비 중)
         setSetupStep('authMethod')
       }
+    } else if (method.authFlow === 'device-code' && method.provider) {
+      setSetupProvider(method.provider)
+      startDeviceCodeFlow()
     } else if (method.authFlow === 'api-key-select') {
       setSetupStep('apiKeyProvider')
     } else if (method.authFlow === 'local') {
@@ -341,6 +363,43 @@ export function SettingsAiSection() {
       console.error(`[Settings] ${target} OAuth 실패:`, err)
       setSetupError(`OAuth 인증 실패: ${errorMessage(err)}`)
       setSetupStep('authMethod')
+    }
+  }
+
+  async function startDeviceCodeFlow() {
+    setSetupError('')
+    setDeviceUserCode('')
+    setDeviceVerificationUri('')
+    setDeviceCodeCopied(false)
+    try {
+      const initResult = await api.initiateDeviceCode()
+      setDeviceUserCode(initResult.userCode)
+      setDeviceVerificationUri(initResult.verificationUri)
+      setSetupStep('deviceCodeWaiting')
+
+      // 브라우저 자동 열기
+      window.open(initResult.verificationUri, '_blank')
+
+      // polling 시작
+      const result = await api.pollDeviceCode()
+      handleOAuthSuccess(result)
+    } catch (err) {
+      console.error('[Settings] GitHub Device Code 실패:', err)
+      setSetupError(`GitHub 인증 실패: ${errorMessage(err)}`)
+      if (setupStep === 'deviceCodeWaiting') {
+        // 에러 상태로 유지하되 다시 시도 가능
+      }
+    }
+  }
+
+  async function copyDeviceCode() {
+    if (!deviceUserCode) return
+    try {
+      await navigator.clipboard.writeText(deviceUserCode)
+      setDeviceCodeCopied(true)
+      setTimeout(() => setDeviceCodeCopied(false), 2000)
+    } catch {
+      // clipboard API 실패 시 무시
     }
   }
 
@@ -880,7 +939,96 @@ export function SettingsAiSection() {
             </div>
           )}
 
-          {/* ⑤ OAuth 코드 입력 */}
+          {/* ⑤ Device Code 대기 (GitHub Copilot) */}
+          {setupStep === 'deviceCodeWaiting' && (
+            <div className="setup-wizard">
+              {setupSuccess ? (
+                <>
+                  <div className="setup-wizard-icon setup-success-icons">
+                    <CheckCircle size={40} className="setup-wizard-icon-success" />
+                    <ProviderIcon provider="copilot" size={24} className="setup-success-provider" />
+                  </div>
+                  <h2 className="setup-wizard-title">연결 완료!</h2>
+                  <p className="setup-wizard-desc">GitHub Copilot에 성공적으로 연결되었어요.</p>
+                </>
+              ) : (
+                <>
+                  <div className="setup-wizard-icon">
+                    <Github size={40} className="setup-wizard-icon-svg" />
+                  </div>
+                  <h2 className="setup-wizard-title">GitHub에서 인증하기</h2>
+                  <p className="setup-wizard-desc">
+                    브라우저에서 아래 코드를 입력해주세요
+                  </p>
+
+                  <div className="setup-wizard-content">
+                    {deviceUserCode && (
+                      <div className="device-code-display">
+                        <code className="device-code-value">{deviceUserCode}</code>
+                        <button
+                          type="button"
+                          className="device-code-copy-btn"
+                          onClick={copyDeviceCode}
+                          aria-label="코드 복사"
+                        >
+                          {deviceCodeCopied ? <CheckCircle size={16} /> : <Copy size={16} />}
+                          <span>{deviceCodeCopied ? '복사됨' : '복사'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="device-code-hint">
+                      <a
+                        href={deviceVerificationUri || 'https://github.com/login/device'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="device-code-link"
+                      >
+                        {deviceVerificationUri || 'github.com/login/device'}
+                      </a>
+                      에서 코드를 입력하면 자동으로 연결돼요.
+                    </p>
+
+                    <div className="device-code-waiting-indicator">
+                      <div className="oauth-waiting-spinner" />
+                      <span>인증 대기 중...</span>
+                    </div>
+
+                    {setupError && (
+                      <div className="provider-error" role="alert" style={{ marginTop: '12px' }}>
+                        <AlertCircle size={14} aria-hidden="true" />
+                        <span>{setupError}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="setup-wizard-actions">
+                    <button
+                      className="wizard-back-btn"
+                      onClick={() => {
+                        api.cancelDeviceCode()
+                        setSetupStep('connectionMethod')
+                        setSetupError('')
+                      }}
+                      type="button"
+                    >
+                      취소
+                    </button>
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={() => window.open(deviceVerificationUri || 'https://github.com/login/device', '_blank')}
+                      className="wizard-connect-btn"
+                    >
+                      브라우저 열기
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ⑥ OAuth 코드 입력 */}
           {setupStep === 'oauthCodeEntry' && setupProvider && (
             <div className="setup-wizard">
               {setupSuccess ? (

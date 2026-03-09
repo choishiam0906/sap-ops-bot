@@ -24,7 +24,8 @@ interface AppConfig {
   oauthOpenaiClientId: string;
   oauthAnthropicClientId: string;
   oauthGoogleClientId: string;
-  // copilot은 OAuth 미지원 (Craft도 동일) — API Key 전용
+  // GitHub Copilot — Device Code OAuth (RFC 8628)
+  githubCopilotClientId: string;
 }
 
 function parseIntSafe(value: string | undefined, fallback: number): number {
@@ -64,6 +65,8 @@ export function loadConfig(): AppConfig {
     oauthAnthropicClientId:
       process.env.OAUTH_ANTHROPIC_CLIENT_ID ?? "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
     oauthGoogleClientId: process.env.OAUTH_GOOGLE_CLIENT_ID ?? "",
+    githubCopilotClientId:
+      process.env.GITHUB_COPILOT_CLIENT_ID ?? "Iv1.b507a08c87ecfe98",
   };
 }
 
