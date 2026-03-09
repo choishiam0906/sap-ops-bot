@@ -59,6 +59,18 @@ export function getOAuthConfig(
         useCallbackServer: true,
       };
     }
+    case "copilot": {
+      const clientId = config.oauthCopilotClientId;
+      if (!clientId) return null;
+      return {
+        authorizationUrl: "https://github.com/login/oauth/authorize",
+        tokenUrl: "https://github.com/login/oauth/access_token",
+        clientId,
+        scopes: ["copilot", "read:user"],
+        tokenContentType: "json",
+        useCallbackServer: true,
+      };
+    }
     default:
       return null;
   }

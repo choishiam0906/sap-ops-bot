@@ -346,6 +346,9 @@ export function ChatPage() {
           provider={provider}
           model={model}
           sending={sendMutation.isPending}
+          selectedSources={availableSources
+            .filter((s) => selectedSourceIds.includes(s.id))
+            .map((s) => ({ id: s.id, title: s.title }))}
           onInputChange={setInput}
           onProviderChange={setProvider}
           onModelChange={setModel}
@@ -353,6 +356,7 @@ export function ChatPage() {
             ? `${selectedSkill.title}: ${selectedSkill.description}`
             : `${packDetail.inputPlaceholder} (${modeDetail.placeholderHint})`}
           onSend={handleSend}
+          onRemoveSource={toggleSourceId}
         />
       </div>
     </div>

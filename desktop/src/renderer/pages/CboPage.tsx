@@ -11,6 +11,7 @@ import { DiffPanel } from '../components/cbo/DiffPanel.js'
 import { Button } from '../components/ui/Button.js'
 import { SkeletonText } from '../components/ui/Skeleton.js'
 import { useAppShellStore } from '../stores/appShellStore.js'
+import type { CboSubPage } from '../stores/appShellStore.js'
 import { useChatStore } from '../stores/chatStore.js'
 import {
   DOMAIN_PACK_DETAILS,
@@ -23,16 +24,37 @@ const api = window.sapOpsDesktop
 
 type Tab = 'text' | 'file' | 'history'
 
+// subPage → Tab 매핑
+function subPageToTab(subPage: string | null): Tab {
+  switch (subPage as CboSubPage | null) {
+    case 'history': return 'history'
+    case 'batch': return 'file'
+    case 'diff': return 'history'
+    default: return 'text'
+  }
+}
+
 export function CboPage() {
   const store = useCboStore()
   const [librarySearch, setLibrarySearch] = useState('')
   const [loadingDocumentId, setLoadingDocumentId] = useState<string | null>(null)
   const [activeLibrarySourceId, setActiveLibrarySourceId] = useState('')
+  const subPage = useAppShellStore((state) => state.subPage)
+  const setSubPage = useAppShellStore((state) => state.setSubPage)
+
+  // subPage 변경 시 내부 탭도 동기화
+  useEffect(() => {
+    const mappedTab = subPageToTab(subPage)
+    if (store.tab !== mappedTab) {
+      store.setTab(mappedTab)
+    }
+  }, [subPage])
+
   const { data: runs = [], refetch: refetchRuns, error: runsError } = useCboRuns(20, store.tab === 'history')
   const securityMode = useWorkspaceStore((state) => state.securityMode)
   const domainPack = useWorkspaceStore((state) => state.domainPack)
   const applyRecommendedCboWorkspace = useWorkspaceStore((state) => state.applyRecommendedCboWorkspace)
-  const setCurrentPage = useAppShellStore((state) => state.setCurrentPage)
+  const setSection = useAppShellStore((state) => state.setSection)
   const setCurrentSessionId = useChatStore((state) => state.setCurrentSessionId)
   const setChatInput = useChatStore((state) => state.setInput)
   const setChatProvider = useChatStore((state) => state.setProvider)
@@ -105,7 +127,7 @@ export function CboPage() {
       setChatModel(store.model)
     }
     setChatInput(prompt)
-    setCurrentPage('chat')
+    setSection('ask-sap', 'all')
   }
 
   async function loadLibraryDocument(documentId: string) {
@@ -237,7 +259,11 @@ export function CboPage() {
             role="tab"
             className={`cbo-tab ${store.tab === t ? 'active' : ''}`}
             aria-selected={store.tab === t}
-            onClick={() => { store.setTab(t); if (t === 'history') refreshRuns() }}
+            onClick={() => {
+              store.setTab(t)
+              setSubPage(t === 'text' ? 'new' : t === 'file' ? 'batch' : 'history')
+              if (t === 'history') refreshRuns()
+            }}
           >
             {t === 'text' ? '텍스트 분석' : t === 'file' ? '파일·폴더' : '실행 이력'}
           </button>

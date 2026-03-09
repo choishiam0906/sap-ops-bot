@@ -1,0 +1,10 @@
+export type SettingsCategory =
+  | 'app'
+  | 'ai'
+  | 'appearance'
+  | 'input'
+  | 'workspace'
+  | 'permissions'
+  | 'labels'
+  | 'shortcuts'
+  | 'preferences'

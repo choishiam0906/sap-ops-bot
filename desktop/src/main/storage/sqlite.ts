@@ -226,6 +226,13 @@ export class LocalDatabase {
       CREATE INDEX IF NOT EXISTS idx_sessions_cockpit
       ON sessions (is_archived, todo_state, is_flagged, updated_at DESC)
     `);
+
+    // Sources → Chat: 메시지에 소스 참조 저장
+    try {
+      this.db.exec(`ALTER TABLE messages ADD COLUMN source_references_json TEXT DEFAULT '[]'`);
+    } catch {
+      // 이미 존재하면 무시
+    }
   }
 
   prepare(sql: string): Database.Statement {

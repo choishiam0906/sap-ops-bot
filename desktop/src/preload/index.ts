@@ -14,12 +14,15 @@ import type {
   ConfiguredSource,
   CockpitStats,
   DomainPack,
+  McpResourceInfo,
+  McpServerConfigInput,
   PickAndAddLocalFolderSourceInput,
   ProviderType,
   SapLabel,
   SendMessageInput,
   SessionFilter,
   SetApiKeyInput,
+  SourceIndexSummary,
   TodoStateKind,
   VaultClassification,
   OAuthAvailability,
@@ -150,6 +153,30 @@ const desktopApi = {
   },
   listVaultByDomainPack(pack: DomainPack, limit?: number) {
     return ipcRenderer.invoke("vault:listByDomainPack", pack, limit);
+  },
+
+  // ─── MCP API ───
+
+  mcpConnect(config: McpServerConfigInput): Promise<{ connected: boolean; name: string }> {
+    return ipcRenderer.invoke("mcp:connect", config);
+  },
+  mcpDisconnect(serverName: string): Promise<{ disconnected: boolean }> {
+    return ipcRenderer.invoke("mcp:disconnect", serverName);
+  },
+  mcpListServers(): Promise<string[]> {
+    return ipcRenderer.invoke("mcp:listServers");
+  },
+  mcpListResources(serverName: string): Promise<McpResourceInfo[]> {
+    return ipcRenderer.invoke("mcp:listResources", serverName);
+  },
+  mcpAddSource(
+    serverName: string,
+    input: { title?: string; domainPack: DomainPack; classificationDefault: VaultClassification }
+  ): Promise<{ source: ConfiguredSource; summary: SourceIndexSummary }> {
+    return ipcRenderer.invoke("mcp:addSource", serverName, input);
+  },
+  mcpSyncSource(sourceId: string): Promise<{ source: ConfiguredSource | null; summary: SourceIndexSummary }> {
+    return ipcRenderer.invoke("mcp:syncSource", sourceId);
   },
 
   // ─── Cockpit API ───

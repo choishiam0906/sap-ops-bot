@@ -125,7 +125,8 @@ export class ChatRuntime {
       "assistant",
       llmResult.content,
       llmResult.inputTokens,
-      llmResult.outputTokens
+      llmResult.outputTokens,
+      execution.meta.sources
     );
 
     // 3. 성공 후 감사 기록

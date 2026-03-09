@@ -1,12 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
-import { ChatPage } from './pages/ChatPage'
-import { CboPage } from './pages/CboPage'
-import { KnowledgeVaultPage } from './pages/KnowledgeVaultPage'
 import { CockpitPage } from './pages/CockpitPage'
-import { SourcesPage } from './pages/SourcesPage'
-import { SkillsPage } from './pages/SkillsPage'
+import { AskSapPage } from './pages/AskSapPage'
+import { CboPage } from './pages/CboPage'
+import { KnowledgePage } from './pages/KnowledgePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { useAppShellStore } from './stores/appShellStore'
 import './components/ErrorBoundary.css'
@@ -26,23 +24,20 @@ const queryClient = new QueryClient({
 })
 
 export function App() {
-  const currentPage = useAppShellStore((state) => state.currentPage)
-  const setCurrentPage = useAppShellStore((state) => state.setCurrentPage)
+  const currentSection = useAppShellStore((state) => state.currentSection)
 
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <div className="app-layout">
-          <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+          <Sidebar />
           <main className="app-main">
-            <div key={currentPage} className="app-page-shell page-enter">
-              {currentPage === 'chat' && <ChatPage />}
-              {currentPage === 'cbo' && <CboPage />}
-              {currentPage === 'audit' && <CockpitPage />}
-              {currentPage === 'sources' && <SourcesPage />}
-              {currentPage === 'skills' && <SkillsPage />}
-              {currentPage === 'vault' && <KnowledgeVaultPage />}
-              {currentPage === 'settings' && <SettingsPage />}
+            <div key={currentSection} className="app-page-shell page-enter">
+              {currentSection === 'cockpit' && <CockpitPage />}
+              {currentSection === 'ask-sap' && <AskSapPage />}
+              {currentSection === 'cbo' && <CboPage />}
+              {currentSection === 'knowledge' && <KnowledgePage />}
+              {currentSection === 'settings' && <SettingsPage />}
             </div>
           </main>
         </div>

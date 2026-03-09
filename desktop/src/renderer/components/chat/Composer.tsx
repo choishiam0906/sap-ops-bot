@@ -1,7 +1,12 @@
-import { Send } from 'lucide-react'
+import { Send, X } from 'lucide-react'
 import type { ProviderType } from '../../../main/contracts.js'
 import { PROVIDER_LABELS, PROVIDER_MODELS } from '../../../main/contracts.js'
 import { Button } from '../ui/Button.js'
+
+interface SourceChip {
+  id: string
+  title: string
+}
 
 interface ComposerProps {
   input: string
@@ -9,15 +14,19 @@ interface ComposerProps {
   model: string
   placeholder?: string
   sending: boolean
+  selectedSources?: SourceChip[]
   onInputChange: (v: string) => void
   onProviderChange: (v: ProviderType) => void
   onModelChange: (v: string) => void
   onSend: () => void
+  onRemoveSource?: (id: string) => void
 }
 
 export function Composer({
   input, provider, model, placeholder, sending,
+  selectedSources = [],
   onInputChange, onProviderChange, onModelChange, onSend,
+  onRemoveSource,
 }: ComposerProps) {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -50,6 +59,24 @@ export function Composer({
           ))}
         </select>
       </div>
+      {selectedSources.length > 0 && (
+        <div className="composer-source-chips" aria-label="선택된 소스">
+          {selectedSources.map((source) => (
+            <span key={source.id} className="composer-source-chip">
+              {source.title}
+              {onRemoveSource && (
+                <button
+                  className="composer-chip-remove"
+                  onClick={() => onRemoveSource(source.id)}
+                  aria-label={`${source.title} 제거`}
+                >
+                  <X size={12} aria-hidden="true" />
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="chat-input-row">
         <textarea
           value={input}

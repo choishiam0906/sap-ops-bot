@@ -1,0 +1,31 @@
+import type { BrowserWindow } from "electron";
+import type { OAuthManager } from "../auth/oauthManager.js";
+import type { ChatRuntime } from "../chatRuntime.js";
+import type { CboAnalyzer } from "../cbo/analyzer.js";
+import type { CboBatchRuntime } from "../cbo/batchRuntime.js";
+import type { SkillSourceRegistry } from "../skills/registry.js";
+import type { LocalFolderSourceLibrary } from "../sources/localFolderLibrary.js";
+import type { McpConnector } from "../sources/mcpConnector.js";
+import type {
+  AuditRepository,
+  ConfiguredSourceRepository,
+  SessionRepository,
+  SourceDocumentRepository,
+  VaultRepository,
+} from "../storage/repositories.js";
+
+export interface IpcContext {
+  oauthManager: OAuthManager;
+  chatRuntime: ChatRuntime;
+  cboAnalyzer: CboAnalyzer;
+  cboBatchRuntime: CboBatchRuntime;
+  auditRepo: AuditRepository;
+  vaultRepo: VaultRepository;
+  sessionRepo: SessionRepository;
+  skillRegistry: SkillSourceRegistry;
+  configuredSourceRepo: ConfiguredSourceRepository;
+  sourceDocumentRepo: SourceDocumentRepository;
+  localFolderLibrary: LocalFolderSourceLibrary;
+  mcpConnector: McpConnector;
+  getMainWindow: () => BrowserWindow | null;
+}

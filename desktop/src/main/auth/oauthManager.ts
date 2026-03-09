@@ -137,7 +137,7 @@ export class OAuthManager {
   // ── OAuth 메서드 ──
 
   async getOAuthAvailability(): Promise<OAuthAvailability[]> {
-    const providers: ProviderType[] = ["openai", "anthropic", "google"];
+    const providers: ProviderType[] = ["openai", "anthropic", "google", "copilot"];
     return providers.map((provider) => ({
       provider,
       available: getOAuthConfig(provider, this.config) !== null,

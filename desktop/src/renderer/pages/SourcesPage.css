@@ -33,7 +33,7 @@
 
 .sources-tab {
   padding: 8px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--color-border);
   background: var(--color-bg);
   cursor: pointer;
@@ -205,6 +205,99 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
+}
+
+/* 문서 카드 클릭 가능 */
+.source-doc-card--clickable {
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.source-doc-card--clickable:hover {
+  border-color: var(--color-primary);
+}
+
+.source-doc-card--clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.source-doc-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+/* 문서 미리보기 패널 */
+.source-preview {
+  margin-top: 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.source-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-secondary);
+}
+
+.source-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-preview-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+}
+
+.source-preview-close:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.source-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.source-preview-content {
+  margin: 0;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--color-text-secondary);
+}
+
+.mcp-spinner {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 900px) {

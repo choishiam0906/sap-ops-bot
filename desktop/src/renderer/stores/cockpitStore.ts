@@ -2,7 +2,9 @@ import { create } from 'zustand'
 import type { SessionFilter } from '../../main/contracts'
 
 interface CockpitState {
+  /** @deprecated Phase 5 이후 Ask SAP으로 이동 — 호환용 유지 */
   currentFilter: SessionFilter
+  /** @deprecated */
   setFilter: (filter: SessionFilter) => void
   statusExpanded: boolean
   labelExpanded: boolean

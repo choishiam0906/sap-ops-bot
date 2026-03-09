@@ -44,7 +44,7 @@ describe('CockpitPage', () => {
       statusExpanded: true,
       labelExpanded: true,
     })
-    useAppShellStore.setState({ currentPage: 'audit' })
+    useAppShellStore.setState({ currentPage: 'audit', currentSection: 'cockpit', subPage: 'overview' })
     useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'ops' })
     useChatStore.setState({
       currentSessionId: null,
@@ -76,48 +76,34 @@ describe('CockpitPage', () => {
     expect(screen.getByText('SAP Cockpit')).toBeInTheDocument()
   })
 
-  it('사이드바에 상태 필터가 표시된다', async () => {
+  it('큐 서브 내비게이션이 표시된다', async () => {
     renderWithProviders(<CockpitPage />)
-    expect(screen.getByText('접수')).toBeInTheDocument()
-    expect(screen.getAllByText('분석중').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('처리중').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('해결').length).toBeGreaterThan(0)
-    expect(screen.getByText('종료')).toBeInTheDocument()
+    expect(screen.getByText('Overview')).toBeInTheDocument()
+    expect(screen.getByText('승인 대기')).toBeInTheDocument()
+    expect(screen.getByText('고위험 분석')).toBeInTheDocument()
+    expect(screen.getByText('오늘 작업')).toBeInTheDocument()
+    expect(screen.getByText('최근 이슈')).toBeInTheDocument()
   })
 
-  it('세션 카드에 상태 메뉴가 표시된다', async () => {
+  it('Overview에서 Ops Snapshot이 표시된다', async () => {
+    renderWithProviders(<CockpitPage />)
+    expect(screen.getByText('Ops Snapshot')).toBeInTheDocument()
+    expect(screen.getByText('Quick Start')).toBeInTheDocument()
+  })
+
+  it('큐 서브 내비게이션에서 최근 이슈를 누르면 세션 목록이 표시된다', async () => {
+    const user = userEvent.setup()
     mockApi.listSessionsFiltered.mockResolvedValue([mockSessionMeta])
     renderWithProviders(<CockpitPage />)
+
+    await user.click(screen.getByText('최근 이슈'))
 
     await waitFor(() => {
       expect(screen.getByText('SAP FI 문의')).toBeInTheDocument()
     })
-    // TodoStateMenu의 현재 상태 라벨 (사이드바에도 '접수'가 있으므로 getAllByText)
-    const labels = screen.getAllByText('접수')
-    expect(labels.length).toBeGreaterThanOrEqual(2) // 사이드바 + 카드
   })
 
-  it('감사 로그 토글 시 감사 로그가 표시된다', async () => {
-    const user = userEvent.setup()
-    renderWithProviders(<CockpitPage />)
-
-    const toggleBtn = screen.getByText('감사 로그')
-    await user.click(toggleBtn)
-
-    await waitFor(() => {
-      expect(screen.getByText('감사 로그가 없어요')).toBeInTheDocument()
-    })
-  })
-
-  it('빈 상태일 때 안내 메시지가 표시된다', async () => {
-    renderWithProviders(<CockpitPage />)
-
-    await waitFor(() => {
-      expect(screen.getByText('해당하는 세션이 없어요')).toBeInTheDocument()
-    })
-  })
-
-  it('Quick Start로 현업 문의 설명을 시작하면 Chat으로 이동한다', async () => {
+  it('Quick Start로 현업 문의 설명을 시작하면 Ask SAP으로 이동한다', async () => {
     const user = userEvent.setup()
     renderWithProviders(<CockpitPage />)
 
@@ -126,15 +112,16 @@ describe('CockpitPage', () => {
 
     await user.click(screen.getByText('업무 설명 시작'))
 
-    expect(useAppShellStore.getState().currentPage).toBe('chat')
+    expect(useAppShellStore.getState().currentSection).toBe('ask-sap')
     expect(useWorkspaceStore.getState().domainPack).toBe('functional')
     expect(useChatStore.getState().selectedSkillId).toBe('sap-explainer')
     expect(useChatStore.getState().input).toContain('월말 마감 중 전표 생성이 안 된다는 문의가 들어왔습니다.')
   })
 
-  it('세션 카드에서 열기를 누르면 해당 대화로 이동한다', async () => {
+  it('세션 카드에서 열기를 누르면 Ask SAP으로 이동한다', async () => {
     const user = userEvent.setup()
     mockApi.listSessionsFiltered.mockResolvedValue([mockSessionMeta])
+    useAppShellStore.setState({ subPage: 'issues' })
     renderWithProviders(<CockpitPage />)
 
     await waitFor(() => {
@@ -143,7 +130,7 @@ describe('CockpitPage', () => {
 
     await user.click(screen.getByText('열기'))
 
-    expect(useAppShellStore.getState().currentPage).toBe('chat')
+    expect(useAppShellStore.getState().currentSection).toBe('ask-sap')
     expect(useChatStore.getState().currentSessionId).toBe('s1')
   })
 })

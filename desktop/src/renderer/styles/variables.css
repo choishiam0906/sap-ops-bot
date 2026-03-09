@@ -39,14 +39,33 @@
   --font-size-2xl: 22px;
 
   /* Radius */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.15);
+  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-minimal: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* Semantic: Severity */
+  --color-severity-high: #991b1b;
+  --color-severity-high-bg: #fef2f2;
+  --color-severity-medium: #92400e;
+  --color-severity-medium-bg: #fef3c7;
+  --color-severity-low: #166534;
+  --color-severity-low-bg: #f0fdf4;
+  --color-severity-high-border: #ef4444;
+  --color-severity-medium-border: #f59e0b;
+  --color-severity-low-border: #22c55e;
+
+  /* Overlay */
+  --color-backdrop: rgba(0, 0, 0, 0.4);
 
   /* Transitions */
   --transition-fast: 0.15s ease;
@@ -89,6 +108,15 @@
   --color-code-text: #e2e8f0;
   --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.4);
   --shadow-minimal: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --color-severity-high: #fca5a5;
+  --color-severity-high-bg: #450a0a;
+  --color-severity-medium: #fcd34d;
+  --color-severity-medium-bg: #451a03;
+  --color-severity-low: #86efac;
+  --color-severity-low-bg: #052e16;
+  --color-severity-high-border: #ef4444;
+  --color-severity-medium-border: #f59e0b;
+  --color-severity-low-border: #22c55e;
 }
 
 /* 시스템 테마 폴백: data-theme 미지정 시 OS 설정 따름 */
@@ -117,5 +145,14 @@
     --color-code-text: #e2e8f0;
     --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.4);
     --shadow-minimal: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --color-severity-high: #fca5a5;
+    --color-severity-high-bg: #450a0a;
+    --color-severity-medium: #fcd34d;
+    --color-severity-medium-bg: #451a03;
+    --color-severity-low: #86efac;
+    --color-severity-low-bg: #052e16;
+    --color-severity-high-border: #ef4444;
+    --color-severity-medium-border: #f59e0b;
+    --color-severity-low-border: #22c55e;
   }
 }

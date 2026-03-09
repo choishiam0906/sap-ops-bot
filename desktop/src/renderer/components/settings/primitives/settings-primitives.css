@@ -1,0 +1,168 @@
+/* ─── Settings Primitives ─────────────────────── */
+/* craft-agents-oss 스타일을 커스텀 CSS 변수로 구현 */
+
+/* ─── SettingsGroup ─────────────────────────── */
+
+.sp-group {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sp-group-title {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0;
+  padding-left: 4px;
+}
+
+.sp-group-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ─── SettingsDivider ───────────────────────── */
+
+.sp-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 8px 0;
+}
+
+/* ─── SettingsRowLabel (standalone) ──────────── */
+
+.sp-row-label-standalone {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text);
+  padding: 0 4px 8px;
+}
+
+/* ─── SettingsCard extended ─────────────────── */
+
+.sp-card-content {
+  padding: 14px 16px;
+}
+
+.sp-card-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ─── SettingsRadioCard ─────────────────────── */
+
+.sp-radio-card-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sp-radio-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.sp-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.sp-radio-card:hover {
+  border-color: var(--color-border);
+  background: var(--color-bg-tertiary);
+}
+
+.sp-radio-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.sp-radio-card-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--color-primary);
+}
+
+.sp-radio-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sp-radio-card-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.sp-radio-card-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.sp-radio-card-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* ─── Page Wrapper (모든 Settings 페이지 공통) ── */
+
+.sp-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sp-page-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.sp-page-header h3 {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin: 0;
+}
+
+.sp-page-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.sp-page-body {
+  padding: 28px 20px;
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+.sp-page-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}

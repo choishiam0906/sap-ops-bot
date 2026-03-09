@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
-import { ThumbsUp, ThumbsDown } from 'lucide-react'
-import type { ChatMessage } from '../../../main/contracts.js'
+import { useState, useEffect, useRef } from 'react'
+import { ThumbsUp, ThumbsDown, BookOpen, ChevronDown, ChevronUp } from 'lucide-react'
+import type { ChatMessage, SourceReference } from '../../../main/contracts.js'
 import { MarkdownRenderer } from '../MarkdownRenderer.js'
 import { SkeletonMessage } from '../ui/Skeleton.js'
 import { useChatStore } from '../../stores/chatStore.js'
@@ -8,6 +8,39 @@ import { useChatStore } from '../../stores/chatStore.js'
 interface MessageListProps {
   messages: ChatMessage[]
   onFeedback?: (messageId: string, rating: 'positive' | 'negative') => void
+}
+
+function SourceCitations({ sources }: { sources: SourceReference[] }) {
+  const [expanded, setExpanded] = useState(false)
+
+  if (sources.length === 0) return null
+
+  return (
+    <div className="message-sources">
+      <button
+        className="message-sources-toggle"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-label={`참조 소스 ${sources.length}건`}
+      >
+        <BookOpen size={14} aria-hidden="true" />
+        <span>참조 소스 {sources.length}건</span>
+        {expanded
+          ? <ChevronUp size={14} aria-hidden="true" />
+          : <ChevronDown size={14} aria-hidden="true" />}
+      </button>
+      {expanded && (
+        <ul className="message-sources-list">
+          {sources.map((source, index) => (
+            <li key={`${source.category}-${source.title}-${index}`} className="message-source-item">
+              <span className="message-source-category">{source.category}</span>
+              <span className="message-source-title">{source.title}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 export function MessageList({ messages, onFeedback }: MessageListProps) {
@@ -34,6 +67,9 @@ export function MessageList({ messages, onFeedback }: MessageListProps) {
                 msg.content
               )}
             </div>
+            {msg.role === 'assistant' && msg.sourceReferences && msg.sourceReferences.length > 0 && (
+              <SourceCitations sources={msg.sourceReferences} />
+            )}
             {msg.role === 'assistant' && onFeedback && (
               <div className="message-feedback" role="group" aria-label="응답 평가">
                 <button

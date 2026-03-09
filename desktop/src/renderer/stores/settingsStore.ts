@@ -45,7 +45,7 @@ function getInitialTheme(): Theme {
 function getInitialProvider(): ProviderType {
   try {
     const stored = localStorage.getItem('sap-ops-default-provider')
-    if (stored === 'openai' || stored === 'anthropic' || stored === 'google') return stored
+    if (stored === 'openai' || stored === 'anthropic' || stored === 'google' || stored === 'copilot' || stored === 'openrouter' || stored === 'ollama') return stored
   } catch { /* 무시 */ }
   return 'openai'
 }

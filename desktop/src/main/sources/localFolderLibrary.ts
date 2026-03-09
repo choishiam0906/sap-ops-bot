@@ -65,14 +65,56 @@ export class LocalFolderSourceLibrary {
     try {
       const result = await this.scanSource(source);
       const indexedAt = new Date().toISOString();
-      const documents: Array<Omit<SourceDocument, "id">> = result.documents.map((document) => ({
-        ...document,
-        indexedAt,
-      }));
-      this.documentRepo.replaceAllForSource(source.id, documents);
+
+      // 기존 문서의 relativePath → {id, contentHash} 매핑
+      const existingDocs = this.documentRepo.listHashesBySource(source.id);
+      const existingMap = new Map(existingDocs.map((d) => [d.relativePath, d]));
+
+      // 변경 감지: 새 파일, 변경된 파일, 삭제된 파일 분류
+      const toUpsert: Array<Omit<SourceDocument, "id">> = [];
+      const upsertExistingIds = new Map<string, string>();
+      let unchanged = 0;
+      let updated = 0;
+      let indexed = 0;
+      const scannedPaths = new Set<string>();
+
+      for (const doc of result.documents) {
+        const withTimestamp = { ...doc, indexedAt };
+        scannedPaths.add(doc.relativePath);
+
+        const existing = existingMap.get(doc.relativePath);
+        if (existing) {
+          if (existing.contentHash === doc.contentHash) {
+            unchanged += 1;
+          } else {
+            toUpsert.push(withTimestamp);
+            upsertExistingIds.set(doc.relativePath, existing.id);
+            updated += 1;
+          }
+        } else {
+          toUpsert.push(withTimestamp);
+          indexed += 1;
+        }
+      }
+
+      // 삭제된 파일 제거
+      const toRemoveIds = existingDocs
+        .filter((d) => !scannedPaths.has(d.relativePath))
+        .map((d) => d.id);
+
+      if (toUpsert.length > 0) {
+        this.documentRepo.upsertDocuments(source.id, toUpsert, upsertExistingIds);
+      }
+      if (toRemoveIds.length > 0) {
+        this.documentRepo.deleteByIds(toRemoveIds);
+      }
+
       this.sourceRepo.updateSyncStatus(source.id, "ready", indexedAt);
       return {
-        indexed: documents.length,
+        indexed,
+        updated,
+        unchanged,
+        removed: toRemoveIds.length,
         skipped: result.skipped,
         failed: result.failed,
       };

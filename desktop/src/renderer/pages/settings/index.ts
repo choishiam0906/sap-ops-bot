@@ -1,0 +1,12 @@
+// Settings 페이지 barrel export
+export { SETTINGS_PAGES } from './settings-pages.js'
+export { SettingsNavigator } from './SettingsNavigator.js'
+export { AppSettingsPage } from './AppSettingsPage.js'
+export { AiSettingsPage } from './AiSettingsPage.js'
+export { AppearanceSettingsPage } from './AppearanceSettingsPage.js'
+export { InputSettingsPage } from './InputSettingsPage.js'
+export { WorkspaceSettingsPage } from './WorkspaceSettingsPage.js'
+export { PermissionsSettingsPage } from './PermissionsSettingsPage.js'
+export { LabelsSettingsPage } from './LabelsSettingsPage.js'
+export { ShortcutsSettingsPage } from './ShortcutsSettingsPage.js'
+export { PreferencesSettingsPage } from './PreferencesSettingsPage.js'

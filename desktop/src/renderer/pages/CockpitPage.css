@@ -387,7 +387,7 @@
 }
 
 .cockpit-icon-btn.flagged {
-  color: #EAB308;
+  color: var(--color-warning);
 }
 
 /* 컨텍스트 메뉴 */

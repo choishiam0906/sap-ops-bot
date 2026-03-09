@@ -24,6 +24,7 @@ interface AppConfig {
   oauthOpenaiClientId: string;
   oauthAnthropicClientId: string;
   oauthGoogleClientId: string;
+  oauthCopilotClientId: string;
 }
 
 function parseIntSafe(value: string | undefined, fallback: number): number {
@@ -59,10 +60,11 @@ export function loadConfig(): AppConfig {
     ),
 
     oauthOpenaiClientId:
-      process.env.OAUTH_OPENAI_CLIENT_ID ?? "app_EMoamEEZ73f0CkXp7hrann",
+      process.env.OAUTH_OPENAI_CLIENT_ID ?? "app_EMoamEEZ73f0CkXaXp7hrann",
     oauthAnthropicClientId:
       process.env.OAUTH_ANTHROPIC_CLIENT_ID ?? "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
     oauthGoogleClientId: process.env.OAUTH_GOOGLE_CLIENT_ID ?? "",
+    oauthCopilotClientId: process.env.OAUTH_COPILOT_CLIENT_ID ?? "",
   };
 }
 

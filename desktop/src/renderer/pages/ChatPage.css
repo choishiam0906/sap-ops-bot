@@ -531,9 +531,240 @@
   min-width: 80px;
 }
 
+/* Composer source chips */
+.composer-source-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 8px;
+}
+
+.composer-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-badge-info-bg, rgba(59, 130, 246, 0.1));
+  color: var(--color-badge-info-text, #3b82f6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.composer-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  border-radius: 50%;
+}
+
+.composer-chip-remove:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Message source citations */
+.message-sources {
+  margin-top: 8px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 6px;
+}
+
+.message-sources-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: var(--radius-sm, 6px);
+}
+
+.message-sources-toggle:hover {
+  background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.message-sources-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-source-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-bg-secondary, rgba(0, 0, 0, 0.02));
+}
+
+.message-source-category {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs, 4px);
+  background: var(--color-badge-neutral-bg, rgba(0, 0, 0, 0.06));
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.message-source-title {
+  color: var(--color-text-primary);
+}
+
 /* Streaming */
 .streaming-cursor {
   animation: pulse 1s ease-in-out infinite;
+}
+
+/* ─── Ask SAP Session Panel ─── */
+
+.ask-sap-session-panel {
+  width: 280px;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.ask-sap-new-btn {
+  margin: var(--spacing-md);
+}
+
+.ask-sap-filter-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border-light);
+  padding: 0 var(--spacing-sm);
+}
+
+.ask-sap-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ask-sap-filter-tab:hover {
+  color: var(--color-text);
+}
+
+.ask-sap-filter-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.ask-sap-search {
+  margin: var(--spacing-sm);
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: var(--font-size-xs);
+}
+
+.ask-sap-session-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--spacing-sm);
+}
+
+.session-flag-icon {
+  color: var(--color-warning);
+  flex-shrink: 0;
+}
+
+.ask-sap-chat-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ─── Cockpit Queue SubNav ─── */
+
+.cockpit-q-subnav {
+  width: 200px;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  padding: var(--spacing-md) var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.cockpit-q-subnav nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cockpit-q-subnav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+}
+
+.cockpit-q-subnav-item:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.cockpit-q-subnav-item.active {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.cockpit-q-content {
+  padding: var(--spacing-lg);
+}
+
+.cockpit-q-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.cockpit-q-header h2 {
+  margin: 0 0 var(--spacing-xs);
+}
+
+.cockpit-q-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 960px) {
@@ -542,7 +773,8 @@
     min-height: auto;
   }
 
-  .chat-sidebar {
+  .chat-sidebar,
+  .ask-sap-session-panel {
     width: 100%;
     max-height: 220px;
     border-right: 0;
@@ -563,5 +795,16 @@
 
   .chat-skill-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cockpit-q-subnav {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cockpit-q-subnav nav {
+    flex-direction: row;
+    overflow-x: auto;
   }
 }

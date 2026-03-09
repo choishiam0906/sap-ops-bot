@@ -86,7 +86,7 @@ describe('SettingsPage', () => {
     })
   })
 
-  it('미인증 상태에서 연결 추가 클릭 시 전체화면 위저드를 표시한다', async () => {
+  it('미인증 상태에서 연결 추가 클릭 시 Craft-style 위저드를 표시한다', async () => {
     const user = userEvent.setup()
     renderWithProviders(<SettingsPage />)
 
@@ -98,14 +98,16 @@ describe('SettingsPage', () => {
 
     expect(screen.getByText('Welcome to SAP Assistant')).toBeInTheDocument()
     expect(screen.getByText('어떻게 연결하시겠어요?')).toBeInTheDocument()
-    expect(screen.getByText('OpenAI')).toBeInTheDocument()
-    expect(screen.getByText('Anthropic')).toBeInTheDocument()
-    expect(screen.getByText('Google Gemini')).toBeInTheDocument()
+    // Craft-style 연결 방법 카드
+    expect(screen.getByText('Claude Pro / Max')).toBeInTheDocument()
+    expect(screen.getByText('Codex · ChatGPT Plus')).toBeInTheDocument()
+    expect(screen.getByText('GitHub Copilot')).toBeInTheDocument()
+    expect(screen.getByText('API Key로 연결')).toBeInTheDocument()
+    expect(screen.getByText('Local model')).toBeInTheDocument()
   })
 
-  it('Provider 선택 후 인증 방식 선택 또는 API Key 입력 화면을 표시한다', async () => {
+  it('API Key 연결 → Provider 선택 → API Key 입력 화면을 표시한다', async () => {
     const user = userEvent.setup()
-    // OAuth 미지원 provider (Anthropic)를 사용하여 바로 credentials 확인
     mockApi.getOAuthAvailability.mockResolvedValue([
       { provider: 'openai', available: false },
       { provider: 'anthropic', available: false },
@@ -119,10 +121,18 @@ describe('SettingsPage', () => {
     const addBtn = screen.getByRole('button', { name: '연결 추가' })
     await user.click(addBtn)
 
+    // "API Key로 연결" 선택
+    const apiKeyCard = screen.getByText('API Key로 연결').closest('button')!
+    await user.click(apiKeyCard)
+
+    // Provider 선택 화면
+    expect(screen.getByText('어떤 provider의 API Key를 사용하시겠어요?')).toBeInTheDocument()
+
+    // OpenAI 선택
     const openaiCard = screen.getByText('OpenAI').closest('button')!
     await user.click(openaiCard)
 
-    // OAuth 미지원이므로 바로 API Key 입력 화면
+    // API Key 입력 화면
     expect(screen.getByLabelText('OpenAI API Key')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '연결' })).toBeInTheDocument()
   })
@@ -232,10 +242,11 @@ describe('SettingsPage', () => {
 
   // ─── OAuth 하이브리드 인증 테스트 ────────────────
 
-  it('Provider 선택 후 인증 방식 선택 화면을 표시한다 (OAuth 가능한 경우)', async () => {
+  it('구독 카드 클릭 시 OAuth 불가면 인증 방식 선택 화면을 표시한다', async () => {
     const user = userEvent.setup()
+    // ChatGPT Plus (OpenAI) — OAuth 불가
     mockApi.getOAuthAvailability.mockResolvedValue([
-      { provider: 'openai', available: true },
+      { provider: 'openai', available: false },
       { provider: 'anthropic', available: false },
       { provider: 'google', available: false },
     ])
@@ -244,7 +255,6 @@ describe('SettingsPage', () => {
     const aiNav = screen.getByText('AI').closest('button')!
     await user.click(aiNav)
 
-    // OAuth availability 로드 대기
     await waitFor(() => {
       expect(mockApi.getOAuthAvailability).toHaveBeenCalled()
     })
@@ -252,21 +262,21 @@ describe('SettingsPage', () => {
     const addBtn = screen.getByRole('button', { name: '연결 추가' })
     await user.click(addBtn)
 
-    const openaiCard = screen.getByText('OpenAI').closest('button')!
-    await user.click(openaiCard)
+    // ChatGPT Plus 카드 클릭
+    const chatgptCard = screen.getByText('Codex · ChatGPT Plus').closest('button')!
+    await user.click(chatgptCard)
 
-    // authMethod 선택 화면 표시 확인
+    // OAuth 불가 → authMethod 선택 화면
     await waitFor(() => {
-      expect(screen.getByText('API Key로 연결')).toBeInTheDocument()
+      expect(screen.getByText('인증 방식을 선택해주세요')).toBeInTheDocument()
     })
-    expect(screen.getByText('OAuth로 연결')).toBeInTheDocument()
-    expect(screen.getByText('인증 방식을 선택해주세요')).toBeInTheDocument()
+    expect(screen.getByText('OAuth로 연결 (준비 중)')).toBeInTheDocument()
   })
 
-  it('API Key 선택 시 기존 API Key 입력 화면을 표시한다', async () => {
+  it('인증 방식에서 API Key 선택 시 API Key 입력 화면을 표시한다', async () => {
     const user = userEvent.setup()
     mockApi.getOAuthAvailability.mockResolvedValue([
-      { provider: 'openai', available: true },
+      { provider: 'openai', available: false },
       { provider: 'anthropic', available: false },
       { provider: 'google', available: false },
     ])
@@ -282,29 +292,30 @@ describe('SettingsPage', () => {
     const addBtn = screen.getByRole('button', { name: '연결 추가' })
     await user.click(addBtn)
 
-    const openaiCard = screen.getByText('OpenAI').closest('button')!
-    await user.click(openaiCard)
+    // ChatGPT Plus 카드 클릭 → authMethod
+    const chatgptCard = screen.getByText('Codex · ChatGPT Plus').closest('button')!
+    await user.click(chatgptCard)
 
     await waitFor(() => {
-      expect(screen.getByText('API Key로 연결')).toBeInTheDocument()
+      expect(screen.getByText('인증 방식을 선택해주세요')).toBeInTheDocument()
     })
 
+    // API Key 선택
     const apiKeyBtn = screen.getByText('API Key로 연결').closest('button')!
     await user.click(apiKeyBtn)
 
-    // 기존 API Key 입력 화면으로 이동
+    // API Key 입력 화면
     expect(screen.getByLabelText('OpenAI API Key')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '연결' })).toBeInTheDocument()
   })
 
-  it('OAuth 선택 시 대기 화면을 표시한다', async () => {
+  it('구독 카드 클릭 시 OAuth 가능하면 OAuth 대기 화면을 표시한다', async () => {
     const user = userEvent.setup()
     mockApi.getOAuthAvailability.mockResolvedValue([
       { provider: 'openai', available: true },
       { provider: 'anthropic', available: false },
       { provider: 'google', available: false },
     ])
-    // waitOAuthCallback이 즉시 resolve하지 않도록 pending 상태 유지
     mockApi.waitOAuthCallback.mockReturnValue(new Promise(() => {}))
     renderWithProviders(<SettingsPage />)
 
@@ -318,15 +329,9 @@ describe('SettingsPage', () => {
     const addBtn = screen.getByRole('button', { name: '연결 추가' })
     await user.click(addBtn)
 
-    const openaiCard = screen.getByText('OpenAI').closest('button')!
-    await user.click(openaiCard)
-
-    await waitFor(() => {
-      expect(screen.getByText('OAuth로 연결')).toBeInTheDocument()
-    })
-
-    const oauthBtn = screen.getByText('OAuth로 연결').closest('button')!
-    await user.click(oauthBtn)
+    // ChatGPT Plus 카드 클릭 → OAuth 바로 시작
+    const chatgptCard = screen.getByText('Codex · ChatGPT Plus').closest('button')!
+    await user.click(chatgptCard)
 
     await waitFor(() => {
       expect(screen.getByText('브라우저에서 인증 중...')).toBeInTheDocument()
@@ -334,16 +339,8 @@ describe('SettingsPage', () => {
     expect(mockApi.initiateOAuth).toHaveBeenCalledWith('openai')
   })
 
-  it('OAuth 미지원 provider는 OAuth 버튼이 비활성화된다', async () => {
+  it('Local model 선택 시 Ollama 설정 화면을 표시한다', async () => {
     const user = userEvent.setup()
-    // Anthropic은 OAuth 미지원 → oauthAvailability에서 available: false
-    // 하지만 authMethod 화면으로 가려면 available이 true여야 하므로
-    // anthropic도 available: true로 설정하되 disabled 테스트 수정
-    mockApi.getOAuthAvailability.mockResolvedValue([
-      { provider: 'openai', available: true },
-      { provider: 'anthropic', available: true },
-      { provider: 'google', available: false },
-    ])
     renderWithProviders(<SettingsPage />)
 
     const aiNav = screen.getByText('AI').closest('button')!
@@ -352,11 +349,12 @@ describe('SettingsPage', () => {
     const addBtn = screen.getByRole('button', { name: '연결 추가' })
     await user.click(addBtn)
 
-    // Google 선택 — OAuth 미지원이므로 바로 credentials 단계
-    const googleCard = screen.getByText('Google Gemini').closest('button')!
-    await user.click(googleCard)
+    // Local model 카드 클릭
+    const localCard = screen.getByText('Local model').closest('button')!
+    await user.click(localCard)
 
-    // authMethod 단계를 건너뛰고 바로 API Key 입력 화면
-    expect(screen.getByLabelText('Google Gemini API Key')).toBeInTheDocument()
+    expect(screen.getByText('Local Model 연결')).toBeInTheDocument()
+    expect(screen.getByLabelText('Ollama Server URL')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '연결' })).toBeInTheDocument()
   })
 })
