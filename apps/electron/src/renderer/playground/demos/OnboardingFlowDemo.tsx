@@ -22,6 +22,7 @@ type DemoStep = 'welcome' | 'provider-select' | 'credentials' | 'local-model' | 
 const CHOICE_TO_METHOD: Record<Exclude<ProviderChoice, 'local'>, ApiSetupMethod> = {
   claude: 'claude_oauth',
   chatgpt: 'pi_chatgpt_oauth',
+  gemini: 'pi_gemini_api_key',
   copilot: 'pi_copilot_oauth',
   api_key: 'pi_api_key',
 }

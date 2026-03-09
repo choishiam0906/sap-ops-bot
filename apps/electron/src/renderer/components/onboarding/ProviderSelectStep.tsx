@@ -5,13 +5,14 @@ import { StepFormLayout } from "./primitives"
 
 import claudeIcon from "@/assets/provider-icons/claude.svg"
 import openaiIcon from "@/assets/provider-icons/openai.svg"
+import geminiIcon from "@/assets/provider-icons/google.svg"
 import copilotIcon from "@/assets/provider-icons/copilot.svg"
 
 /**
  * The high-level provider choice the user makes on first launch.
  * This maps to one or more ApiSetupMethods downstream.
  */
-export type ProviderChoice = 'claude' | 'chatgpt' | 'copilot' | 'api_key' | 'local'
+export type ProviderChoice = 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'api_key' | 'local'
 
 interface ProviderOption {
   id: ProviderChoice
@@ -32,6 +33,12 @@ const PROVIDER_OPTIONS: ProviderOption[] = [
     name: 'Codex · ChatGPT Plus',
     description: 'Use your ChatGPT Plus or Pro subscription.',
     icon: <img src={openaiIcon} alt="" className="size-5 rounded-[3px]" />,
+  },
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    description: 'Use your Google AI Studio API key.',
+    icon: <img src={geminiIcon} alt="" className="size-5 rounded-[3px]" />,
   },
   {
     id: 'copilot',

@@ -58,7 +58,8 @@ export function CredentialsStep({
   const isChatGptOAuth = apiSetupMethod === 'pi_chatgpt_oauth'
   const isCopilotOAuth = apiSetupMethod === 'pi_copilot_oauth'
   const isAnthropicApiKey = apiSetupMethod === 'anthropic_api_key'
-  const isPiApiKey = apiSetupMethod === 'pi_api_key'
+  const isPiApiKey = apiSetupMethod === 'pi_api_key' || apiSetupMethod === 'pi_gemini_api_key'
+  const isGeminiDirect = apiSetupMethod === 'pi_gemini_api_key'
   const isApiKey = isAnthropicApiKey || isPiApiKey
 
   // Copilot device code clipboard handling
@@ -249,6 +250,69 @@ export function CredentialsStep({
           onSubmitAuthCode={onSubmitAuthCode}
           onCancelOAuth={onCancelOAuth}
         />
+      </StepFormLayout>
+    )
+  }
+
+  // --- Gemini API Key flow (direct from provider select) ---
+  if (isGeminiDirect) {
+    return (
+      <StepFormLayout
+        title="Connect Google Gemini"
+        description="Enter your Google AI Studio API key to get started."
+        actions={
+          <>
+            <BackButton onClick={onBack} disabled={status === 'validating'} />
+            <ContinueButton
+              type="submit"
+              form="api-key-form"
+              disabled={false}
+              loading={status === 'validating'}
+              loadingText="Validating..."
+            />
+          </>
+        }
+      >
+        <form
+          id="api-key-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const formData = new FormData(e.currentTarget)
+            onSubmit({
+              apiKey: (formData.get('apiKey') as string) ?? '',
+              piAuthProvider: 'google',
+            })
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <input
+              name="apiKey"
+              type="password"
+              placeholder="Enter your API key"
+              autoFocus
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="rounded-xl bg-foreground-2 p-4 text-sm text-muted-foreground">
+            <p>
+              Get your API key from{' '}
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline"
+              >
+                Google AI Studio
+              </a>
+            </p>
+          </div>
+          {status === 'error' && errorMessage && (
+            <div className="rounded-lg bg-destructive/10 text-destructive text-sm p-3">
+              {errorMessage}
+            </div>
+          )}
+        </form>
       </StepFormLayout>
     )
   }

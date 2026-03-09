@@ -92,6 +92,7 @@ export const BASE_SLUG_FOR_METHOD: Record<ApiSetupMethod, string> = {
   claude_oauth: 'claude-max',
   pi_chatgpt_oauth: 'chatgpt-plus',
   pi_copilot_oauth: 'github-copilot',
+  pi_gemini_api_key: 'google-gemini',
   pi_api_key: 'pi-api-key',
 }
 
@@ -146,13 +147,14 @@ export function apiSetupMethodToConnectionSetup(
         credential: options.credential,
       }
     case 'pi_api_key':
+    case 'pi_gemini_api_key':
       return {
         slug,
         credential: options.credential,
         baseUrl: options.baseUrl,
         defaultModel: options.connectionDefaultModel,
         models: options.models,
-        piAuthProvider: options.piAuthProvider,
+        piAuthProvider: method === 'pi_gemini_api_key' ? 'google' : options.piAuthProvider,
       }
   }
 }
@@ -323,7 +325,7 @@ export function useOnboarding({
   const handleSubmitCredential = useCallback(async (data: ApiKeySubmitData) => {
     setState(s => ({ ...s, credentialStatus: 'validating', errorMessage: undefined }))
 
-    const isPiApiKeyFlow = state.apiSetupMethod === 'pi_api_key'
+    const isPiApiKeyFlow = state.apiSetupMethod === 'pi_api_key' || state.apiSetupMethod === 'pi_gemini_api_key'
 
     try {
       // When editing an existing connection, API key is optional (empty = keep existing credential)
@@ -548,6 +550,7 @@ export function useOnboarding({
     const CHOICE_TO_METHOD: Record<Exclude<ProviderChoice, 'local'>, ApiSetupMethod> = {
       claude: 'claude_oauth',
       chatgpt: 'pi_chatgpt_oauth',
+      gemini: 'pi_gemini_api_key',
       copilot: 'pi_copilot_oauth',
       api_key: 'pi_api_key',
     }

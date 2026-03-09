@@ -39,6 +39,7 @@ export type ApiSetupMethod =
   | 'pi_chatgpt_oauth'
   | 'pi_copilot_oauth'
   | 'pi_api_key'
+  | 'pi_gemini_api_key'
 
 /**
  * Map ApiSetupMethod to the underlying LLM connection types.
@@ -57,6 +58,7 @@ export function apiSetupMethodToConnectionTypes(method: ApiSetupMethod): {
     case 'pi_copilot_oauth':
       return { providerType: 'pi', authType: 'oauth' };
     case 'pi_api_key':
+    case 'pi_gemini_api_key':
       return { providerType: 'pi', authType: 'api_key' };
   }
 }
