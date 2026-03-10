@@ -1,5 +1,5 @@
 import type { ProviderType } from './provider.js';
-import type { SecurityMode, DomainPack } from './policy.js';
+import type { DomainPack } from './policy.js';
 
 export type AuditAction =
   | "send_message"
@@ -14,7 +14,6 @@ export interface AuditLogEntry {
   sessionId: string | null;
   runId: string | null;
   timestamp: string;
-  securityMode: SecurityMode;
   domainPack: DomainPack;
   action: AuditAction;
   externalTransfer: boolean;
@@ -30,5 +29,4 @@ export interface AuditSearchFilters {
   from?: string;
   to?: string;
   action?: AuditAction;
-  securityMode?: SecurityMode;
 }

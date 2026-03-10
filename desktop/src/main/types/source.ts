@@ -1,4 +1,4 @@
-import type { SecurityMode, DomainPack } from './policy.js';
+import type { DomainPack } from './policy.js';
 import type { VaultClassification, VaultSourceType } from './vault.js';
 
 export interface SourceReference {
@@ -119,7 +119,6 @@ export interface SapSkillDefinition {
   description: string;
   supportedDomainPacks: DomainPack[];
   supportedDataTypes: Array<"chat" | "cbo">;
-  allowedSecurityModes: SecurityMode[];
   defaultPromptTemplate: string;
   outputFormat: SkillOutputFormat;
   requiredSources: string[];

@@ -66,7 +66,6 @@ export function registerCboHandlers(ctx: IpcContext): void {
         filePath,
         provider: input.provider,
         model: input.model,
-        securityMode: input.securityMode,
         domainPack: input.domainPack,
       });
 
@@ -111,7 +110,6 @@ export function registerCboHandlers(ctx: IpcContext): void {
             provider: input.provider,
             model: input.model,
             skipUnchanged: input.skipUnchanged,
-            securityMode: input.securityMode,
             domainPack: input.domainPack,
           },
           {

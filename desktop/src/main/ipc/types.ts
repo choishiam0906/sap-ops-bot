@@ -11,10 +11,13 @@ import type {
   ClosingPlanRepository,
   ClosingStepRepository,
   ConfiguredSourceRepository,
+  RoutineExecutionRepository,
+  RoutineTemplateRepository,
   SessionRepository,
   SourceDocumentRepository,
   VaultRepository,
 } from "../storage/repositories.js";
+import type { RoutineExecutor } from "../services/routineExecutor.js";
 
 export interface IpcContext {
   oauthManager: OAuthManager;
@@ -31,5 +34,8 @@ export interface IpcContext {
   mcpConnector: McpConnector;
   closingPlanRepo: ClosingPlanRepository;
   closingStepRepo: ClosingStepRepository;
+  routineTemplateRepo: RoutineTemplateRepository;
+  routineExecutionRepo: RoutineExecutionRepository;
+  routineExecutor: RoutineExecutor;
   getMainWindow: () => BrowserWindow | null;
 }

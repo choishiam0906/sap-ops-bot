@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FolderSearch, Database, RefreshCw, PlugZap, Globe, Unplug, Plus, Loader2, X, FileText } from 'lucide-react'
+import { FolderSearch, RefreshCw, PlugZap, Unplug, Plus, Loader2, X, FileText } from 'lucide-react'
 import type { ConfiguredSource, SourceDocument, VaultClassification } from '../../../main/contracts.js'
 import { Badge } from '../../components/ui/Badge.js'
 import { Button } from '../../components/ui/Button.js'
-import { useWorkspaceStore } from '../../stores/workspaceStore.js'
-import { useAppShellStore } from '../../stores/appShellStore.js'
-import type { KnowledgeSubPage } from '../../stores/appShellStore.js'
+import { useWorkspaceStore, DOMAIN_PACK_DETAILS } from '../../stores/workspaceStore.js'
 import '../SourcesPage.css'
 
 const api = window.sapOpsDesktop
@@ -20,10 +18,9 @@ function formatTimestamp(iso: string | null): string {
   } catch { return iso }
 }
 
-export function SourcesSection() {
+export function SourcesPage() {
   const queryClient = useQueryClient()
-  const subPage = useAppShellStore((state) => state.subPage) as KnowledgeSubPage
-  const activeTab = subPage === 'mcps' ? 'mcp' : subPage === 'apis' ? 'api' : 'local-folder'
+  const [activeSourceType, setActiveSourceType] = useState<'local-folder' | 'mcp'>('local-folder')
 
   const [newTitle, setNewTitle] = useState('')
   const [classification, setClassification] = useState<VaultClassification>('confidential')
@@ -46,6 +43,7 @@ export function SourcesSection() {
   const [previewDoc, setPreviewDoc] = useState<SourceDocument | null>(null)
 
   const domainPack = useWorkspaceStore((state) => state.domainPack)
+  const packDetail = DOMAIN_PACK_DETAILS[domainPack]
 
   const { data: configuredSources = [] } = useQuery({
     queryKey: ['sources', 'configured'],
@@ -66,14 +64,14 @@ export function SourcesSection() {
   const { data: connectedServers = [] } = useQuery({
     queryKey: ['mcp', 'servers'],
     queryFn: () => api.mcpListServers(),
-    enabled: activeTab === 'mcp',
+    enabled: activeSourceType === 'mcp',
     staleTime: 5_000,
   })
 
   const { data: mcpResources = [], isLoading: isLoadingResources } = useQuery({
     queryKey: ['mcp', 'resources', selectedMcpServer],
     queryFn: () => api.mcpListResources(selectedMcpServer),
-    enabled: activeTab === 'mcp' && selectedMcpServer !== '',
+    enabled: activeSourceType === 'mcp' && selectedMcpServer !== '',
     staleTime: 10_000,
   })
 
@@ -87,7 +85,7 @@ export function SourcesSection() {
         domainPack,
         limit: 20,
       }),
-    enabled: activeTab === 'local-folder',
+    enabled: activeSourceType === 'local-folder',
     staleTime: 10_000,
   })
 
@@ -199,8 +197,40 @@ export function SourcesSection() {
   }
 
   return (
-    <>
-      {activeTab === 'local-folder' && (
+    <div className="sources-page">
+      <div className="sources-header">
+        <div>
+          <h1 className="page-title">소스 관리</h1>
+          <p className="sources-copy">
+            로컬 폴더와 MCP 서버를 통합 관리합니다.
+          </p>
+        </div>
+        <div className="sources-badges">
+          <Badge variant="success">엔터프라이즈 보호</Badge>
+          <Badge variant="neutral">{packDetail.label}</Badge>
+        </div>
+      </div>
+
+      <div className="sources-type-toggle" role="group" aria-label="소스 타입 선택">
+        <button
+          type="button"
+          className={`sources-type-btn ${activeSourceType === 'local-folder' ? 'active' : ''}`}
+          onClick={() => setActiveSourceType('local-folder')}
+        >
+          <FolderSearch size={14} aria-hidden="true" />
+          로컬 폴더
+        </button>
+        <button
+          type="button"
+          className={`sources-type-btn ${activeSourceType === 'mcp' ? 'active' : ''}`}
+          onClick={() => setActiveSourceType('mcp')}
+        >
+          <PlugZap size={14} aria-hidden="true" />
+          MCP
+        </button>
+      </div>
+
+      {activeSourceType === 'local-folder' && (
         <div className="sources-grid">
           <section className="sources-panel">
             <div className="sources-panel-header">
@@ -351,7 +381,7 @@ export function SourcesSection() {
         </div>
       )}
 
-      {activeTab === 'mcp' && (
+      {activeSourceType === 'mcp' && (
         <div className="sources-grid">
           <section className="sources-panel">
             <div className="sources-panel-header">
@@ -499,22 +529,6 @@ export function SourcesSection() {
           </section>
         </div>
       )}
-
-      {activeTab === 'api' && (
-        <div className="sources-coming-grid">
-          <article className="sources-coming-card">
-            <Globe size={18} aria-hidden="true" />
-            <div>
-              <strong>API Source Slots</strong>
-              <p>v1은 실행형 API source 대신 future-ready slot과 정책 설명만 제공합니다.</p>
-            </div>
-          </article>
-          <article className="sources-coming-card">
-            <Database size={18} aria-hidden="true" />
-            <p>향후 SAP 운영 API, 티켓 시스템, 문서 검색 API를 같은 source catalog 인터페이스로 연결할 수 있게 준비합니다.</p>
-          </article>
-        </div>
-      )}
-    </>
+    </div>
   )
 }

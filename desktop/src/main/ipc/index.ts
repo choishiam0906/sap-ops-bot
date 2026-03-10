@@ -5,6 +5,8 @@ import { registerCboHandlers } from "./cboHandlers.js";
 import { registerSourceHandlers } from "./sourceHandlers.js";
 import { registerAuditHandlers } from "./auditHandlers.js";
 import { registerClosingHandlers } from "./closingHandlers.js";
+import { registerRoutineHandlers } from "./routineHandlers.js";
+import { registerArchiveHandlers } from "./archiveHandlers.js";
 
 export type { IpcContext } from "./types.js";
 
@@ -15,4 +17,6 @@ export function registerAllIpcHandlers(ctx: IpcContext): void {
   registerSourceHandlers(ctx);
   registerAuditHandlers(ctx);
   registerClosingHandlers(ctx);
+  registerRoutineHandlers(ctx);
+  registerArchiveHandlers(ctx);
 }

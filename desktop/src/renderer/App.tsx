@@ -2,8 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
 import { CockpitPage } from './pages/CockpitPage'
-import { AskSapPage } from './pages/AskSapPage'
-import { CboPage } from './pages/CboPage'
+import { SapAssistantPage } from './pages/SapAssistantPage'
 import { KnowledgePage } from './pages/KnowledgePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { useAppShellStore } from './stores/appShellStore'
@@ -34,8 +33,7 @@ export function App() {
           <main className="app-main">
             <div key={currentSection} className="app-page-shell page-enter">
               {currentSection === 'cockpit' && <CockpitPage />}
-              {currentSection === 'ask-sap' && <AskSapPage />}
-              {currentSection === 'cbo' && <CboPage />}
+              {currentSection === 'sap-assistant' && <SapAssistantPage />}
               {currentSection === 'knowledge' && <KnowledgePage />}
               {currentSection === 'settings' && <SettingsPage />}
             </div>

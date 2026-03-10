@@ -6,13 +6,14 @@ import { useChatStore } from '../stores/chatStore.js'
 import { useSessions } from '../hooks/useSessions.js'
 import { useMessages } from '../hooks/useMessages.js'
 import { useSendMessage } from '../hooks/useSendMessage.js'
+import { useAuthenticatedProviders } from '../hooks/useAuthenticatedProviders.js'
 import { Badge } from '../components/ui/Badge.js'
 import { SessionList } from '../components/chat/SessionList.js'
 import { MessageList } from '../components/chat/MessageList.js'
 import { Composer } from '../components/chat/Composer.js'
+import { DEFAULT_MODELS, PROVIDER_MODELS } from '../../main/contracts.js'
 import {
   DOMAIN_PACK_DETAILS,
-  SECURITY_MODE_DETAILS,
   useWorkspaceStore,
 } from '../stores/workspaceStore.js'
 import './ChatPage.css'
@@ -43,9 +44,8 @@ export function ChatPage() {
     toggleSourceId,
     setLastExecutionMeta,
   } = useChatStore()
-  const securityMode = useWorkspaceStore((state) => state.securityMode)
+  const { authenticatedTypes } = useAuthenticatedProviders()
   const domainPack = useWorkspaceStore((state) => state.domainPack)
-  const modeDetail = SECURITY_MODE_DETAILS[securityMode]
   const packDetail = DOMAIN_PACK_DETAILS[domainPack]
   const suggestionIcons = [Code, ShieldCheck, Sparkles]
 
@@ -62,15 +62,14 @@ export function ChatPage() {
     staleTime: 60_000,
   })
   const { data: recommendations = [] } = useQuery({
-    queryKey: ['skills', 'recommend', domainPack, securityMode],
-    queryFn: () => api.recommendSkills({ securityMode, domainPack, dataType: 'chat' }),
+    queryKey: ['skills', 'recommend', domainPack],
+    queryFn: () => api.recommendSkills({ domainPack, dataType: 'chat' }),
     staleTime: 30_000,
   })
   const { data: sources = [] } = useQuery({
-    queryKey: ['sources', domainPack, securityMode, caseContext?.runId ?? '', caseContext?.filePath ?? '', caseContext?.objectName ?? ''],
+    queryKey: ['sources', domainPack, caseContext?.runId ?? '', caseContext?.filePath ?? '', caseContext?.objectName ?? ''],
     queryFn: () =>
       api.listSources({
-        securityMode,
         domainPack,
         dataType: 'chat',
         caseContext: caseContext ?? undefined,
@@ -148,6 +147,23 @@ export function ChatPage() {
     return source.title
   }
 
+  // 인증된 Provider가 있는데 현재 선택이 인증 안 됐으면 자동 전환
+  useEffect(() => {
+    if (authenticatedTypes.length > 0 && !authenticatedTypes.includes(provider)) {
+      const newProvider = authenticatedTypes[0]
+      setProvider(newProvider)
+      setModel(DEFAULT_MODELS[newProvider])
+    }
+  }, [authenticatedTypes, provider, setProvider, setModel])
+
+  // Provider 변경 시 현재 모델이 해당 provider에 없으면 기본 모델로 전환
+  useEffect(() => {
+    const models = PROVIDER_MODELS[provider]
+    if (!models.some((m) => m.value === model)) {
+      setModel(DEFAULT_MODELS[provider])
+    }
+  }, [provider, model, setModel])
+
   useEffect(() => {
     if (!selectedSkillId && fallbackSkill) {
       setSelectedSkillId(fallbackSkill.id)
@@ -186,12 +202,9 @@ export function ChatPage() {
           <div className="chat-context-copy">
             <span className="chat-context-eyebrow">Active Workspace</span>
             <strong>{packDetail.label}</strong>
-            <p>
-              {packDetail.description} 현재 전송 정책은 <b>{modeDetail.outboundPolicy}</b>입니다.
-            </p>
+            <p>{packDetail.description}</p>
           </div>
           <div className="chat-context-badges">
-            <Badge variant={modeDetail.badgeVariant}>{modeDetail.label}</Badge>
             <Badge variant="neutral">{packDetail.label}</Badge>
             {selectedSkill && <Badge variant="info">{selectedSkill.title}</Badge>}
           </div>
@@ -316,7 +329,6 @@ export function ChatPage() {
             <h2>{packDetail.chatTitle}</h2>
             <p>{packDetail.chatDescription}</p>
             <div className="chat-empty-meta">
-              <Badge variant={modeDetail.badgeVariant}>{modeDetail.outboundPolicy}</Badge>
               <Badge variant="neutral">{packDetail.label}</Badge>
               {selectedSkill && <Badge variant="info">{selectedSkill.title}</Badge>}
             </div>
@@ -346,6 +358,7 @@ export function ChatPage() {
           provider={provider}
           model={model}
           sending={sendMutation.isPending}
+          availableProviders={authenticatedTypes.length > 0 ? authenticatedTypes : undefined}
           selectedSources={availableSources
             .filter((s) => selectedSourceIds.includes(s.id))
             .map((s) => ({ id: s.id, title: s.title }))}
@@ -354,7 +367,7 @@ export function ChatPage() {
           onModelChange={setModel}
           placeholder={selectedSkill
             ? `${selectedSkill.title}: ${selectedSkill.description}`
-            : `${packDetail.inputPlaceholder} (${modeDetail.placeholderHint})`}
+            : packDetail.inputPlaceholder}
           onSend={handleSend}
           onRemoveSource={toggleSourceId}
         />

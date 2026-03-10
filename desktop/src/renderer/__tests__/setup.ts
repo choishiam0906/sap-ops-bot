@@ -5,7 +5,12 @@ import { useWorkspaceStore } from '../stores/workspaceStore'
 // window.sapOpsDesktop IPC 목킹
 const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
   setApiKey: vi.fn().mockResolvedValue(undefined),
-  getAuthStatus: vi.fn().mockResolvedValue('unauthenticated'),
+  getAuthStatus: vi.fn().mockImplementation((provider: string) => Promise.resolve({
+    provider,
+    status: 'authenticated',
+    accountHint: 'test@example.com',
+    updatedAt: new Date().toISOString(),
+  })),
   logout: vi.fn().mockResolvedValue(undefined),
   sendMessage: vi.fn().mockResolvedValue({
     session: { id: 's1', title: '테스트', provider: 'openai', model: 'gpt-4.1-mini', createdAt: '', updatedAt: '' },
@@ -27,7 +32,6 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
       description: 'CBO 영향 분석',
       supportedDomainPacks: ['cbo-maintenance'],
       supportedDataTypes: ['chat', 'cbo'],
-      allowedSecurityModes: ['secure-local', 'reference', 'hybrid-approved'],
       defaultPromptTemplate: '',
       outputFormat: 'structured-report',
       requiredSources: ['workspace-context', 'vault-confidential'],
@@ -53,7 +57,6 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
         description: 'CBO 영향 분석',
         supportedDomainPacks: ['cbo-maintenance'],
         supportedDataTypes: ['chat', 'cbo'],
-        allowedSecurityModes: ['secure-local', 'reference', 'hybrid-approved'],
         defaultPromptTemplate: '',
         outputFormat: 'structured-report',
         requiredSources: ['workspace-context', 'vault-confidential'],
@@ -86,6 +89,7 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
       sourceType: 'internal_memo',
     },
   ]),
+  stopGeneration: vi.fn().mockResolvedValue(undefined),
   searchSources: vi.fn().mockResolvedValue([]),
   listConfiguredSources: vi.fn().mockResolvedValue([
     {
@@ -284,6 +288,23 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
     updatedAt: new Date().toISOString(),
   }),
   cancelDeviceCode: vi.fn().mockResolvedValue(undefined),
+  // Routine (루틴 업무 자동화)
+  listRoutineTemplates: vi.fn().mockResolvedValue([]),
+  listRoutineTemplatesByFrequency: vi.fn().mockResolvedValue([]),
+  getRoutineTemplate: vi.fn().mockResolvedValue(null),
+  createRoutineTemplate: vi.fn().mockResolvedValue({ id: 'rt-1', frequency: 'daily', name: '테스트 루틴', isActive: true, createdAt: '', updatedAt: '' }),
+  updateRoutineTemplate: vi.fn().mockResolvedValue(null),
+  deleteRoutineTemplate: vi.fn().mockResolvedValue(true),
+  toggleRoutineTemplate: vi.fn().mockResolvedValue(null),
+  executeRoutinesNow: vi.fn().mockResolvedValue({ created: 0, skipped: 0 }),
+  listRoutineExecutions: vi.fn().mockResolvedValue([]),
+  getRoutineExecutionPlanIds: vi.fn().mockResolvedValue([]),
+
+  // Archive (소스코드 아카이브)
+  archivePickFolder: vi.fn().mockResolvedValue({ canceled: true, path: null }),
+  archiveListContents: vi.fn().mockResolvedValue([]),
+  archiveReadFile: vi.fn().mockResolvedValue({ content: '', size: 0 }),
+  archiveSaveFile: vi.fn().mockResolvedValue({ success: true }),
 }
 
 Object.defineProperty(window, 'sapOpsDesktop', {
@@ -299,7 +320,6 @@ beforeEach(() => {
 // workspaceStore 초기화를 위한 헬퍼
 export function resetWorkspaceStore() {
   useWorkspaceStore.setState({
-    securityMode: 'secure-local',
     domainPack: 'ops',
   })
 }

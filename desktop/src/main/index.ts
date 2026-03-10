@@ -12,10 +12,10 @@ import { SecureStore } from "./auth/secureStore.js";
 import { OpenAiProvider } from "./providers/openaiProvider.js";
 import { AnthropicProvider } from "./providers/anthropicProvider.js";
 import { GoogleProvider } from "./providers/googleProvider.js";
+import { CopilotProvider } from "./providers/copilotProvider.js";
 import { ChatRuntime } from "./chatRuntime.js";
 import { CboAnalyzer } from "./cbo/analyzer.js";
 import { CboBatchRuntime } from "./cbo/batchRuntime.js";
-import { PolicyEngine } from "./policy/policyEngine.js";
 import {
   AuditRepository,
   CboAnalysisRepository,
@@ -24,10 +24,14 @@ import {
   ConfiguredSourceRepository,
   MessageRepository,
   ProviderAccountRepository,
+  RoutineExecutionRepository,
+  RoutineTemplateRepository,
   SessionRepository,
   SourceDocumentRepository,
   VaultRepository,
 } from "./storage/repositories.js";
+import { RoutineExecutor } from "./services/routineExecutor.js";
+import { seedRoutineTemplates } from "./services/routineSeedData.js";
 import { LocalDatabase } from "./storage/sqlite.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
@@ -61,15 +65,28 @@ function initRuntime(): void {
   const anthropicProvider = new AnthropicProvider(config.anthropicApiBaseUrl);
   const googleProvider = new GoogleProvider(config.googleApiBaseUrl);
 
-  const policyEngine = new PolicyEngine();
   const auditRepo = new AuditRepository(db);
   const vaultRepo = new VaultRepository(db);
   const closingPlanRepo = new ClosingPlanRepository(db);
   const closingStepRepo = new ClosingStepRepository(db);
+  const routineTemplateRepo = new RoutineTemplateRepository(db);
+  const routineExecutionRepo = new RoutineExecutionRepository(db);
+
+  // 시드 데이터: 첫 실행 시 기본 SAP 루틴 템플릿 삽입
+  seedRoutineTemplates(routineTemplateRepo);
+
+  const routineExecutor = new RoutineExecutor(
+    routineTemplateRepo, routineExecutionRepo, closingPlanRepo, closingStepRepo
+  );
+
+  // 앱 시작 시 루틴 자동 실행
+  routineExecutor.executeDueRoutines();
+
   const localFolderLibrary = new LocalFolderSourceLibrary(configuredSourceRepo, sourceDocumentRepo);
   const mcpConnector = new McpConnector(configuredSourceRepo, sourceDocumentRepo);
 
-  const providers = [openaiProvider, anthropicProvider, googleProvider];
+  const copilotProvider = new CopilotProvider();
+  const providers = [openaiProvider, anthropicProvider, googleProvider, copilotProvider];
   const skillRegistry = new SkillSourceRegistry(
     vaultRepo,
     analysisRepo,
@@ -78,7 +95,7 @@ function initRuntime(): void {
   );
   const chatRuntime = new ChatRuntime(
     providers, secureStore, sessionRepo, messageRepo,
-    policyEngine, auditRepo, skillRegistry
+    auditRepo, skillRegistry
   );
   const oauthManager = new OAuthManager(secureStore, accountRepo, config);
 
@@ -105,6 +122,9 @@ function initRuntime(): void {
     mcpConnector,
     closingPlanRepo,
     closingStepRepo,
+    routineTemplateRepo,
+    routineExecutionRepo,
+    routineExecutor,
     getMainWindow: () => mainWindow,
   };
 }

@@ -704,6 +704,285 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  height: 100%;
+}
+
+/* ─── Compact Header ─── */
+
+.chat-context-banner--compact {
+  padding: var(--spacing-md) var(--spacing-xl);
+}
+
+.chat-context-banner--compact .chat-context-copy p {
+  display: none;
+}
+
+/* ─── Toolbar (접기/펼치기) ─── */
+
+.ask-sap-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-xl);
+  height: 44px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-secondary);
+}
+
+.ask-sap-toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.ask-sap-toolbar-toggle:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.ask-sap-toolbar-toggle.active {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.ask-sap-toolbar-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-bg-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.ask-sap-toolbar-toggle.active .ask-sap-toolbar-count {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ─── Content Area (flex: 1 스크롤) ─── */
+
+.ask-sap-content-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 접기 가능한 패널 공통 */
+.chat-collapsible-panel {
+  flex-shrink: 0;
+  margin: var(--spacing-md) var(--spacing-xl) 0;
+}
+
+/* ─── Streaming Indicator ─── */
+
+.streaming-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.streaming-meta-badges {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.streaming-content {
+  padding: 12px 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 70%;
+  align-self: flex-start;
+}
+
+.streaming-dots {
+  display: flex;
+  gap: 6px;
+  padding: var(--spacing-md);
+}
+
+.streaming-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.4;
+  animation: streaming-bounce 1.4s ease-in-out infinite;
+}
+
+.streaming-dot:nth-child(2) { animation-delay: 0.2s; }
+.streaming-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes streaming-bounce {
+  0%, 80%, 100% { transform: scale(1); opacity: 0.4; }
+  40% { transform: scale(1.3); opacity: 1; }
+}
+
+.streaming-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.streaming-stop-btn:hover {
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
+}
+
+/* ─── Empty State 리디자인 ─── */
+
+.chat-empty--redesigned {
+  gap: var(--spacing-sm);
+}
+
+.chat-empty--redesigned h2 {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.chat-empty--redesigned p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.chat-empty-section-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.chat-empty-quickstart,
+.chat-empty-frequent {
+  width: 100%;
+  max-width: 480px;
+  margin-top: var(--spacing-md);
+}
+
+.chat-empty-card-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.chat-empty-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.chat-empty-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.chat-empty-card strong {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.chat-empty-card span {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ─── Session Card 개선 ─── */
+
+.session-preview {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.session-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: 2px;
+}
+
+.session-provider-badge {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs, 4px);
+  background: var(--color-badge-neutral-bg, rgba(0, 0, 0, 0.06));
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.session-item-actions {
+  display: none;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+}
+
+.session-item:hover .session-item-actions {
+  display: flex;
+}
+
+.session-action-btn {
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+}
+
+.session-action-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
 }
 
 /* ─── Cockpit Queue SubNav ─── */

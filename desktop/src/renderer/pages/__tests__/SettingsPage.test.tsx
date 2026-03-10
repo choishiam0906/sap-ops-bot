@@ -28,7 +28,6 @@ describe('SettingsPage', () => {
       thinkingLevel: 'medium',
     })
     useWorkspaceStore.setState({
-      securityMode: 'secure-local',
       domainPack: 'ops',
     })
     mockApi.getAuthStatus.mockResolvedValue({ status: 'unauthenticated', accountHint: null })
@@ -175,7 +174,7 @@ describe('SettingsPage', () => {
     expect(screen.getByLabelText('메시지 전송 키')).toBeInTheDocument()
   })
 
-  it('Workspace 카테고리에서 SecurityMode 3종 카드를 표시한다', async () => {
+  it('Workspace 카테고리에서 Domain Pack 선택을 표시한다', async () => {
     const user = userEvent.setup()
     renderWithProviders(<SettingsPage />)
 
@@ -183,22 +182,7 @@ describe('SettingsPage', () => {
     await user.click(workspaceNav)
 
     expect(screen.getByRole('heading', { name: 'Workspace' })).toBeInTheDocument()
-    expect(screen.getByText('Secure Local')).toBeInTheDocument()
-    expect(screen.getByText('Reference')).toBeInTheDocument()
-    expect(screen.getAllByText('Hybrid Approved').length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('Workspace에서 SecurityMode 변경 시 workspaceStore가 업데이트된다', async () => {
-    const user = userEvent.setup()
-    renderWithProviders(<SettingsPage />)
-
-    const workspaceNav = screen.getByText('Workspace').closest('button')!
-    await user.click(workspaceNav)
-
-    const referenceCard = screen.getByText('Reference').closest('button')!
-    await user.click(referenceCard)
-
-    expect(useWorkspaceStore.getState().securityMode).toBe('reference')
+    expect(screen.getByText('Domain Pack')).toBeInTheDocument()
   })
 
   it('Shortcuts 카테고리에서 단축키 레퍼런스를 표시한다', async () => {

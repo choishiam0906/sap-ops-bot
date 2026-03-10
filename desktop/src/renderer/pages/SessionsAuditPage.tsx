@@ -2,15 +2,8 @@ import { useSessions } from '../hooks/useSessions'
 import { useAuditLogs, useAuditSearch } from '../hooks/useAuditLogs'
 import { useAuditStore } from '../stores/auditStore'
 import { Badge } from '../components/ui/Badge'
-import type { AuditLogEntry, AuditSearchFilters, SecurityMode, AuditAction } from '../../main/contracts'
+import type { AuditLogEntry, AuditSearchFilters, AuditAction } from '../../main/contracts'
 import './SessionsAuditPage.css'
-
-const SECURITY_MODE_OPTIONS: { value: SecurityMode | ''; label: string }[] = [
-  { value: '', label: '전체 모드' },
-  { value: 'secure-local', label: 'Secure Local' },
-  { value: 'reference', label: 'Reference' },
-  { value: 'hybrid-approved', label: 'Hybrid Approved' },
-]
 
 const ACTION_OPTIONS: { value: AuditAction | ''; label: string }[] = [
   { value: '', label: '전체 액션' },
@@ -64,11 +57,9 @@ function SessionsTab() {
 
 function AuditFilters() {
   const {
-    filterSecurityMode,
     filterAction,
     filterDateFrom,
     filterDateTo,
-    setFilterSecurityMode,
     setFilterAction,
     setFilterDateFrom,
     setFilterDateTo,
@@ -77,18 +68,6 @@ function AuditFilters() {
 
   return (
     <div className="audit-filters">
-      <select
-        className="audit-filter-select"
-        value={filterSecurityMode}
-        onChange={(e) => setFilterSecurityMode(e.target.value as SecurityMode | '')}
-        aria-label="보안 모드 필터"
-      >
-        {SECURITY_MODE_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
       <select
         className="audit-filter-select"
         value={filterAction}
@@ -134,7 +113,6 @@ function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
           <th>시간</th>
           <th>액션</th>
           <th>Skill</th>
-          <th>보안 모드</th>
           <th>도메인 팩</th>
           <th>정책 결정</th>
           <th>외부 전송</th>
@@ -148,11 +126,6 @@ function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
             <td>{formatTimestamp(entry.timestamp)}</td>
             <td>{entry.action}</td>
             <td>{entry.skillId ?? '-'}</td>
-            <td>
-              <Badge variant={entry.securityMode === 'secure-local' ? 'success' : entry.securityMode === 'reference' ? 'info' : 'warning'}>
-                {entry.securityMode}
-              </Badge>
-            </td>
             <td>{entry.domainPack}</td>
             <td>
               <span className={policyBadgeClass(entry.policyDecision)}>
@@ -170,11 +143,10 @@ function AuditTable({ entries }: { entries: AuditLogEntry[] }) {
 }
 
 function AuditTab() {
-  const { filterSecurityMode, filterAction, filterDateFrom, filterDateTo } = useAuditStore()
+  const { filterAction, filterDateFrom, filterDateTo } = useAuditStore()
 
-  const hasFilters = filterSecurityMode || filterAction || filterDateFrom || filterDateTo
+  const hasFilters = filterAction || filterDateFrom || filterDateTo
   const filters: AuditSearchFilters = {}
-  if (filterSecurityMode) filters.securityMode = filterSecurityMode
   if (filterAction) filters.action = filterAction
   if (filterDateFrom) filters.from = filterDateFrom
   if (filterDateTo) filters.to = filterDateTo

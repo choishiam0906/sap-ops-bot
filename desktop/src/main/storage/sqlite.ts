@@ -269,6 +269,50 @@ export class LocalDatabase {
       CREATE INDEX IF NOT EXISTS idx_closing_steps_deadline ON closing_steps(deadline);
       CREATE INDEX IF NOT EXISTS idx_closing_steps_plan_order ON closing_steps(plan_id, sort_order);
     `);
+
+    // ─── Routine (루틴 업무 자동화) 테이블 ───
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS routine_templates (
+        id TEXT PRIMARY KEY,
+        frequency TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        trigger_day INTEGER,
+        trigger_month INTEGER,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS routine_template_steps (
+        id TEXT PRIMARY KEY,
+        template_id TEXT NOT NULL REFERENCES routine_templates(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT,
+        module TEXT,
+        sort_order INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS routine_executions (
+        id TEXT PRIMARY KEY,
+        template_id TEXT NOT NULL REFERENCES routine_templates(id) ON DELETE CASCADE,
+        plan_id TEXT NOT NULL REFERENCES closing_plans(id) ON DELETE CASCADE,
+        execution_date TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_routine_exec_unique
+      ON routine_executions(template_id, execution_date);
+
+      CREATE INDEX IF NOT EXISTS idx_routine_templates_frequency
+      ON routine_templates(frequency, is_active);
+
+      CREATE INDEX IF NOT EXISTS idx_routine_template_steps_template
+      ON routine_template_steps(template_id, sort_order);
+
+      CREATE INDEX IF NOT EXISTS idx_routine_executions_date
+      ON routine_executions(execution_date);
+    `);
   }
 
   prepare(sql: string): Database.Statement {

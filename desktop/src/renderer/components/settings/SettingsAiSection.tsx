@@ -4,7 +4,7 @@ import {
   Sparkles, Plus, X, Globe, Monitor, Github, Copy,
 } from 'lucide-react'
 import type {
-  ProviderType, AuthStatus, SecurityMode, DomainPack,
+  ProviderType, AuthStatus, DomainPack,
   OAuthAvailability,
 } from '../../../main/contracts.js'
 import { PROVIDER_LABELS, PROVIDER_MODELS } from '../../../main/contracts.js'
@@ -17,7 +17,6 @@ import { ActionMenu } from '../ui/ActionMenu.js'
 import { useSettingsStore, type ThinkingLevel } from '../../stores/settingsStore.js'
 import {
   useWorkspaceStore,
-  SECURITY_MODE_DETAILS,
 } from '../../stores/workspaceStore.js'
 
 const api = window.sapOpsDesktop
@@ -164,24 +163,12 @@ function errorMessage(err: unknown): string {
   return String(err)
 }
 
-function describeSourceBoundary(securityMode: SecurityMode): string {
-  if (securityMode === 'secure-local') {
-    return 'Local file, Current Run, Vault 중심으로 제한하며 외부 MCP connector는 차단합니다.'
-  }
-  if (securityMode === 'reference') {
-    return '공개 Reference source와 read-only connector를 우선 사용합니다.'
-  }
-  return '승인된 요약과 메타데이터만 connector로 넘기고, 원문 직접 전달은 제한합니다.'
+function describeSourceBoundary(): string {
+  return '인증된 AI 서비스를 통해 Local file, Vault, MCP connector 등 다양한 소스를 활용합니다.'
 }
 
-function describeMcpGuardrail(securityMode: SecurityMode): string {
-  if (securityMode === 'secure-local') {
-    return 'MCP는 비활성 또는 로컬 전용 connector만 허용하는 구성이 안전합니다.'
-  }
-  if (securityMode === 'reference') {
-    return '공개 문서, 표준 가이드, read-only 검색형 MCP를 붙이기 좋은 모드입니다.'
-  }
-  return '운영 시스템 connector는 read-only + 승인형 요약 전달 정책으로 연결하는 것이 적합합니다.'
+function describeMcpGuardrail(): string {
+  return '공개 문서, 표준 가이드, read-only 검색형 MCP를 연결할 수 있습니다.'
 }
 
 // ─── 메인 컴포넌트 ─────────────────────────────────
@@ -226,7 +213,7 @@ export function SettingsAiSection() {
     thinkingLevel, setThinkingLevel,
   } = useSettingsStore()
 
-  const { securityMode, domainPack } = useWorkspaceStore()
+  const { domainPack } = useWorkspaceStore()
 
   const checkAllStatus = useCallback(async () => {
     for (const p of ALL_PROVIDERS) {
@@ -527,7 +514,6 @@ export function SettingsAiSection() {
   const authenticatedProviders = ALL_PROVIDERS.filter((p) => states[p.type].status === 'authenticated')
   const allUnauthenticated = authenticatedProviders.length === 0
 
-  const currentModeDetail = SECURITY_MODE_DETAILS[securityMode]
   const currentPackGuide = WORKSPACE_SKILL_GUIDES[domainPack]
 
   // ─── 렌더링 ───────────────────────────────────────
@@ -692,16 +678,16 @@ export function SettingsAiSection() {
                 <div className="settings-row">
                   <div className="row-label-group">
                     <span className="row-label">Source 경계</span>
-                    <span className="row-desc">{describeSourceBoundary(securityMode)}</span>
+                    <span className="row-desc">{describeSourceBoundary()}</span>
                   </div>
                   <div className="row-right">
-                    <Badge variant={currentModeDetail.badgeVariant}>{currentModeDetail.label}</Badge>
+                    <Badge variant="info">active</Badge>
                   </div>
                 </div>
                 <div className="settings-row">
                   <div className="row-label-group">
                     <span className="row-label">MCP 권장 정책</span>
-                    <span className="row-desc">{describeMcpGuardrail(securityMode)}</span>
+                    <span className="row-desc">{describeMcpGuardrail()}</span>
                   </div>
                   <div className="row-right">
                     <Badge variant="neutral">{currentPackGuide.skillId}</Badge>
@@ -736,9 +722,7 @@ export function SettingsAiSection() {
                 <article className="source-capability-card">
                   <div className="source-capability-head">
                     <strong>MCP Connectors</strong>
-                    <Badge variant={securityMode === 'secure-local' ? 'warning' : 'info'}>
-                      {securityMode === 'secure-local' ? 'guarded' : 'expandable'}
-                    </Badge>
+                    <Badge variant="info">expandable</Badge>
                   </div>
                   <p>SAP 문서, 티켓, 운영 시스템은 read-only 중심으로 단계적으로 붙이는 구성이 적합합니다.</p>
                 </article>

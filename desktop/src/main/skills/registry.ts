@@ -22,7 +22,7 @@ const SKILLS: SapSkillDefinition[] = [
     description: "CBO 소스와 추출물을 읽고 영향 범위, 리스크, 검증 체크포인트를 정리합니다.",
     supportedDomainPacks: ["cbo-maintenance"],
     supportedDataTypes: ["chat", "cbo"],
-    allowedSecurityModes: ["secure-local", "reference", "hybrid-approved"],
+
     defaultPromptTemplate:
       "당신은 SAP 운영팀의 CBO 유지보수 리뷰어입니다. 변경 영향, 리스크, 점검 항목을 구조적으로 정리하세요.",
     outputFormat: "structured-report",
@@ -40,7 +40,7 @@ const SKILLS: SapSkillDefinition[] = [
     description: "Transport 추출물 기준으로 변경 범위와 배포 전 확인 포인트를 요약합니다.",
     supportedDomainPacks: ["ops", "cbo-maintenance", "functional"],
     supportedDataTypes: ["chat"],
-    allowedSecurityModes: ["secure-local", "reference", "hybrid-approved"],
+
     defaultPromptTemplate:
       "SAP transport 검토자로서 변경 범위, 리스크, 승인 전 점검 항목을 운영 관점에서 정리하세요.",
     outputFormat: "structured-report",
@@ -58,7 +58,7 @@ const SKILLS: SapSkillDefinition[] = [
     description: "dump, spool, log를 기준으로 원인 후보와 점검 순서를 정리합니다.",
     supportedDomainPacks: ["ops", "functional"],
     supportedDataTypes: ["chat"],
-    allowedSecurityModes: ["reference", "hybrid-approved"],
+
     defaultPromptTemplate:
       "SAP 운영 장애 분석가로서 원인 후보, 확인 순서, 임시 우회책을 간결하게 제시하세요.",
     outputFormat: "checklist",
@@ -76,7 +76,7 @@ const SKILLS: SapSkillDefinition[] = [
     description: "분석 결과를 운영 절차, 인수인계 메모, 변경 승인 코멘트로 변환합니다.",
     supportedDomainPacks: ["ops", "cbo-maintenance", "functional", "pi-integration", "btp-rap-cap"],
     supportedDataTypes: ["chat"],
-    allowedSecurityModes: ["secure-local", "reference", "hybrid-approved"],
+
     defaultPromptTemplate:
       "SAP 운영 문서 작성자로서 보고서, runbook, handoff memo를 짧고 명확하게 작성하세요.",
     outputFormat: "structured-report",
@@ -94,7 +94,7 @@ const SKILLS: SapSkillDefinition[] = [
     description: "기술 분석 결과를 운영자와 현업이 이해하기 쉬운 설명으로 바꿉니다.",
     supportedDomainPacks: ["ops", "functional", "cbo-maintenance", "pi-integration", "btp-rap-cap"],
     supportedDataTypes: ["chat"],
-    allowedSecurityModes: ["secure-local", "reference", "hybrid-approved"],
+
     defaultPromptTemplate:
       "SAP 도메인 설명가로서 기술 결과를 운영자와 현업 모두 이해할 수 있게 재구성하세요.",
     outputFormat: "explanation",
@@ -112,7 +112,7 @@ const SKILLS: SapSkillDefinition[] = [
     description: "분석 결과를 Vault에 저장하기 전에 classification, source type, 태그 방향을 제안합니다.",
     supportedDomainPacks: ["ops", "functional", "cbo-maintenance", "pi-integration", "btp-rap-cap"],
     supportedDataTypes: ["chat"],
-    allowedSecurityModes: ["secure-local", "reference", "hybrid-approved"],
+
     defaultPromptTemplate:
       "지식 큐레이터로서 근거 문서를 어떤 분류와 제목으로 저장해야 하는지 제안하세요.",
     outputFormat: "checklist",
@@ -239,8 +239,7 @@ export class SkillSourceRegistry {
     const compatible = SKILLS.filter(
       (skill) =>
         skill.supportedDomainPacks.includes(context.domainPack) &&
-        skill.supportedDataTypes.includes(context.dataType) &&
-        skill.allowedSecurityModes.includes(context.securityMode)
+        skill.supportedDataTypes.includes(context.dataType)
     );
 
     return compatible.map((skill, index) => ({
@@ -354,7 +353,7 @@ export class SkillSourceRegistry {
     const sourceReferences: SourceReference[] = [
       {
         id: "workspace-context",
-        title: `${labelDomainPack(input.context.domainPack)} / ${input.context.securityMode}`,
+        title: labelDomainPack(input.context.domainPack),
         category: "workspace",
         relevance_score: 1,
         description: "현재 워크스페이스 설정",
@@ -363,7 +362,7 @@ export class SkillSourceRegistry {
 
     const promptContext = [
       `[선택 Skill]\n${selectedSkill.title}\n${selectedSkill.description}`,
-      `[워크스페이스]\nDomain Pack: ${input.context.domainPack}\nSecurity Mode: ${input.context.securityMode}`,
+      `[워크스페이스]\nDomain Pack: ${input.context.domainPack}`,
     ];
 
     for (const source of selectedSources) {

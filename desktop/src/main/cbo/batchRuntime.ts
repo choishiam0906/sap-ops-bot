@@ -119,7 +119,6 @@ export class CboBatchRuntime {
           parsed.content,
           input.provider,
           input.model,
-          input.securityMode
         );
         const fileId = this.analysisRepo.recordSuccessFile(
           run.id,

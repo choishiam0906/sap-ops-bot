@@ -794,6 +794,243 @@
   font-size: var(--font-size-sm);
 }
 
+/* ════════════════════════════════════════════════
+   Cockpit: Overview / Routine 패널
+   ════════════════════════════════════════════════ */
+
+/* ─── Overview Panel ─── */
+.cockpit-overview-panel {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.cockpit-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.cockpit-overview-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.cockpit-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.cockpit-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-lg) var(--spacing-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.cockpit-stat-icon {
+  margin-bottom: 4px;
+}
+
+.cockpit-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.cockpit-stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.cockpit-overview-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.cockpit-overview-section h3 {
+  font-size: var(--font-size-base);
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-text);
+}
+
+.cockpit-overview-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cockpit-alert-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+}
+
+.cockpit-alert-title {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cockpit-alert-progress {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.cockpit-overview-toast {
+  margin-top: var(--spacing-md);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ─── Today Plan Summary ─── */
+.cockpit-today-plan {
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.cockpit-today-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.cockpit-today-plan-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.cockpit-today-step {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 4px 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.cockpit-today-step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.cockpit-today-more {
+  padding: 4px 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* ─── Routine Panel (공통: Daily/Monthly/Yearly) ─── */
+.cockpit-routine-panel {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.cockpit-routine-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.cockpit-routine-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.cockpit-date-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-secondary);
+}
+
+.cockpit-routine-card {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.cockpit-routine-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.cockpit-routine-card-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.cockpit-empty-hint {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ─── Module Group (모듈별 접기/펼치기) ─── */
+.cockpit-module-group {
+  margin-top: var(--spacing-md);
+}
+
+.cockpit-module-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.cockpit-module-group-header:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.cockpit-module-count {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
 /* ─── 반응형 ─── */
 @media (max-width: 960px) {
   .closing-subnav {
@@ -804,6 +1041,10 @@
   .closing-plan-list-panel {
     width: 260px;
     min-width: 220px;
+  }
+
+  .cockpit-overview-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

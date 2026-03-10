@@ -14,7 +14,7 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
 }
 
-describe('CboPage', () => {
+describe('CboPage (AnalysisMode 래퍼)', () => {
   beforeEach(() => {
     mockApi.searchSourceDocuments.mockResolvedValue([
       {
@@ -71,15 +71,13 @@ describe('CboPage', () => {
       streamingMeta: null,
     })
     useAppShellStore.setState({ currentPage: 'cbo' })
-    useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'cbo-maintenance' })
+    useWorkspaceStore.setState({ domainPack: 'cbo-maintenance' })
   })
 
-  it('페이지 타이틀과 3개 탭을 렌더링한다', () => {
+  it('2개 분석 탭(텍스트 분석, 파일 선택)을 렌더링한다', () => {
     renderWithProviders(<CboPage />)
-    expect(screen.getByText('CBO 코드 분석')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '텍스트 분석' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: '파일·폴더' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: '실행 이력' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '파일 선택' })).toBeInTheDocument()
   })
 
   it('텍스트 탭에서 소스 코드 입력란이 표시된다', () => {
@@ -124,42 +122,16 @@ describe('CboPage', () => {
     })
 
     expect(mockApi.analyzeCboText).toHaveBeenCalledWith(expect.objectContaining({
-      securityMode: 'secure-local',
       domainPack: 'cbo-maintenance',
     }))
   })
 
-  it('파일·폴더 탭으로 전환하면 파일/폴더 버튼이 표시된다', async () => {
+  it('파일 선택 탭으로 전환하면 파일 분석 버튼이 표시된다', async () => {
     const user = userEvent.setup()
     renderWithProviders(<CboPage />)
 
-    await user.click(screen.getByRole('tab', { name: '파일·폴더' }))
+    await user.click(screen.getByRole('tab', { name: '파일 선택' }))
     expect(screen.getByText('파일 선택 후 분석')).toBeInTheDocument()
-    expect(screen.getByText('폴더 배치 분석')).toBeInTheDocument()
-  })
-
-  it('실행 이력 탭 전환 시 Run 목록을 로드한다', async () => {
-    const user = userEvent.setup()
-    mockApi.listCboRuns.mockResolvedValue([])
-
-    renderWithProviders(<CboPage />)
-    await user.click(screen.getByRole('tab', { name: '실행 이력' }))
-
-    await waitFor(() => {
-      expect(mockApi.listCboRuns).toHaveBeenCalledWith(20)
-    })
-  })
-
-  it('Run 목록 로드 실패 시 에러 메시지를 표시한다', async () => {
-    const user = userEvent.setup()
-    mockApi.listCboRuns.mockRejectedValue(new Error('DB 오류'))
-
-    renderWithProviders(<CboPage />)
-    await user.click(screen.getByRole('tab', { name: '실행 이력' }))
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('실행 이력을 불러오지 못했어요')
-    })
   })
 
   it('분석 결과에서 AI 후속 질문을 Chat으로 넘긴다', async () => {

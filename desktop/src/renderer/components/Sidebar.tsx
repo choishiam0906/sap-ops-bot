@@ -1,6 +1,6 @@
 import {
-  MessageSquare, Search, LayoutDashboard, Settings,
-  PanelLeftClose, PanelLeft, BookOpen, Plus, Sparkles,
+  MessageSquare, LayoutDashboard, Settings,
+  PanelLeftClose, PanelLeft, BookOpen, Plus,
 } from 'lucide-react'
 import type { AppSection } from '../stores/appShellStore'
 import { useAppShellStore } from '../stores/appShellStore'
@@ -19,36 +19,24 @@ const MAIN_NAV_ITEMS: NavGroupItem[] = [
     position: 'main',
     children: [
       { id: 'cockpit-overview', subPage: 'overview', label: 'Overview' },
-      { id: 'cockpit-pending', subPage: 'pending', label: '승인 대기' },
-      { id: 'cockpit-high-risk', subPage: 'high-risk', label: '고위험 분석' },
-      { id: 'cockpit-today', subPage: 'today', label: '오늘 작업' },
-      { id: 'cockpit-issues', subPage: 'issues', label: '최근 이슈' },
+      { id: 'cockpit-daily', subPage: 'daily', label: 'Daily Tasks' },
+      { id: 'cockpit-monthly', subPage: 'monthly', label: '월별 마감' },
+      { id: 'cockpit-yearly', subPage: 'yearly', label: '연간 마감' },
+      { id: 'cockpit-all-plans', subPage: 'all-plans', label: '전체 Plan' },
     ],
   },
   {
-    id: 'ask-sap',
-    section: 'ask-sap',
-    label: 'Ask SAP',
+    id: 'sap-assistant',
+    section: 'sap-assistant',
+    label: 'SAP 어시스턴트',
     Icon: MessageSquare,
     position: 'main',
     children: [
-      { id: 'ask-sap-all', subPage: 'all', label: '전체 세션' },
-      { id: 'ask-sap-flagged', subPage: 'flagged', label: '중요 세션' },
-      { id: 'ask-sap-cases', subPage: 'cases', label: '저장한 케이스' },
-      { id: 'ask-sap-archive', subPage: 'archive', label: 'Archive' },
-    ],
-  },
-  {
-    id: 'cbo',
-    section: 'cbo',
-    label: 'CBO 분석',
-    Icon: Search,
-    position: 'main',
-    children: [
-      { id: 'cbo-new', subPage: 'new', label: '새 분석' },
-      { id: 'cbo-history', subPage: 'history', label: '분석 이력' },
-      { id: 'cbo-batch', subPage: 'batch', label: 'Batch / Folder Run' },
-      { id: 'cbo-diff', subPage: 'diff', label: 'Diff / 영향도' },
+      { id: 'sa-chat', subPage: 'chat', label: '💬 대화' },
+      { id: 'sa-flagged', subPage: 'chat:flagged', label: '중요 세션' },
+      { id: 'sa-saved', subPage: 'chat:saved', label: '보관함' },
+      { id: 'sa-analysis', subPage: 'analysis', label: '🔍 코드 분석' },
+      { id: 'sa-source-archive', subPage: 'archive', label: '📁 소스코드 아카이브' },
     ],
   },
   {
@@ -58,10 +46,9 @@ const MAIN_NAV_ITEMS: NavGroupItem[] = [
     Icon: BookOpen,
     position: 'main',
     children: [
-      { id: 'knowledge-local', subPage: 'local-folders', label: 'Local Folders' },
-      { id: 'knowledge-apis', subPage: 'apis', label: 'APIs' },
-      { id: 'knowledge-mcps', subPage: 'mcps', label: 'MCPs' },
-      { id: 'knowledge-vault', subPage: 'vault', label: 'Vault' },
+      { id: 'knowledge-sources', subPage: 'sources', label: '📚 소스' },
+      { id: 'knowledge-skills', subPage: 'skills', label: '⚡ 스킬' },
+      { id: 'knowledge-vault', subPage: 'vault', label: '🔐 볼트' },
     ],
   },
 ]
@@ -72,13 +59,6 @@ const BOTTOM_NAV_ITEMS: NavGroupItem[] = [
     section: 'settings',
     label: 'Settings',
     Icon: Settings,
-    position: 'bottom',
-  },
-  {
-    id: 'whats-new',
-    section: 'settings',
-    label: "What's New",
-    Icon: Sparkles,
     position: 'bottom',
   },
 ]
@@ -101,7 +81,7 @@ export function Sidebar() {
     setCurrentSessionId(null)
     setCaseContext(null)
     setInput('')
-    setSection('ask-sap', 'all')
+    setSection('sap-assistant', 'chat')
   }
 
   return (

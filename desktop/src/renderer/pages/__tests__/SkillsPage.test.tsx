@@ -17,7 +17,6 @@ const compatibleSkill = {
   description: 'CBO 영향 분석',
   supportedDomainPacks: ['cbo-maintenance'] as const,
   supportedDataTypes: ['chat', 'cbo'] as const,
-  allowedSecurityModes: ['secure-local', 'reference', 'hybrid-approved'] as const,
   defaultPromptTemplate: '',
   outputFormat: 'structured-report' as const,
   requiredSources: ['workspace-context', 'vault-confidential'],
@@ -31,7 +30,6 @@ const incompatibleSkill = {
   description: 'BTP 기반 아키텍처를 리뷰합니다.',
   supportedDomainPacks: ['btp-rap-cap'] as const,
   supportedDataTypes: ['chat'] as const,
-  allowedSecurityModes: ['reference'] as const,
   defaultPromptTemplate: '',
   outputFormat: 'checklist' as const,
   requiredSources: ['vault-reference'],
@@ -52,7 +50,7 @@ describe('SkillsPage', () => {
       },
     ])
     mockApi.listSkills.mockResolvedValue([compatibleSkill, incompatibleSkill])
-    useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'cbo-maintenance' })
+    useWorkspaceStore.setState({ domainPack: 'cbo-maintenance' })
   })
 
   it('현재 워크스페이스에 맞는 skill pack과 skill catalog를 표시한다', async () => {

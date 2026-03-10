@@ -1,5 +1,5 @@
 import type { ProviderType } from './provider.js';
-import type { SecurityMode, DomainPack } from './policy.js';
+import type { DomainPack } from './policy.js';
 import type { SourceReference, SapSkillDefinition } from './source.js';
 
 export interface ChatSession {
@@ -29,7 +29,6 @@ export interface CaseContext {
 }
 
 export interface SkillExecutionContext {
-  securityMode: SecurityMode;
   domainPack: DomainPack;
   dataType: "chat" | "cbo";
   message?: string;
@@ -56,7 +55,6 @@ export interface SendMessageInput {
   provider: ProviderType;
   model: string;
   message: string;
-  securityMode: SecurityMode;
   domainPack: DomainPack;
   skillId?: string;
   sourceIds?: string[];

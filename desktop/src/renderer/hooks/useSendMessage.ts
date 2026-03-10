@@ -6,11 +6,10 @@ const api = window.sapOpsDesktop
 
 export function useSendMessage() {
   const queryClient = useQueryClient()
-  const securityMode = useWorkspaceStore((s) => s.securityMode)
   const domainPack = useWorkspaceStore((s) => s.domainPack)
 
-  return useMutation<SendMessageOutput, Error, Omit<SendMessageInput, 'securityMode' | 'domainPack'>>({
-    mutationFn: (input) => api.sendMessage({ ...input, securityMode, domainPack }),
+  return useMutation<SendMessageOutput, Error, Omit<SendMessageInput, 'domainPack'>>({
+    mutationFn: (input) => api.sendMessage({ ...input, domainPack }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
     },

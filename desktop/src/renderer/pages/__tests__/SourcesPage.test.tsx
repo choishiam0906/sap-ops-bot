@@ -13,7 +13,7 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe('SourcesPage', () => {
   beforeEach(() => {
-    useWorkspaceStore.setState({ securityMode: 'secure-local', domainPack: 'cbo-maintenance' })
+    useWorkspaceStore.setState({ domainPack: 'cbo-maintenance' })
   })
 
   it('Local Folder / MCPs / APIs 탭을 표시한다', async () => {

@@ -36,7 +36,6 @@ describe('ChatPage', () => {
         description: '장애 증상을 분석합니다.',
         supportedDomainPacks: ['ops'],
         supportedDataTypes: ['chat'],
-        allowedSecurityModes: ['reference', 'hybrid-approved'],
         defaultPromptTemplate: '',
         outputFormat: 'checklist',
         requiredSources: ['vault-reference'],
@@ -52,7 +51,6 @@ describe('ChatPage', () => {
           description: '장애 증상을 분석합니다.',
           supportedDomainPacks: ['ops'],
           supportedDataTypes: ['chat'],
-          allowedSecurityModes: ['reference', 'hybrid-approved'],
           defaultPromptTemplate: '',
           outputFormat: 'checklist',
           requiredSources: ['workspace-context', 'vault-reference'],
@@ -94,7 +92,7 @@ describe('ChatPage', () => {
       selectedSourceIds: [],
       lastExecutionMeta: null,
     })
-    useWorkspaceStore.setState({ securityMode: 'reference', domainPack: 'ops' })
+    useWorkspaceStore.setState({ domainPack: 'ops' })
   })
 
   it('빈 상태에서 안내 메시지를 표시한다', async () => {

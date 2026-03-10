@@ -1,6 +1,6 @@
 import { Send, X } from 'lucide-react'
 import type { ProviderType } from '../../../main/contracts.js'
-import { PROVIDER_LABELS, PROVIDER_MODELS } from '../../../main/contracts.js'
+import { PROVIDER_LABELS, PROVIDER_MODELS, DEFAULT_MODELS } from '../../../main/contracts.js'
 import { Button } from '../ui/Button.js'
 
 interface SourceChip {
@@ -15,6 +15,7 @@ interface ComposerProps {
   placeholder?: string
   sending: boolean
   selectedSources?: SourceChip[]
+  availableProviders?: ProviderType[]
   onInputChange: (v: string) => void
   onProviderChange: (v: ProviderType) => void
   onModelChange: (v: string) => void
@@ -25,9 +26,11 @@ interface ComposerProps {
 export function Composer({
   input, provider, model, placeholder, sending,
   selectedSources = [],
+  availableProviders,
   onInputChange, onProviderChange, onModelChange, onSend,
   onRemoveSource,
 }: ComposerProps) {
+  const providerKeys = availableProviders ?? (Object.keys(PROVIDER_LABELS) as ProviderType[])
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -40,13 +43,24 @@ export function Composer({
       <div className="chat-options">
         <select
           value={provider}
-          onChange={(e) => onProviderChange(e.target.value as ProviderType)}
+          onChange={(e) => {
+            const newProvider = e.target.value as ProviderType
+            onProviderChange(newProvider)
+            const models = PROVIDER_MODELS[newProvider]
+            if (!models.some((m) => m.value === model)) {
+              onModelChange(DEFAULT_MODELS[newProvider])
+            }
+          }}
           className="chat-select"
           aria-label="Provider 선택"
         >
-          {(Object.keys(PROVIDER_LABELS) as ProviderType[]).map((p) => (
-            <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
-          ))}
+          {providerKeys.length === 0 ? (
+            <option value="" disabled>연결된 AI가 없어요</option>
+          ) : (
+            providerKeys.map((p) => (
+              <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
+            ))
+          )}
         </select>
         <select
           value={model}

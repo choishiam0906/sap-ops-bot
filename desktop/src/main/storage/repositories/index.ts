@@ -5,3 +5,7 @@ export { CboAnalysisRepository } from "./cboAnalysisRepository.js";
 export { AuditRepository } from "./auditRepository.js";
 export { VaultRepository } from "./vaultRepository.js";
 export { ConfiguredSourceRepository, SourceDocumentRepository } from "./sourceRepository.js";
+export { ClosingPlanRepository } from "./closingPlanRepository.js";
+export { ClosingStepRepository } from "./closingStepRepository.js";
+export { RoutineTemplateRepository } from "./routineTemplateRepository.js";
+export { RoutineExecutionRepository } from "./routineExecutionRepository.js";

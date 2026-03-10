@@ -1,0 +1,29 @@
+/* ─── SAP Assistant Page Layout ─── */
+
+.sap-assistant-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sap-assistant-content {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ─── ChatMode: chat-layout이 컨테이너를 꽉 채우도록 ─── */
+
+.sap-assistant-content .chat-layout {
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
+
+/* ─── AnalysisMode: cbo-page가 스크롤 되도록 ─── */
+
+.sap-assistant-content .cbo-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}

@@ -3,7 +3,6 @@ import {
   CboAnalyzeFileInput,
   CboAnalyzeTextInput,
   ProviderType,
-  SecurityMode,
   SourceReference,
 } from "../contracts.js";
 import { SecureStore } from "../auth/secureStore.js";
@@ -41,24 +40,12 @@ export class CboAnalyzer {
 
   async analyzeText(input: CboAnalyzeTextInput): Promise<CboAnalysisResult> {
     const parsed = parseCboText(input.fileName, input.content);
-    return this.analyzeContent(
-      parsed.fileName,
-      parsed.content,
-      input.provider,
-      input.model,
-      input.securityMode
-    );
+    return this.analyzeContent(parsed.fileName, parsed.content, input.provider, input.model);
   }
 
   async analyzeFile(input: CboAnalyzeFileInput): Promise<CboAnalysisResult> {
     const parsed = await parseCboFile(input.filePath);
-    return this.analyzeContent(
-      parsed.fileName,
-      parsed.content,
-      input.provider,
-      input.model,
-      input.securityMode
-    );
+    return this.analyzeContent(parsed.fileName, parsed.content, input.provider, input.model);
   }
 
   async analyzeContent(
@@ -66,15 +53,8 @@ export class CboAnalyzer {
     content: string,
     provider?: ProviderType,
     model?: string,
-    securityMode?: SecurityMode
   ): Promise<CboAnalysisResult> {
     const baseResult = withSkillMeta(analyzeByRules(fileName, content), fileName);
-
-    // secure-local 모드: LLM 보강 건너뜀 — 규칙 분석만 반환
-    if (securityMode === "secure-local") {
-      return baseResult;
-    }
-
     return this.enrichWithOptionalLlm(baseResult, content, provider, model);
   }
 

@@ -3,16 +3,14 @@ import { useQuery } from '@tanstack/react-query'
 import { Sparkles, Wrench, ShieldCheck, X, FileCode, BookOpen, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { SapSkillDefinition } from '../../main/contracts.js'
 import { Badge } from '../components/ui/Badge.js'
-import { useWorkspaceStore, DOMAIN_PACK_DETAILS, SECURITY_MODE_DETAILS } from '../stores/workspaceStore.js'
+import { useWorkspaceStore, DOMAIN_PACK_DETAILS } from '../stores/workspaceStore.js'
 import './SkillsPage.css'
 
 const api = window.sapOpsDesktop
 
 export function SkillsPage() {
   const domainPack = useWorkspaceStore((state) => state.domainPack)
-  const securityMode = useWorkspaceStore((state) => state.securityMode)
   const packDetail = DOMAIN_PACK_DETAILS[domainPack]
-  const modeDetail = SECURITY_MODE_DETAILS[securityMode]
   const [filterMode, setFilterMode] = useState<'compatible' | 'all'>('compatible')
   const [selectedSkill, setSelectedSkill] = useState<SapSkillDefinition | null>(null)
 
@@ -36,17 +34,12 @@ export function SkillsPage() {
   const filteredSkills = useMemo(() => {
     if (filterMode === 'all') return skills
     return skills.filter(
-      (skill) =>
-        skill.supportedDomainPacks.includes(domainPack) &&
-        skill.allowedSecurityModes.includes(securityMode)
+      (skill) => skill.supportedDomainPacks.includes(domainPack)
     )
-  }, [skills, domainPack, securityMode, filterMode])
+  }, [skills, domainPack, filterMode])
 
   function isCompatible(skill: SapSkillDefinition): boolean {
-    return (
-      skill.supportedDomainPacks.includes(domainPack) &&
-      skill.allowedSecurityModes.includes(securityMode)
-    )
+    return skill.supportedDomainPacks.includes(domainPack)
   }
 
   return (
@@ -60,7 +53,7 @@ export function SkillsPage() {
         </div>
         <div className="skills-badges">
           <Badge variant="neutral">{packDetail.label}</Badge>
-          <Badge variant={modeDetail.badgeVariant}>{modeDetail.label}</Badge>
+          <Badge variant="success">엔터프라이즈 보호</Badge>
         </div>
       </div>
 
@@ -213,14 +206,6 @@ export function SkillsPage() {
                     <div className="skills-badges">
                       {selectedSkill.supportedDomainPacks.map((item) => (
                         <Badge key={item} variant={item === domainPack ? 'success' : 'neutral'}>{item}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="skill-modal-label">Security Mode</span>
-                    <div className="skills-badges">
-                      {selectedSkill.allowedSecurityModes.map((mode) => (
-                        <Badge key={mode} variant={mode === securityMode ? 'success' : 'neutral'}>{mode}</Badge>
                       ))}
                     </div>
                   </div>

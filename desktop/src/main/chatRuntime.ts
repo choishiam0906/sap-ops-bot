@@ -10,7 +10,6 @@ import {
   ChatSession,
 } from "./contracts.js";
 import { SecureStore } from "./auth/secureStore.js";
-import { PolicyEngine } from "./policy/policyEngine.js";
 import { LlmProvider } from "./providers/base.js";
 import { AuditRepository, MessageRepository, SessionRepository } from "./storage/repositories.js";
 import { SkillSourceRegistry } from "./skills/registry.js";
@@ -25,7 +24,6 @@ export class ChatRuntime {
     private readonly secureStore: SecureStore,
     private readonly sessionRepo: SessionRepository,
     private readonly messageRepo: MessageRepository,
-    private readonly policyEngine: PolicyEngine,
     private readonly auditRepo: AuditRepository,
     private readonly skillRegistry: SkillSourceRegistry
   ) {
@@ -43,44 +41,16 @@ export class ChatRuntime {
   }
 
   async sendMessage(input: SendMessageInput): Promise<SendMessageOutput> {
-    // 1. 정책 검증 — provider lookup 전에 수행하여 차단 시 외부 호출 방지
-    const decision = this.policyEngine.evaluate({
-      securityMode: input.securityMode,
-      domainPack: input.domainPack,
-      dataType: "chat",
-    });
-
     const execution = this.skillRegistry.resolveSkillExecution({
       skillId: input.skillId,
       sourceIds: input.sourceIds,
       context: {
-        securityMode: input.securityMode,
         domainPack: input.domainPack,
         dataType: "chat",
         message: input.message,
         caseContext: input.caseContext,
       },
     });
-
-    if (!decision.allowed && !decision.requiresApproval) {
-      this.auditRepo.append({
-        id: randomUUID(),
-        sessionId: input.sessionId ?? null,
-        runId: null,
-        timestamp: new Date().toISOString(),
-        securityMode: input.securityMode,
-        domainPack: input.domainPack,
-        action: "send_message",
-        externalTransfer: false,
-        policyDecision: "BLOCKED",
-        provider: input.provider,
-        model: input.model,
-        skillId: execution.meta.skillUsed,
-        sourceIds: execution.meta.sourceIds,
-        sourceCount: execution.meta.sourceCount,
-      });
-      throw new Error(decision.reason);
-    }
 
     const provider = this.providers.get(input.provider);
     if (!provider) {
@@ -129,17 +99,16 @@ export class ChatRuntime {
       execution.meta.sources
     );
 
-    // 3. 성공 후 감사 기록
+    // 감사 기록
     this.auditRepo.append({
       id: randomUUID(),
       sessionId: session.id,
       runId: null,
       timestamp: new Date().toISOString(),
-      securityMode: input.securityMode,
       domainPack: input.domainPack,
       action: "send_message",
       externalTransfer: true,
-      policyDecision: decision.requiresApproval ? "PENDING_APPROVAL" : "ALLOWED",
+      policyDecision: "ALLOWED",
       provider: input.provider,
       model: input.model,
       skillId: execution.meta.skillUsed,

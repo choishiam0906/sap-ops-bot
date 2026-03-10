@@ -1,7 +1,6 @@
 import type {
   AuditLogEntry,
   AuditSearchFilters,
-  SecurityMode,
 } from "../../contracts.js";
 import type { LocalDatabase } from "../sqlite.js";
 import { parseSourceIds } from "./utils.js";
@@ -11,7 +10,7 @@ interface AuditRow {
   sessionId: string | null;
   runId: string | null;
   timestamp: string;
-  securityMode: SecurityMode;
+  securityMode: string;
   domainPack: string;
   action: string;
   externalTransfer: number;
@@ -49,7 +48,7 @@ export class AuditRepository {
         entry.sessionId,
         entry.runId,
         entry.timestamp,
-        entry.securityMode,
+        "reference",
         entry.domainPack,
         entry.action,
         entry.externalTransfer ? 1 : 0,
@@ -129,10 +128,6 @@ export class AuditRepository {
     if (filters.action) {
       conditions.push("action = ?");
       params.push(filters.action);
-    }
-    if (filters.securityMode) {
-      conditions.push("security_mode = ?");
-      params.push(filters.securityMode);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

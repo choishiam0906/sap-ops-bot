@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import type { AskSapSubPage } from './appShellStore'
 
-export type SessionFilterTab = AskSapSubPage
+export type SessionFilterTab = 'all' | 'flagged' | 'saved'
 
 interface AskSapState {
   filterTab: SessionFilterTab

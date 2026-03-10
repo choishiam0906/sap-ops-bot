@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react'
 import {
   SettingsSection,
   SettingsCard,
@@ -7,17 +6,11 @@ import {
 import { Badge } from '../../components/ui/Badge.js'
 import {
   useWorkspaceStore,
-  SECURITY_MODE_DETAILS,
+  DOMAIN_PACK_DETAILS,
 } from '../../stores/workspaceStore.js'
 
 export function PermissionsSettingsPage() {
-  const { securityMode } = useWorkspaceStore()
-  const currentModeDetail = SECURITY_MODE_DETAILS[securityMode]
-
-  const permissionSummary = {
-    outbound: securityMode === 'secure-local' ? '차단' : securityMode === 'reference' ? '허용' : '승인 후 전달',
-    approval: securityMode === 'hybrid-approved' ? '요약본 승인 필요' : '필요 없음',
-  }
+  const { domainPack } = useWorkspaceStore()
 
   return (
     <div className="sp-page page-enter">
@@ -28,26 +21,16 @@ export function PermissionsSettingsPage() {
         <div className="sp-page-body">
           <div className="sp-page-sections">
 
-            <SettingsSection title="현재 정책" description="현재 적용 중인 보안 정책이에요">
+            <SettingsSection title="현재 정책" description="인증된 엔터프라이즈 AI 서비스를 통해 안전하게 처리해요">
               <SettingsCard>
-                <SettingsRow label="Security Mode">
-                  <Badge variant={currentModeDetail.badgeVariant}>{currentModeDetail.label}</Badge>
-                </SettingsRow>
                 <SettingsRow label="외부 전송">
-                  <span className="row-value">{permissionSummary.outbound}</span>
+                  <Badge variant="success">엔터프라이즈 보호</Badge>
                 </SettingsRow>
-                <SettingsRow label="승인 필요">
-                  <span className="row-value">{permissionSummary.approval}</span>
+                <SettingsRow label="Domain Pack">
+                  <span className="row-value">{DOMAIN_PACK_DETAILS[domainPack].label}</span>
                 </SettingsRow>
               </SettingsCard>
             </SettingsSection>
-
-            <section className="settings-section">
-              <div className="info-card">
-                <Info size={16} className="info-card-icon" aria-hidden="true" />
-                <p>정책은 Workspace 카테고리에서 변경할 수 있어요.</p>
-              </div>
-            </section>
 
           </div>
         </div>

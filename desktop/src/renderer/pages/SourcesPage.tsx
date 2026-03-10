@@ -4,7 +4,7 @@ import { FolderSearch, Database, RefreshCw, PlugZap, Globe, Unplug, Plus, Loader
 import type { ConfiguredSource, McpResourceInfo, SourceDocument, VaultClassification } from '../../main/contracts.js'
 import { Badge } from '../components/ui/Badge.js'
 import { Button } from '../components/ui/Button.js'
-import { useWorkspaceStore, DOMAIN_PACK_DETAILS, SECURITY_MODE_DETAILS } from '../stores/workspaceStore.js'
+import { useWorkspaceStore, DOMAIN_PACK_DETAILS } from '../stores/workspaceStore.js'
 import './SourcesPage.css'
 
 const api = window.sapOpsDesktop
@@ -47,9 +47,7 @@ export function SourcesPage() {
   const [previewDoc, setPreviewDoc] = useState<SourceDocument | null>(null)
 
   const domainPack = useWorkspaceStore((state) => state.domainPack)
-  const securityMode = useWorkspaceStore((state) => state.securityMode)
   const packDetail = DOMAIN_PACK_DETAILS[domainPack]
-  const modeDetail = SECURITY_MODE_DETAILS[securityMode]
 
   const { data: configuredSources = [] } = useQuery({
     queryKey: ['sources', 'configured'],
@@ -212,7 +210,7 @@ export function SourcesPage() {
           </p>
         </div>
         <div className="sources-badges">
-          <Badge variant={modeDetail.badgeVariant}>{modeDetail.label}</Badge>
+          <Badge variant="success">엔터프라이즈 보호</Badge>
           <Badge variant="neutral">{packDetail.label}</Badge>
         </div>
       </div>

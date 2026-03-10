@@ -1,5 +1,5 @@
 import type { ProviderType } from './provider.js';
-import type { SecurityMode, DomainPack } from './policy.js';
+import type { DomainPack } from './policy.js';
 import type { SourceReference } from './source.js';
 
 export type CboRiskSeverity = "high" | "medium" | "low";
@@ -41,7 +41,6 @@ export interface CboAnalyzeTextInput {
   content: string;
   provider?: ProviderType;
   model?: string;
-  securityMode?: SecurityMode;
   domainPack?: DomainPack;
 }
 
@@ -49,14 +48,12 @@ export interface CboAnalyzeFileInput {
   filePath: string;
   provider?: ProviderType;
   model?: string;
-  securityMode?: SecurityMode;
   domainPack?: DomainPack;
 }
 
 export interface CboAnalyzePickInput {
   provider?: ProviderType;
   model?: string;
-  securityMode?: SecurityMode;
   domainPack?: DomainPack;
 }
 
@@ -119,7 +116,6 @@ export interface CboAnalyzeFolderInput {
   provider?: ProviderType;
   model?: string;
   skipUnchanged?: boolean;
-  securityMode?: SecurityMode;
   domainPack?: DomainPack;
 }
 
@@ -133,7 +129,6 @@ export interface CboAnalyzeFolderPickInput {
   provider?: ProviderType;
   model?: string;
   skipUnchanged?: boolean;
-  securityMode?: SecurityMode;
   domainPack?: DomainPack;
 }
 

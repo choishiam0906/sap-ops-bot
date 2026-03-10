@@ -7,3 +7,5 @@ export { VaultRepository } from "./repositories/vaultRepository.js";
 export { ConfiguredSourceRepository, SourceDocumentRepository } from "./repositories/sourceRepository.js";
 export { ClosingPlanRepository } from "./repositories/closingPlanRepository.js";
 export { ClosingStepRepository } from "./repositories/closingStepRepository.js";
+export { RoutineTemplateRepository } from "./repositories/routineTemplateRepository.js";
+export { RoutineExecutionRepository } from "./repositories/routineExecutionRepository.js";

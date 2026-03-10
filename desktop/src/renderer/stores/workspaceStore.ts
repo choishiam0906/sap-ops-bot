@@ -1,15 +1,7 @@
 import { create } from 'zustand'
-import type { SecurityMode, DomainPack } from '../../main/contracts'
+import type { DomainPack } from '../../main/contracts'
 
-export type { SecurityMode, DomainPack }
-
-interface SecurityModeDetail {
-  label: string
-  description: string
-  outboundPolicy: string
-  badgeVariant: 'success' | 'info' | 'warning'
-  placeholderHint: string
-}
+export type { DomainPack }
 
 interface DomainPackDetail {
   label: string
@@ -17,36 +9,10 @@ interface DomainPackDetail {
   chatTitle: string
   chatDescription: string
   inputPlaceholder: string
-  recommendedSecurityMode: SecurityMode
   suggestions: string[]
 }
 
-const SECURITY_MODE_KEY = 'sap-assistant-security-mode'
 const DOMAIN_PACK_KEY = 'sap-assistant-domain-pack'
-
-export const SECURITY_MODE_DETAILS: Record<SecurityMode, SecurityModeDetail> = {
-  'secure-local': {
-    label: 'Secure Local',
-    description: '민감한 CBO와 운영 메모를 로컬에서 우선 처리합니다.',
-    outboundPolicy: '원문 외부 전송 차단',
-    badgeVariant: 'success',
-    placeholderHint: '민감한 소스는 로컬 TXT 요약 기준으로 질문하세요.',
-  },
-  reference: {
-    label: 'Reference',
-    description: 'SAP 표준, BTP, RAP, CAP 같은 공개 지식을 중심으로 답변합니다.',
-    outboundPolicy: '공개 지식 질의 허용',
-    badgeVariant: 'info',
-    placeholderHint: '표준 개념, 절차, 아키텍처 질문에 적합합니다.',
-  },
-  'hybrid-approved': {
-    label: 'Hybrid Approved',
-    description: '승인된 요약본만 외부 모델로 전달하는 절충 모드입니다.',
-    outboundPolicy: '승인된 요약만 전달',
-    badgeVariant: 'warning',
-    placeholderHint: '원문 대신 승인된 요약이나 오류 증상만 입력하세요.',
-  },
-}
 
 export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
   ops: {
@@ -55,7 +21,6 @@ export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
     chatTitle: '운영 이슈를 빠르게 진단하세요',
     chatDescription: 'ST22, SM21, 배치잡, 권한, 성능 이슈를 운영 관점으로 정리합니다.',
     inputPlaceholder: '예: ST22 덤프 TSV_TNEW_PAGE_ALLOC_FAILED 원인과 점검 순서',
-    recommendedSecurityMode: 'hybrid-approved',
     suggestions: [
       'ST22 덤프 발생 시 우선 점검할 T-code와 원인을 알려줘',
       '배치잡이 주기적으로 실패할 때 운영자가 확인할 순서를 정리해줘',
@@ -68,7 +33,6 @@ export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
     chatTitle: '현업 문의를 업무 언어로 풀어냅니다',
     chatDescription: '트랜잭션, 업무 절차, 오류 메시지를 현업 관점으로 설명합니다.',
     inputPlaceholder: '예: 전표 생성이 안 될 때 현업이 먼저 확인할 절차를 설명해줘',
-    recommendedSecurityMode: 'reference',
     suggestions: [
       'MM에서 입고 후 송장 처리 흐름을 현업 관점으로 정리해줘',
       '전표 생성 오류가 나올 때 현업이 먼저 확인할 항목은 뭐야?',
@@ -81,7 +45,6 @@ export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
     chatTitle: '커스텀 소스와 운영 규칙을 안전하게 다룹니다',
     chatDescription: 'TXT로 반출한 CBO 소스와 내부 운영 메모를 기준으로 분석 흐름을 만듭니다.',
     inputPlaceholder: '예: 이 Z 프로그램 TXT에서 권한, 성능, 예외처리 리스크를 찾아줘',
-    recommendedSecurityMode: 'secure-local',
     suggestions: [
       'TXT로 넣은 Z 리포트에서 권한 체크 누락 가능성을 먼저 봐줘',
       '커스텀 인터페이스 소스에서 COMMIT/ROLLBACK 위치가 위험한지 검토해줘',
@@ -94,7 +57,6 @@ export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
     chatTitle: '인터페이스 장애를 메시지 흐름 기준으로 추적하세요',
     chatDescription: 'PI/PO와 Integration Suite 운영 이슈를 어댑터와 메시지 관점으로 풉니다.',
     inputPlaceholder: '예: PI 메시지가 지연될 때 채널, 어댑터, 모니터링 순서를 알려줘',
-    recommendedSecurityMode: 'hybrid-approved',
     suggestions: [
       'PI/PO 메시지 실패 시 모니터링 순서를 단계별로 알려줘',
       'Cloud Integration iFlow 오류를 볼 때 MPL에서 뭘 먼저 봐야 해?',
@@ -107,7 +69,6 @@ export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
     chatTitle: '클라우드 SAP 스택 질문을 구조적으로 답변합니다',
     chatDescription: 'BTP, RAP, CAP 설계와 운영 포인트를 공개 지식 기준으로 정리합니다.',
     inputPlaceholder: '예: RAP unmanaged 시나리오와 CAP 서비스 설계 차이를 비교해줘',
-    recommendedSecurityMode: 'reference',
     suggestions: [
       'RAP managed와 unmanaged를 유지보수 관점에서 비교해줘',
       'CAP 서비스에서 CDS 모델링과 서비스 노출 흐름을 설명해줘',
@@ -117,24 +78,9 @@ export const DOMAIN_PACK_DETAILS: Record<DomainPack, DomainPackDetail> = {
 }
 
 interface WorkspaceState {
-  securityMode: SecurityMode
   domainPack: DomainPack
-  setSecurityMode: (mode: SecurityMode) => void
   setDomainPack: (pack: DomainPack) => void
   applyRecommendedCboWorkspace: () => void
-}
-
-function getInitialSecurityMode(): SecurityMode {
-  try {
-    const stored = localStorage.getItem(SECURITY_MODE_KEY)
-    if (stored === 'secure-local' || stored === 'reference' || stored === 'hybrid-approved') {
-      return stored
-    }
-  } catch {
-    // localStorage 접근 실패는 무시하고 기본값을 사용한다.
-  }
-
-  return 'secure-local'
 }
 
 function getInitialDomainPack(): DomainPack {
@@ -156,12 +102,8 @@ function getInitialDomainPack(): DomainPack {
   return 'ops'
 }
 
-function persistWorkspace(partial: Partial<Pick<WorkspaceState, 'securityMode' | 'domainPack'>>): void {
+function persistWorkspace(partial: Partial<Pick<WorkspaceState, 'domainPack'>>): void {
   try {
-    if (partial.securityMode) {
-      localStorage.setItem(SECURITY_MODE_KEY, partial.securityMode)
-    }
-
     if (partial.domainPack) {
       localStorage.setItem(DOMAIN_PACK_KEY, partial.domainPack)
     }
@@ -171,23 +113,16 @@ function persistWorkspace(partial: Partial<Pick<WorkspaceState, 'securityMode' |
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
-  securityMode: getInitialSecurityMode(),
   domainPack: getInitialDomainPack(),
-  setSecurityMode: (securityMode) => {
-    persistWorkspace({ securityMode })
-    set({ securityMode })
-  },
   setDomainPack: (domainPack) => {
     persistWorkspace({ domainPack })
     set({ domainPack })
   },
   applyRecommendedCboWorkspace: () => {
     persistWorkspace({
-      securityMode: 'secure-local',
       domainPack: 'cbo-maintenance',
     })
     set({
-      securityMode: 'secure-local',
       domainPack: 'cbo-maintenance',
     })
   },

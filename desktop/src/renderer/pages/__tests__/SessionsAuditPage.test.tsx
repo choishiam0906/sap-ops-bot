@@ -26,7 +26,6 @@ const mockAuditEntry: AuditLogEntry = {
   sessionId: 's1',
   runId: null,
   timestamp: '2026-03-01T12:00:00Z',
-  securityMode: 'reference',
   domainPack: 'ops',
   action: 'send_message',
   externalTransfer: true,
@@ -40,7 +39,7 @@ describe('SessionsAuditPage', () => {
     mockApi.listSessions.mockResolvedValue([])
     mockApi.listAuditLogs.mockResolvedValue([])
     mockApi.searchAuditLogs.mockResolvedValue([])
-    useAuditStore.setState({ tab: 'sessions', filterSecurityMode: '', filterAction: '', filterDateFrom: '', filterDateTo: '' })
+    useAuditStore.setState({ tab: 'sessions', filterAction: '', filterDateFrom: '', filterDateTo: '' })
   })
 
   it('세션 이력 탭에서 세션 목록을 표시한다', async () => {

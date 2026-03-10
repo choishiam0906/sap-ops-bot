@@ -12,6 +12,13 @@ export function registerChatHandlers(ctx: IpcContext): void {
     return ctx.chatRuntime.sendMessage(input);
   });
 
+  ipcMain.handle("chat:stop", async () => {
+    const runtime = ctx.chatRuntime as unknown as Record<string, unknown>;
+    if (typeof runtime["stopGeneration"] === "function") {
+      (runtime["stopGeneration"] as () => void)();
+    }
+  });
+
   ipcMain.handle("sessions:list", async (_event, limit = 50) => {
     return ctx.chatRuntime.listSessions(limit);
   });

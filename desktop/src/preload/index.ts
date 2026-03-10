@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type {
+  ArchiveTreeNode,
   AuditSearchFilters,
   CboBatchProgressEvent,
   ChatSessionMeta,
@@ -19,12 +20,21 @@ import type {
   CockpitStats,
   DeviceCodeInitResult,
   DomainPack,
+  ListArchiveContentsInput,
   McpResourceInfo,
   McpServerConfigInput,
   PlanStatus,
   PickAndAddLocalFolderSourceInput,
   ProviderType,
+  ReadArchiveFileInput,
+  RoutineExecution,
+  RoutineFrequency,
+  RoutineTemplate,
+  RoutineTemplateInput,
+  RoutineTemplateStep,
+  RoutineTemplateUpdate,
   SapLabel,
+  SaveArchiveFileInput,
   SendMessageInput,
   SessionFilter,
   SetApiKeyInput,
@@ -80,6 +90,9 @@ const desktopApi = {
   },
   sendMessage(input: SendMessageInput) {
     return ipcRenderer.invoke("chat:send", input);
+  },
+  stopGeneration(): Promise<void> {
+    return ipcRenderer.invoke("chat:stop");
   },
   listSkills(): Promise<SapSkillDefinition[]> {
     return ipcRenderer.invoke("skills:list");
@@ -195,6 +208,21 @@ const desktopApi = {
     return ipcRenderer.invoke("mcp:syncSource", sourceId);
   },
 
+  // ─── Archive (소스코드 아카이브) API ───
+
+  archivePickFolder(): Promise<{ canceled: boolean; path: string | null }> {
+    return ipcRenderer.invoke("archive:pickFolder");
+  },
+  archiveListContents(input: ListArchiveContentsInput): Promise<ArchiveTreeNode[]> {
+    return ipcRenderer.invoke("archive:listContents", input);
+  },
+  archiveReadFile(input: ReadArchiveFileInput): Promise<{ content: string; size: number }> {
+    return ipcRenderer.invoke("archive:readFile", input);
+  },
+  archiveSaveFile(input: SaveArchiveFileInput): Promise<{ success: boolean; error?: string }> {
+    return ipcRenderer.invoke("archive:saveFile", input);
+  },
+
   // ─── Cockpit: 세션 API (Ask SAP 등에서 사용) ───
 
   listSessionsFiltered(filter: SessionFilter, limit = 50): Promise<ChatSessionMeta[]> {
@@ -259,6 +287,39 @@ const desktopApi = {
   },
   getClosingStats() {
     return ipcRenderer.invoke("cockpit:stats");
+  },
+
+  // ─── Routine (루틴 업무 자동화) API ───
+
+  listRoutineTemplates(): Promise<RoutineTemplate[]> {
+    return ipcRenderer.invoke("routine:templates:list");
+  },
+  listRoutineTemplatesByFrequency(frequency: RoutineFrequency): Promise<RoutineTemplate[]> {
+    return ipcRenderer.invoke("routine:templates:listByFrequency", frequency);
+  },
+  getRoutineTemplate(id: string): Promise<{ template: RoutineTemplate; steps: RoutineTemplateStep[] } | null> {
+    return ipcRenderer.invoke("routine:templates:get", id);
+  },
+  createRoutineTemplate(input: RoutineTemplateInput): Promise<RoutineTemplate> {
+    return ipcRenderer.invoke("routine:templates:create", input);
+  },
+  updateRoutineTemplate(id: string, patch: RoutineTemplateUpdate): Promise<RoutineTemplate | null> {
+    return ipcRenderer.invoke("routine:templates:update", { id, patch });
+  },
+  deleteRoutineTemplate(id: string): Promise<boolean> {
+    return ipcRenderer.invoke("routine:templates:delete", id);
+  },
+  toggleRoutineTemplate(id: string): Promise<RoutineTemplate | null> {
+    return ipcRenderer.invoke("routine:templates:toggle", id);
+  },
+  executeRoutinesNow(): Promise<{ created: number; skipped: number }> {
+    return ipcRenderer.invoke("routine:execute:now");
+  },
+  listRoutineExecutions(date?: string): Promise<RoutineExecution[]> {
+    return ipcRenderer.invoke("routine:executions:list", date);
+  },
+  getRoutineExecutionPlanIds(date: string): Promise<string[]> {
+    return ipcRenderer.invoke("routine:executions:planIds", date);
   },
 };
 

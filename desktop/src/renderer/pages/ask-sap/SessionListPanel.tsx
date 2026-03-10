@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
-import { Plus, Star, Archive, Bookmark, MessageSquare } from 'lucide-react'
+import { Plus, Star, Archive, MessageSquare, Flag, ArchiveIcon } from 'lucide-react'
 import type { ChatSession, ChatSessionMeta } from '../../../main/contracts.js'
 import { Button } from '../../components/ui/Button.js'
 import { Skeleton } from '../../components/ui/Skeleton.js'
 import { useAskSapStore } from '../../stores/askSapStore.js'
 import type { SessionFilterTab } from '../../stores/askSapStore.js'
 
-// ChatSession이 ChatSessionMeta 필드를 가질 수 있는 유니온 타입
 type SessionItem = ChatSession & Partial<Pick<ChatSessionMeta, 'isFlagged' | 'isArchived' | 'todoState'>>
 
 interface SessionListPanelProps {
@@ -15,13 +14,13 @@ interface SessionListPanelProps {
   loading?: boolean
   onSelect: (session: SessionItem) => void
   onNewChat: () => void
+  onFilterTabChange?: (tab: SessionFilterTab) => void
 }
 
 const FILTER_TABS: { id: SessionFilterTab; label: string; Icon: typeof MessageSquare }[] = [
   { id: 'all', label: '전체 세션', Icon: MessageSquare },
   { id: 'flagged', label: '중요 세션', Icon: Star },
-  { id: 'cases', label: '저장한 케이스', Icon: Bookmark },
-  { id: 'archive', label: 'Archive', Icon: Archive },
+  { id: 'saved', label: '보관함', Icon: Archive },
 ]
 
 export function SessionListPanel({
@@ -30,8 +29,14 @@ export function SessionListPanel({
   loading,
   onSelect,
   onNewChat,
+  onFilterTabChange,
 }: SessionListPanelProps) {
   const { filterTab, setFilterTab, searchQuery, setSearchQuery } = useAskSapStore()
+
+  function handleFilterTabClick(tab: SessionFilterTab) {
+    setFilterTab(tab)
+    onFilterTabChange?.(tab)
+  }
 
   const filteredSessions = useMemo(() => {
     let result: SessionItem[]
@@ -39,11 +44,11 @@ export function SessionListPanel({
       case 'flagged':
         result = sessions.filter((s) => s.isFlagged === true)
         break
-      case 'cases':
-        result = sessions.filter((s) => s.todoState != null && s.todoState !== 'closed' && s.todoState !== 'resolved')
-        break
-      case 'archive':
-        result = sessions.filter((s) => s.isArchived === true)
+      case 'saved':
+        result = sessions.filter((s) =>
+          s.isArchived === true ||
+          (s.todoState != null && s.todoState !== 'closed' && s.todoState !== 'resolved'),
+        )
         break
       default:
         result = sessions.filter((s) => s.isArchived !== true)
@@ -69,7 +74,7 @@ export function SessionListPanel({
             role="tab"
             className={`ask-sap-filter-tab ${filterTab === id ? 'active' : ''}`}
             aria-selected={filterTab === id}
-            onClick={() => setFilterTab(id)}
+            onClick={() => handleFilterTabClick(id)}
             type="button"
             title={label}
           >
@@ -108,10 +113,21 @@ export function SessionListPanel({
                 type="button"
               >
                 <span className="session-title">{s.title || '새 대화'}</span>
-                <span className="session-date">
-                  {new Date(s.updatedAt).toLocaleDateString('ko-KR')}
-                </span>
-                {s.isFlagged === true && <Star size={12} className="session-flag-icon" aria-label="중요" />}
+                <div className="session-item-meta">
+                  <span className="session-date">
+                    {new Date(s.updatedAt).toLocaleDateString('ko-KR')}
+                  </span>
+                  <span className="session-provider-badge">{s.provider}</span>
+                  {s.isFlagged === true && <Star size={12} className="session-flag-icon" aria-label="중요" />}
+                </div>
+                <div className="session-item-actions">
+                  <span className="session-action-btn" title="중요 표시" role="button" tabIndex={-1}>
+                    <Flag size={12} />
+                  </span>
+                  <span className="session-action-btn" title="보관" role="button" tabIndex={-1}>
+                    <ArchiveIcon size={12} />
+                  </span>
+                </div>
               </button>
             ))}
             {filteredSessions.length === 0 && (
