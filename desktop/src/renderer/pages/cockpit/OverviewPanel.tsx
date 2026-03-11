@@ -3,6 +3,8 @@ import { useClosingStats, usePlans, useSteps } from '../../hooks/useClosingPlans
 import { useExecuteRoutinesNow, useRoutinePlanIds } from '../../hooks/useRoutineTemplates'
 import { calculateDday } from '../../../main/types/closing'
 import type { ClosingStep } from '../../../main/contracts'
+import { PageHeader } from '../../components/ui/PageHeader.js'
+import { Button } from '../../components/ui/Button.js'
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -28,17 +30,21 @@ export function OverviewPanel() {
 
   return (
     <div className="cockpit-overview-panel">
-      <div className="cockpit-overview-header">
-        <h2>Overview</h2>
-        <button
-          className="closing-btn compact"
-          onClick={() => executeNow.mutate()}
-          disabled={executeNow.isPending}
-        >
-          <Play size={14} />
-          {executeNow.isPending ? '실행 중...' : '루틴 수동 실행'}
-        </button>
-      </div>
+      <PageHeader
+        title="Overview"
+        description="운영 현황과 일일 체크리스트를 한눈에 확인하세요"
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={executeNow.isPending}
+            onClick={() => executeNow.mutate()}
+          >
+            <Play size={14} />
+            루틴 수동 실행
+          </Button>
+        }
+      />
 
       {/* 통계 카드 */}
       <div className="cockpit-overview-stats">

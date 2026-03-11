@@ -24,7 +24,6 @@ interface SettingsNavigatorProps {
 export function SettingsNavigator({ activeCategory, onCategoryChange }: SettingsNavigatorProps) {
   return (
     <nav className="settings-nav" aria-label="설정 카테고리">
-      <h2 className="settings-nav-title">설정</h2>
       <ul className="settings-nav-list">
         {CATEGORIES.map(({ id, label, desc, Icon }) => (
           <li key={id}>

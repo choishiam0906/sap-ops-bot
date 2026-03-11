@@ -138,16 +138,12 @@ export function AgentsCatalog() {
 
   return (
     <div className="agents-page">
-      <div className="agents-hero">
-        <div>
-          <h1 className="page-title">Agents</h1>
-          <p className="agents-copy">
-            자동화된 업무 Workflow를 실행하고 결과를 관리하세요.
-          </p>
-        </div>
+      <div className="agents-action-bar">
         <div className="agents-badges">
           <Badge variant="success">엔터프라이즈 보호</Badge>
           <Badge variant="neutral">{packDetail.label}</Badge>
+        </div>
+        <div className="agents-actions">
           <Button variant="ghost" size="sm" onClick={() => api.openAgentFolder()}>
             <FolderOpen size={14} aria-hidden="true" />
             폴더

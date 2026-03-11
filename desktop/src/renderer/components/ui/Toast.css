@@ -1,0 +1,116 @@
+/* ─── Toast Container ─── */
+.ui-toast-container {
+  position: fixed;
+  bottom: var(--spacing-xl);
+  right: var(--spacing-xl);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  pointer-events: none;
+}
+
+/* ─── Toast Item ─── */
+.ui-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 300px;
+  max-width: 440px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+  animation: toastSlideInRight 0.3s ease;
+}
+
+/* 좌측 3px 컬러 보더 */
+.ui-toast-success { border-left: 3px solid var(--color-success); }
+.ui-toast-error   { border-left: 3px solid var(--color-error); }
+.ui-toast-warning { border-left: 3px solid var(--color-warning); }
+.ui-toast-info    { border-left: 3px solid var(--color-info); }
+
+/* 아이콘 색상 */
+.ui-toast-success .ui-toast-icon { color: var(--color-success); }
+.ui-toast-error   .ui-toast-icon { color: var(--color-error); }
+.ui-toast-warning .ui-toast-icon { color: var(--color-warning); }
+.ui-toast-info    .ui-toast-icon { color: var(--color-info); }
+
+.ui-toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.ui-toast-message {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.ui-toast-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.ui-toast-close:hover {
+  background: var(--color-primary-subtle);
+  color: var(--color-text);
+}
+
+.ui-toast-close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Exit Animation ─── */
+.ui-toast-exit {
+  animation: toastSlideOutRight 0.25s ease forwards;
+}
+
+/* ─── Keyframes ─── */
+@keyframes toastSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .ui-toast {
+    animation: fadeIn 0.15s ease;
+  }
+  .ui-toast-exit {
+    animation: none;
+    opacity: 0;
+  }
+}

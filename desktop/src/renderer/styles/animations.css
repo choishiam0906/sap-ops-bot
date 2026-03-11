@@ -30,9 +30,36 @@
   100% { opacity: 1; }
 }
 
-/* Page transition */
+/* ─── Sprint 1: 신규 키프레임 ─── */
+
+@keyframes pageSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modalBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+/* Page transition — slideUp으로 강화 */
 .page-enter {
-  animation: fadeIn var(--transition-normal);
+  animation: pageSlideUp var(--transition-normal) ease;
 }
 
 /* Message entrance */
@@ -44,4 +71,42 @@
 .streaming-dots::after {
   content: '';
   animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* ─── Card hover 유틸리티 ─── */
+.card-hover-lift {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Modal 유틸리티 ─── */
+.modal-backdrop {
+  animation: modalBackdropIn 0.2s ease;
+}
+
+.modal-content {
+  animation: modalSlideUp 0.25s ease;
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .message-enter,
+  .modal-backdrop,
+  .modal-content,
+  .card-hover-lift {
+    animation: none;
+  }
+
+  .card-hover-lift:hover {
+    transform: none;
+  }
+
+  .streaming-dots::after {
+    animation: none;
+  }
 }

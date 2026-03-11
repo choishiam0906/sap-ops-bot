@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { CheckCircle2, Circle, ChevronDown, ChevronRight } from 'lucide-react'
 import { usePlans, useSteps, useUpdateStep } from '../../hooks/useClosingPlans'
 import type { ClosingPlan, ClosingStep } from '../../../main/contracts'
+import { PageHeader } from '../../components/ui/PageHeader.js'
 
 export function YearlyClosingPanel() {
   const now = new Date()
@@ -14,19 +15,22 @@ export function YearlyClosingPanel() {
 
   return (
     <div className="cockpit-routine-panel">
-      <div className="cockpit-routine-header">
-        <h2>연간 마감</h2>
-        <select
-          className="closing-select"
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          {Array.from({ length: 5 }, (_, i) => {
-            const y = now.getFullYear() - 2 + i
-            return <option key={y} value={String(y)}>{y}년</option>
-          })}
-        </select>
-      </div>
+      <PageHeader
+        title="연간 마감"
+        description="연간 결산 체크리스트를 관리하세요"
+        actions={
+          <select
+            className="closing-select"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+          >
+            {Array.from({ length: 5 }, (_, i) => {
+              const y = now.getFullYear() - 2 + i
+              return <option key={y} value={String(y)}>{y}년</option>
+            })}
+          </select>
+        }
+      />
 
       {yearlyPlans.length === 0 ? (
         <div className="closing-empty">

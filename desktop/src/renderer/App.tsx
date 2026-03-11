@@ -6,6 +6,7 @@ import { SapAssistantPage } from './pages/SapAssistantPage'
 import { KnowledgePage } from './pages/KnowledgePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { useAppShellStore } from './stores/appShellStore'
+import { ToastContainer } from './components/ui/Toast.js'
 import './components/ErrorBoundary.css'
 import './styles/animations.css'
 import './App.css'
@@ -40,6 +41,7 @@ export function App() {
           </main>
         </div>
       </ErrorBoundary>
+      <ToastContainer />
     </QueryClientProvider>
   )
 }
