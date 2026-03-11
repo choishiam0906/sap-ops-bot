@@ -3,31 +3,34 @@ import { CheckCircle2, Circle, Calendar } from 'lucide-react'
 import { usePlans, useSteps, useUpdateStep } from '../../hooks/useClosingPlans'
 import { useRoutinePlanIds } from '../../hooks/useRoutineTemplates'
 import type { ClosingPlan, ClosingStep } from '../../../main/contracts'
+import { PageHeader } from '../../components/ui/PageHeader.js'
 
 export function DailyTasksPanel() {
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10))
   const { data: planIds } = useRoutinePlanIds(selectedDate)
   const { data: allPlans } = usePlans()
 
-  // 해당 날짜의 Daily Plan 필터링
   const dailyPlans = allPlans?.filter(
     (p) => planIds?.includes(p.id) && p.title.startsWith('[Daily]')
   ) ?? []
 
   return (
     <div className="cockpit-routine-panel">
-      <div className="cockpit-routine-header">
-        <h2>Daily Tasks</h2>
-        <div className="cockpit-date-picker">
-          <Calendar size={16} />
-          <input
-            type="date"
-            className="closing-input"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Daily Tasks"
+        description="일일 마감 체크리스트를 확인하고 처리하세요"
+        actions={
+          <div className="cockpit-date-picker">
+            <Calendar size={16} />
+            <input
+              type="date"
+              className="closing-input"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </div>
+        }
+      />
 
       {dailyPlans.length === 0 ? (
         <div className="closing-empty">

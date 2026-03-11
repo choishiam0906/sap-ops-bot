@@ -198,20 +198,8 @@ export function SourcesPage() {
 
   return (
     <div className="sources-page">
-      <div className="sources-header">
-        <div>
-          <h1 className="page-title">소스 관리</h1>
-          <p className="sources-copy">
-            로컬 폴더와 MCP 서버를 통합 관리합니다.
-          </p>
-        </div>
-        <div className="sources-badges">
-          <Badge variant="success">엔터프라이즈 보호</Badge>
-          <Badge variant="neutral">{packDetail.label}</Badge>
-        </div>
-      </div>
-
-      <div className="sources-type-toggle" role="group" aria-label="소스 타입 선택">
+      <div className="sources-type-bar">
+        <div className="sources-type-toggle" role="group" aria-label="소스 타입 선택">
         <button
           type="button"
           className={`sources-type-btn ${activeSourceType === 'local-folder' ? 'active' : ''}`}
@@ -228,6 +216,11 @@ export function SourcesPage() {
           <PlugZap size={14} aria-hidden="true" />
           MCP
         </button>
+        </div>
+        <div className="sources-badges">
+          <Badge variant="success">엔터프라이즈 보호</Badge>
+          <Badge variant="neutral">{packDetail.label}</Badge>
+        </div>
       </div>
 
       {activeSourceType === 'local-folder' && (

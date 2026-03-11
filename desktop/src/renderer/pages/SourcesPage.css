@@ -1,12 +1,25 @@
 .knowledge-page {
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.knowledge-page > .ui-page-header {
+  flex-shrink: 0;
+}
+
+.knowledge-page-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .sources-page {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
 }
 
 .sources-type-toggle {
@@ -44,18 +57,11 @@
   box-shadow: var(--shadow-sm);
 }
 
-.sources-header {
+.sources-type-bar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--spacing-lg);
-}
-
-.sources-copy {
-  max-width: 760px;
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
 }
 
 .sources-badges {

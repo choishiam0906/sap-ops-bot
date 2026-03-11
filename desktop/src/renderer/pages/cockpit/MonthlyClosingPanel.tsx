@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { CheckCircle2, Circle, ChevronDown, ChevronRight } from 'lucide-react'
 import { usePlans, useSteps, useUpdateStep } from '../../hooks/useClosingPlans'
 import type { ClosingPlan, ClosingStep } from '../../../main/contracts'
+import { PageHeader } from '../../components/ui/PageHeader.js'
 
 export function MonthlyClosingPanel() {
   const now = new Date()
@@ -10,22 +11,24 @@ export function MonthlyClosingPanel() {
   )
   const { data: allPlans } = usePlans()
 
-  // [Monthly] 태그가 붙은 Plan 중 해당 월에 해당하는 것 필터링
   const monthlyPlans = allPlans?.filter(
     (p) => p.title.startsWith('[Monthly]') && p.title.includes(`${Number(selectedMonth.split('-')[1])}월`)
   ) ?? []
 
   return (
     <div className="cockpit-routine-panel">
-      <div className="cockpit-routine-header">
-        <h2>월별 마감</h2>
-        <input
-          type="month"
-          className="closing-input"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-        />
-      </div>
+      <PageHeader
+        title="월별 마감"
+        description="월간 결산 체크리스트를 관리하세요"
+        actions={
+          <input
+            type="month"
+            className="closing-input"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          />
+        }
+      />
 
       {monthlyPlans.length === 0 ? (
         <div className="closing-empty">

@@ -6,24 +6,24 @@
   gap: var(--spacing-xl);
 }
 
-.agents-hero {
+.agents-action-bar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--spacing-lg);
 }
 
-.agents-copy {
-  max-width: 760px;
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
 .agents-badges {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
+}
+
+.agents-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .agents-grid {
