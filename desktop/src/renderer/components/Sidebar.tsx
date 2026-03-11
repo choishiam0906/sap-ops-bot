@@ -35,8 +35,7 @@ const MAIN_NAV_ITEMS: NavGroupItem[] = [
       { id: 'sa-chat', subPage: 'chat', label: '💬 대화' },
       { id: 'sa-flagged', subPage: 'chat:flagged', label: '중요 세션' },
       { id: 'sa-saved', subPage: 'chat:saved', label: '보관함' },
-      { id: 'sa-analysis', subPage: 'analysis', label: '🔍 코드 분석' },
-      { id: 'sa-source-archive', subPage: 'archive', label: '📁 소스코드 아카이브' },
+      { id: 'sa-code-lab', subPage: 'code-lab', label: '🧪 코드 랩' },
     ],
   },
   {
@@ -46,8 +45,8 @@ const MAIN_NAV_ITEMS: NavGroupItem[] = [
     Icon: BookOpen,
     position: 'main',
     children: [
-      { id: 'knowledge-sources', subPage: 'sources', label: '📚 소스' },
       { id: 'knowledge-skills', subPage: 'skills', label: '⚡ 스킬' },
+      { id: 'knowledge-agents', subPage: 'agents', label: '🤖 에이전트' },
       { id: 'knowledge-vault', subPage: 'vault', label: '🔐 볼트' },
     ],
   },
@@ -90,7 +89,7 @@ export function Sidebar() {
         {!sidebarCollapsed && (
           <div className="sidebar-brand">
             <h1 className="sidebar-title">SAP Assistant</h1>
-            <span className="sidebar-version">Desktop Platform v3.0</span>
+            <span className="sidebar-version">by boxlogodev · v4.0</span>
           </div>
         )}
         <button

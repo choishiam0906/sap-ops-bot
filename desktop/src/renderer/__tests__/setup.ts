@@ -305,6 +305,26 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
   archiveListContents: vi.fn().mockResolvedValue([]),
   archiveReadFile: vi.fn().mockResolvedValue({ content: '', size: 0 }),
   archiveSaveFile: vi.fn().mockResolvedValue({ success: true }),
+
+  // Agent (스킬 조합 워크플로우)
+  listAgents: vi.fn().mockResolvedValue([]),
+  getAgent: vi.fn().mockResolvedValue(null),
+  executeAgent: vi.fn().mockResolvedValue('exec-1'),
+  getAgentExecution: vi.fn().mockResolvedValue(null),
+  listAgentExecutions: vi.fn().mockResolvedValue([]),
+  cancelAgentExecution: vi.fn().mockResolvedValue(undefined),
+
+  // 커스텀 에이전트 CRUD
+  listCustomAgents: vi.fn().mockResolvedValue([]),
+  saveCustomAgent: vi.fn().mockResolvedValue(undefined),
+  deleteCustomAgent: vi.fn().mockResolvedValue(undefined),
+  openAgentFolder: vi.fn().mockResolvedValue(undefined),
+
+  // 커스텀 스킬 CRUD
+  listCustomSkills: vi.fn().mockResolvedValue([]),
+  saveCustomSkill: vi.fn().mockResolvedValue(undefined),
+  deleteCustomSkill: vi.fn().mockResolvedValue(undefined),
+  openSkillFolder: vi.fn().mockResolvedValue(undefined),
 }
 
 Object.defineProperty(window, 'sapOpsDesktop', {

@@ -124,6 +124,7 @@ export interface SapSkillDefinition {
   requiredSources: string[];
   suggestedInputs: string[];
   suggestedTcodes: string[];
+  isCustom?: boolean; // 커스텀 스킬 여부 (프리셋/커스텀 구분용)
 }
 
 export interface SapSourceDefinition {

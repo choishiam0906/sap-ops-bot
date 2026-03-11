@@ -17,6 +17,7 @@ import { ChatRuntime } from "./chatRuntime.js";
 import { CboAnalyzer } from "./cbo/analyzer.js";
 import { CboBatchRuntime } from "./cbo/batchRuntime.js";
 import {
+  AgentExecutionRepository,
   AuditRepository,
   CboAnalysisRepository,
   ClosingPlanRepository,
@@ -32,6 +33,7 @@ import {
 } from "./storage/repositories.js";
 import { RoutineExecutor } from "./services/routineExecutor.js";
 import { seedRoutineTemplates } from "./services/routineSeedData.js";
+import { AgentExecutor } from "./agents/executor.js";
 import { LocalDatabase } from "./storage/sqlite.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
@@ -44,7 +46,7 @@ import type { IpcContext } from "./ipc/index.js";
 let mainWindow: BrowserWindow | null = null;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
 const productName = "SAP Assistant Desktop Platform";
-const appUserModelId = "com.sapassistantdesktop.platform";
+const appUserModelId = "com.boxlogodev.sap-assistant";
 
 let ipcContext: IpcContext;
 
@@ -82,6 +84,8 @@ function initRuntime(): void {
   // 앱 시작 시 루틴 자동 실행
   routineExecutor.executeDueRoutines();
 
+  const agentExecutionRepo = new AgentExecutionRepository(db);
+
   const localFolderLibrary = new LocalFolderSourceLibrary(configuredSourceRepo, sourceDocumentRepo);
   const mcpConnector = new McpConnector(configuredSourceRepo, sourceDocumentRepo);
 
@@ -98,6 +102,8 @@ function initRuntime(): void {
     auditRepo, skillRegistry
   );
   const oauthManager = new OAuthManager(secureStore, accountRepo, config);
+
+  const agentExecutor = new AgentExecutor(chatRuntime, skillRegistry, agentExecutionRepo);
 
   const cboAnalyzer = new CboAnalyzer(providers, secureStore);
   const cboBatchRuntime = new CboBatchRuntime(
@@ -125,6 +131,8 @@ function initRuntime(): void {
     routineTemplateRepo,
     routineExecutionRepo,
     routineExecutor,
+    agentExecutionRepo,
+    agentExecutor,
     getMainWindow: () => mainWindow,
   };
 }

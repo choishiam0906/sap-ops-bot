@@ -1,11 +1,14 @@
 # SAP Assistant Desktop Platform
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/choishiam0906/sap-assistant-desktop/releases/tag/v3.0.0)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/boxlogodev/sap-assistant-desktop/releases/tag/v4.0.0)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d4.svg)](#)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](#)
+[![Website](https://img.shields.io/badge/website-boxlogodev.com-ff6b35.svg)](https://www.boxlogodev.com)
 
-**SAP 운영 업무의 지능형 어시스턴트 데스크톱 앱** – 로컬 우선(Local-First) 아키텍처로 민감한 데이터를 보호하면서 다중 LLM 통합을 제공합니다.
+**SAP 운영 자동화 봇 플랫폼** – 로컬 우선(Local-First) 아키텍처로 민감한 데이터를 보호하면서, 커스텀 에이전트와 스킬을 통해 SAP 운영 워크플로우를 자동화합니다.
+
+> 궁극적 비전: 사용자가 직접 정의한 워크플로우를 기반으로, SAP 운영의 수동 작업을 점진적으로 자동화하는 **몰트봇(MoltBot)** 플랫폼
 
 ---
 
@@ -61,6 +64,33 @@
 ### T-Code 기반 스킬 시스템
 - SAP 트랜잭션별 컨텍스트 인식
 - 도메인별 프롬프트 최적화
+
+### 커스텀 에이전트 & 스킬 (v4.0 NEW)
+- **agent.md**: YAML frontmatter 형식으로 워크플로우 직접 정의
+- **skill.md**: 맞춤형 프롬프트 템플릿 정의
+- 프리셋 에이전트/스킬과 자동 병합
+- 폼 기반 비주얼 에디터 + 미리보기
+- 저장 경로: `%APPDATA%/SAP Assistant/agents/` 및 `skills/`
+- 상세: [커스텀 에이전트 가이드](./docs/USER-GUIDE/CUSTOM-AGENTS.md) | [커스텀 스킬 가이드](./docs/USER-GUIDE/CUSTOM-SKILLS.md)
+
+### 코드 랩 (Code Lab) (v4.0 NEW)
+- 소스 관리 + CBO 분석 + 아카이브를 하나의 통합 뷰로 제공
+- 탭 전환으로 빠르게 작업 컨텍스트 전환
+
+---
+
+## 문서
+
+| 문서 | 설명 |
+|------|------|
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 시스템 아키텍처, 신뢰 경계, Mermaid 다이어그램 |
+| [GETTING-STARTED.md](./docs/GETTING-STARTED.md) | 설치, 빌드, 개발 모드 |
+| [CUSTOM-AGENTS.md](./docs/USER-GUIDE/CUSTOM-AGENTS.md) | agent.md 작성 가이드 + 예제 |
+| [CUSTOM-SKILLS.md](./docs/USER-GUIDE/CUSTOM-SKILLS.md) | skill.md 작성 가이드 + 예제 |
+| [DOMAIN-PACKS.md](./docs/USER-GUIDE/DOMAIN-PACKS.md) | 5가지 Domain Pack 상세 |
+| [SECURITY-MODES.md](./docs/USER-GUIDE/SECURITY-MODES.md) | 3가지 보안 모드 설명 |
+| [IPC-PROTOCOL.md](./docs/API/IPC-PROTOCOL.md) | 전체 IPC 채널 레퍼런스 |
+| [CONTRIBUTING.md](./docs/CONTRIBUTING.md) | 코드 기여, 컨벤션, PR 규칙 |
 
 ---
 
@@ -242,7 +272,7 @@ src/
 
 ```bash
 # 저장소 클론
-git clone https://github.com/choishiam0906/sap-assistant-desktop.git
+git clone https://github.com/boxlogodev/sap-assistant-desktop.git
 cd sap-assistant/desktop
 
 # 의존성 설치
@@ -871,7 +901,7 @@ npx webpack-bundle-analyzer
 - [ABAP Development 가이드](https://help.sap.com/docs/abap-development)
 
 ### 커뮤니티
-- [GitHub Discussions](https://github.com/choishiam0906/sap-assistant-desktop/discussions)
+- [GitHub Discussions](https://github.com/boxlogodev/sap-assistant-desktop/discussions)
 - [SAP 커뮤니티](https://community.sap.com)
 - [Stack Overflow - SAP](https://stackoverflow.com/questions/tagged/sap)
 
@@ -879,38 +909,38 @@ npx webpack-bundle-analyzer
 
 ## 로드맵
 
-### v3.0 (현재)
-- ✅ 다중 LLM 통합
-- ✅ CBO 분석
-- ✅ 기본 세션 관리
-- ✅ SQLite 로컬 저장
+### Phase 1: 수동 워크플로우 (v4.0 — 현재)
+- ✅ 다중 LLM 통합 (OpenAI, Anthropic, Google)
+- ✅ CBO 분석 + 소스코드 아카이브
+- ✅ 에이전트/스킬 시스템 (프리셋 2 에이전트, 6 스킬)
+- ✅ **커스텀 에이전트/스킬** (agent.md / skill.md)
+- ✅ **코드 랩** (Sources + CBO + Archive 통합)
+- ✅ Knowledge Vault + MCP 서버 연결
+- ✅ Cockpit (마감 관리 + 루틴)
 
-### v3.1 (예정)
-- 🔄 보안 모드 UI 고도화
-- 🔄 Domain Pack 런처 완성
-- 🔄 Knowledge Vault 공개/기밀 분류
+### Phase 2: 자동 트리거 (v4.1 — 예정)
+- ⬜ 스케줄 기반 에이전트 실행 (cron-like)
+- ⬜ 이벤트 트리거 (파일 변경 감시, Transport 알림)
+- ⬜ 에이전트 체이닝 (에이전트 → 에이전트)
+- ⬜ 결과 알림 (Windows 토스트, Slack webhook)
 
-### v3.2 (예정)
-- ⬜ MCP 서버 연결 (완전 지원)
-- ⬜ 감시 로그 대시보드
-- ⬜ 팀 정책 동기화
-
-### v4.0 (장기)
-- ⬜ 자동 업데이트
-- ⬜ 코드 서명 (Windows)
-- ⬜ 엔터프라이즈 배포 옵션 (LDAP, SSO)
-- ⬜ 오프라인 LLM 모델 (Ollama 연동)
+### Phase 3: 무인 운영 (v5.0 — 장기)
+- ⬜ SAP 시스템 직접 연결 (RFC/OData)
+- ⬜ 자동 Transport 리뷰 & 승인 흐름
+- ⬜ 멀티 시스템 모니터링 대시보드
+- ⬜ 오프라인 LLM (Ollama 연동)
+- ⬜ 엔터프라이즈 배포 (LDAP, SSO, 코드 서명)
 
 ---
 
 ## 문의 및 지원
 
 ### 버그 신고
-- [GitHub Issues](https://github.com/choishiam0906/sap-assistant-desktop/issues)
+- [GitHub Issues](https://github.com/boxlogodev/sap-assistant-desktop/issues)
 - 템플릿: `[BUG] 제목` 또는 `[FEATURE] 제목`
 
 ### 토론
-- [GitHub Discussions](https://github.com/choishiam0906/sap-assistant-desktop/discussions)
+- [GitHub Discussions](https://github.com/boxlogodev/sap-assistant-desktop/discussions)
 
 ### 이메일
 - support@your-org.com

@@ -1,0 +1,444 @@
+/* ─── AgentsCatalog ─── */
+
+.agents-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.agents-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.agents-copy {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.agents-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.agents-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* ── 에이전트 카드 ── */
+
+.agents-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-card {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-secondary);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.agent-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.agent-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.agent-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.agent-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.agent-card-header strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.agent-card-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.agent-card-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* ── 상세 패널 ── */
+
+.agent-detail-panel {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-secondary);
+  padding: var(--spacing-lg);
+}
+
+.agent-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.agent-detail-header h2 {
+  margin: 0 0 6px;
+  font-size: var(--font-size-lg);
+}
+
+.agent-detail-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── 파이프라인 스텝 ── */
+
+.agent-pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 20px 0;
+}
+
+.agent-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  position: relative;
+}
+
+.agent-step + .agent-step {
+  border-top: 1px dashed var(--color-border-light);
+}
+
+.agent-step-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.agent-step-icon.completed {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: white;
+}
+
+.agent-step-icon.running {
+  border-color: var(--color-primary);
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+.agent-step-icon.failed {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: white;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb, 59, 130, 246), 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb, 59, 130, 246), 0.1); }
+}
+
+.agent-step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-step-label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.agent-step-skill {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* ── 실행 히스토리 ── */
+
+.agent-history-section {
+  margin-top: 24px;
+}
+
+.agent-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.agent-history-header h3 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.agent-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agent-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.agent-history-row:hover {
+  border-color: var(--color-primary);
+}
+
+.agent-history-row-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+}
+
+.agent-history-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ── 빈 상태 ── */
+
+.agents-empty {
+  padding: 24px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.agents-detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: var(--color-text-muted);
+}
+
+/* ── 상태 뱃지 색상 ── */
+
+.agent-status-running {
+  color: var(--color-primary);
+}
+
+.agent-status-completed {
+  color: var(--color-success);
+}
+
+.agent-status-failed {
+  color: var(--color-danger);
+}
+
+.agent-status-cancelled {
+  color: var(--color-text-muted);
+}
+
+/* ── 모달 ── */
+
+.agent-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.agent-modal {
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 640px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.agent-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.agent-modal-header h2 {
+  margin: 0 0 4px;
+  font-size: var(--font-size-lg);
+}
+
+.agent-modal-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.agent-modal-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.agent-modal-close:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+}
+
+.agent-modal-body {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agent-modal-step {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.agent-modal-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--color-bg-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.agent-modal-step-output {
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text-secondary);
+}
+
+.agent-modal-step-error {
+  padding: 10px 14px;
+  background: var(--color-danger-subtle, #fef2f2);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+.agent-modal-step-timing {
+  padding: 6px 14px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* ─── 섹션 라벨 ─── */
+
+.agents-section-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ─── 커스텀 에이전트 카드 ─── */
+
+.agent-card--custom {
+  border-left: 3px solid var(--color-warning, #f59e0b);
+}
+
+.agent-card-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-card-action-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+@media (max-width: 900px) {
+  .agents-hero {
+    flex-direction: column;
+  }
+
+  .agents-grid {
+    grid-template-columns: 1fr;
+  }
+}

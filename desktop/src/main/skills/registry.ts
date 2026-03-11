@@ -14,8 +14,9 @@ import type {
   SkillRecommendation,
   SourceReference,
 } from "../contracts.js";
+import { loadCustomSkills } from "./skillLoaderService.js";
 
-const SKILLS: SapSkillDefinition[] = [
+const PRESET_SKILLS: SapSkillDefinition[] = [
   {
     id: "cbo-impact-analysis",
     title: "CBO 변경 영향 분석",
@@ -210,9 +211,21 @@ function mapVaultEntriesToSources(entries: Awaited<ReturnType<VaultRepository["l
   }));
 }
 
+function getAllSkills(): SapSkillDefinition[] {
+  const custom = loadCustomSkills();
+  const presetIds = new Set(PRESET_SKILLS.map((s) => s.id));
+  const deduped = custom.filter((s) => !presetIds.has(s.id));
+  return [...PRESET_SKILLS, ...deduped];
+}
+
 export function getSkillDefinition(skillId: string): SapSkillDefinition | null {
-  const skill = SKILLS.find((item) => item.id === skillId);
+  const all = getAllSkills();
+  const skill = all.find((item) => item.id === skillId);
   return skill ? normalizeSkill(skill) : null;
+}
+
+export function listCustomSkillDefinitions(): SapSkillDefinition[] {
+  return loadCustomSkills().map(normalizeSkill);
 }
 
 export class SkillSourceRegistry {
@@ -224,7 +237,7 @@ export class SkillSourceRegistry {
   ) {}
 
   listSkills(): SapSkillDefinition[] {
-    return SKILLS.map(normalizeSkill);
+    return getAllSkills().map(normalizeSkill);
   }
 
   listPacks(): SkillPackDefinition[] {
@@ -236,7 +249,7 @@ export class SkillSourceRegistry {
   }
 
   recommendSkills(context: SkillExecutionContext): SkillRecommendation[] {
-    const compatible = SKILLS.filter(
+    const compatible = getAllSkills().filter(
       (skill) =>
         skill.supportedDomainPacks.includes(context.domainPack) &&
         skill.supportedDataTypes.includes(context.dataType)
@@ -338,7 +351,7 @@ export class SkillSourceRegistry {
     const selectedSkill =
       (input.skillId ? getSkillDefinition(input.skillId) : null) ??
       recommendedSkills[0]?.skill ??
-      normalizeSkill(SKILLS[0]);
+      normalizeSkill(PRESET_SKILLS[0]);
 
     const availableSources = this.listSources(input.context);
     const requestedIds =
