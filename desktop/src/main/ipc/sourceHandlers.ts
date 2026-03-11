@@ -1,4 +1,4 @@
-import { dialog, ipcMain } from "electron";
+import { dialog, ipcMain, shell } from "electron";
 import type {
   DomainPack,
   PickAndAddLocalFolderSourceInput,
@@ -7,6 +7,8 @@ import type {
   VaultClassification,
 } from "../contracts.js";
 import type { McpServerConfig } from "../sources/mcpConnector.js";
+import { listCustomSkillDefinitions } from "../skills/registry.js";
+import { saveCustomSkill, deleteCustomSkill, getSkillFolderPath } from "../skills/skillLoaderService.js";
 import type { IpcContext } from "./types.js";
 
 export function registerSourceHandlers(ctx: IpcContext): void {
@@ -114,5 +116,23 @@ export function registerSourceHandlers(ctx: IpcContext): void {
       source: ctx.configuredSourceRepo.getById(sourceId),
       summary,
     };
+  });
+
+  // ─── 커스텀 스킬 CRUD ───
+
+  ipcMain.handle("skills:listCustom", () => {
+    return listCustomSkillDefinitions();
+  });
+
+  ipcMain.handle("skills:saveCustom", (_event, content: string, fileName: string) => {
+    saveCustomSkill(content, fileName);
+  });
+
+  ipcMain.handle("skills:deleteCustom", (_event, fileName: string) => {
+    deleteCustomSkill(fileName);
+  });
+
+  ipcMain.handle("skills:openFolder", async () => {
+    await shell.openPath(getSkillFolderPath());
   });
 }

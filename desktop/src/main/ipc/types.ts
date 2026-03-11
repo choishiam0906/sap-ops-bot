@@ -7,6 +7,7 @@ import type { SkillSourceRegistry } from "../skills/registry.js";
 import type { LocalFolderSourceLibrary } from "../sources/localFolderLibrary.js";
 import type { McpConnector } from "../sources/mcpConnector.js";
 import type {
+  AgentExecutionRepository,
   AuditRepository,
   ClosingPlanRepository,
   ClosingStepRepository,
@@ -18,6 +19,7 @@ import type {
   VaultRepository,
 } from "../storage/repositories.js";
 import type { RoutineExecutor } from "../services/routineExecutor.js";
+import type { AgentExecutor } from "../agents/executor.js";
 
 export interface IpcContext {
   oauthManager: OAuthManager;
@@ -37,5 +39,7 @@ export interface IpcContext {
   routineTemplateRepo: RoutineTemplateRepository;
   routineExecutionRepo: RoutineExecutionRepository;
   routineExecutor: RoutineExecutor;
+  agentExecutionRepo: AgentExecutionRepository;
+  agentExecutor: AgentExecutor;
   getMainWindow: () => BrowserWindow | null;
 }

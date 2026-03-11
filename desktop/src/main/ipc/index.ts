@@ -7,6 +7,7 @@ import { registerAuditHandlers } from "./auditHandlers.js";
 import { registerClosingHandlers } from "./closingHandlers.js";
 import { registerRoutineHandlers } from "./routineHandlers.js";
 import { registerArchiveHandlers } from "./archiveHandlers.js";
+import { registerAgentHandlers } from "./agentHandlers.js";
 
 export type { IpcContext } from "./types.js";
 
@@ -19,4 +20,5 @@ export function registerAllIpcHandlers(ctx: IpcContext): void {
   registerClosingHandlers(ctx);
   registerRoutineHandlers(ctx);
   registerArchiveHandlers(ctx);
+  registerAgentHandlers(ctx);
 }

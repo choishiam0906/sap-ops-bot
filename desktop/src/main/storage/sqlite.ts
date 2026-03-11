@@ -313,6 +313,37 @@ export class LocalDatabase {
       CREATE INDEX IF NOT EXISTS idx_routine_executions_date
       ON routine_executions(execution_date);
     `);
+
+    // ─── Agent (스킬 조합 워크플로우) 테이블 ───
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS agent_executions (
+        id TEXT PRIMARY KEY,
+        agent_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'running',
+        started_at TEXT NOT NULL,
+        completed_at TEXT,
+        error_message TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS agent_step_results (
+        id TEXT PRIMARY KEY,
+        execution_id TEXT NOT NULL REFERENCES agent_executions(id) ON DELETE CASCADE,
+        step_id TEXT NOT NULL,
+        skill_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        started_at TEXT,
+        completed_at TEXT,
+        output_text TEXT,
+        error TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agent_executions_agent
+      ON agent_executions(agent_id, started_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_agent_step_results_exec
+      ON agent_step_results(execution_id);
+    `);
   }
 
   prepare(sql: string): Database.Statement {

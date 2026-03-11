@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type {
+  AgentDefinition,
+  AgentExecution,
+  AgentExecutionSummary,
   ArchiveTreeNode,
   AuditSearchFilters,
   CboBatchProgressEvent,
@@ -52,6 +55,7 @@ import type {
   SkillExecutionContext,
   SkillRecommendation,
 } from "../main/contracts.js";
+import type { AgentExecutionListOptions } from "../main/storage/repositories/agentExecutionRepository.js";
 
 const desktopApi = {
   setApiKey(input: SetApiKeyInput) {
@@ -320,6 +324,57 @@ const desktopApi = {
   },
   getRoutineExecutionPlanIds(date: string): Promise<string[]> {
     return ipcRenderer.invoke("routine:executions:planIds", date);
+  },
+
+  // ─── Agent (스킬 조합 워크플로우) API ───
+
+  listAgents(domainPack?: DomainPack): Promise<AgentDefinition[]> {
+    return ipcRenderer.invoke("agents:list", domainPack);
+  },
+  getAgent(id: string): Promise<AgentDefinition | null> {
+    return ipcRenderer.invoke("agents:get", id);
+  },
+  executeAgent(agentId: string, domainPack: DomainPack): Promise<string> {
+    return ipcRenderer.invoke("agents:execute", agentId, domainPack);
+  },
+  getAgentExecution(execId: string): Promise<AgentExecution | null> {
+    return ipcRenderer.invoke("agents:execution:status", execId);
+  },
+  listAgentExecutions(opts?: AgentExecutionListOptions): Promise<AgentExecutionSummary[]> {
+    return ipcRenderer.invoke("agents:executions:list", opts);
+  },
+  cancelAgentExecution(execId: string): Promise<void> {
+    return ipcRenderer.invoke("agents:execution:cancel", execId);
+  },
+
+  // ─── 커스텀 에이전트 CRUD ───
+
+  listCustomAgents(): Promise<AgentDefinition[]> {
+    return ipcRenderer.invoke("agents:listCustom");
+  },
+  saveCustomAgent(content: string, fileName: string): Promise<void> {
+    return ipcRenderer.invoke("agents:saveCustom", content, fileName);
+  },
+  deleteCustomAgent(fileName: string): Promise<void> {
+    return ipcRenderer.invoke("agents:deleteCustom", fileName);
+  },
+  openAgentFolder(): Promise<void> {
+    return ipcRenderer.invoke("agents:openFolder");
+  },
+
+  // ─── 커스텀 스킬 CRUD ───
+
+  listCustomSkills(): Promise<SapSkillDefinition[]> {
+    return ipcRenderer.invoke("skills:listCustom");
+  },
+  saveCustomSkill(content: string, fileName: string): Promise<void> {
+    return ipcRenderer.invoke("skills:saveCustom", content, fileName);
+  },
+  deleteCustomSkill(fileName: string): Promise<void> {
+    return ipcRenderer.invoke("skills:deleteCustom", fileName);
+  },
+  openSkillFolder(): Promise<void> {
+    return ipcRenderer.invoke("skills:openFolder");
   },
 };
 

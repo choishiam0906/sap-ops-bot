@@ -9,9 +9,13 @@ export type SapAssistantSubPage =
   | 'chat'           // 대화 모드 (기본)
   | 'chat:flagged'   // 중요 세션 필터
   | 'chat:saved'     // 보관함 필터
-  | 'analysis'       // 분석 모드
-  | 'archive'        // 소스코드 아카이브
-export type KnowledgeSubPage = 'sources' | 'skills' | 'vault'
+  | 'analysis'       // 분석 모드 (레거시, code-lab:analysis로 리다이렉트)
+  | 'archive'        // 소스코드 아카이브 (레거시, code-lab:archive로 리다이렉트)
+  | 'code-lab'               // 🧪 코드 랩 (기본 = sources 탭)
+  | 'code-lab:sources'       // 📚 소스 관리 탭
+  | 'code-lab:analysis'      // 🔍 CBO 분석 탭
+  | 'code-lab:archive'       // 📁 아카이브 탭
+export type KnowledgeSubPage = 'skills' | 'agents' | 'vault'
 
 /** @deprecated Phase 1 호환 레이어 — AskSapSubPage는 SessionFilterTab으로 이전됨 */
 export type AskSapSubPage = 'all' | 'flagged' | 'saved'
@@ -40,8 +44,8 @@ function pageToSection(page: AppPage): { section: AppSection; subPage: string | 
     case 'audit': return { section: 'cockpit', subPage: 'overview' }
     case 'chat': return { section: 'sap-assistant', subPage: 'chat' }
     case 'skills': return { section: 'sap-assistant', subPage: 'chat' }
-    case 'cbo': return { section: 'sap-assistant', subPage: 'analysis' }
-    case 'sources': return { section: 'knowledge', subPage: 'sources' }
+    case 'cbo': return { section: 'sap-assistant', subPage: 'code-lab:analysis' }
+    case 'sources': return { section: 'sap-assistant', subPage: 'code-lab:sources' }
     case 'vault': return { section: 'knowledge', subPage: 'vault' }
     case 'settings': return { section: 'settings', subPage: null }
   }
