@@ -13,6 +13,7 @@ import type {
   ClosingStepRepository,
   ConfiguredSourceRepository,
   RoutineExecutionRepository,
+  RoutineKnowledgeLinkRepository,
   RoutineTemplateRepository,
   SessionRepository,
   SourceDocumentRepository,
@@ -38,6 +39,7 @@ export interface IpcContext {
   closingStepRepo: ClosingStepRepository;
   routineTemplateRepo: RoutineTemplateRepository;
   routineExecutionRepo: RoutineExecutionRepository;
+  routineKnowledgeLinkRepo: RoutineKnowledgeLinkRepository;
   routineExecutor: RoutineExecutor;
   agentExecutionRepo: AgentExecutionRepository;
   agentExecutor: AgentExecutor;

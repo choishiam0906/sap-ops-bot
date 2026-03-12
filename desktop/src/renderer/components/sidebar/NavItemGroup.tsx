@@ -14,6 +14,7 @@ export interface NavGroupItem {
   section: AppSection
   label: string
   Icon: LucideIcon
+  defaultSubPage?: string
   children?: NavChild[]
   position: 'main' | 'bottom'
 }
@@ -41,7 +42,7 @@ export function NavItemGroup({
     if (hasChildren && !collapsed) {
       setExpanded(!expanded)
     }
-    onNavigate(item.section, item.children?.[0]?.subPage ?? null)
+    onNavigate(item.section, item.defaultSubPage ?? item.children?.[0]?.subPage ?? null)
   }
 
   return (

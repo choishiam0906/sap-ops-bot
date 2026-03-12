@@ -1,6 +1,10 @@
+import type { SourceDocument } from './source.js';
+import type { VaultEntry } from './vault.js';
+
 // ─── Routine Template (루틴 업무 자동화) ───
 
 export type RoutineFrequency = 'daily' | 'monthly' | 'yearly';
+export type RoutineKnowledgeTargetType = 'vault' | 'source-document';
 
 export interface RoutineTemplate {
   id: string;
@@ -29,6 +33,32 @@ export interface RoutineExecution {
   planId: string;
   executionDate: string;   // YYYY-MM-DD
   createdAt: string;
+}
+
+export interface RoutineKnowledgeLink {
+  id: string;
+  templateId: string;
+  targetType: RoutineKnowledgeTargetType;
+  targetId: string;
+  title: string;
+  excerpt?: string;
+  location?: string;
+  classification?: string | null;
+  sourceType?: string | null;
+  createdAt: string;
+  vaultEntry?: VaultEntry;
+  sourceDocument?: SourceDocument;
+}
+
+export interface RoutineKnowledgeLinkInput {
+  templateId: string;
+  targetType: RoutineKnowledgeTargetType;
+  targetId: string;
+  title: string;
+  excerpt?: string;
+  location?: string;
+  classification?: string | null;
+  sourceType?: string | null;
 }
 
 export interface RoutineTemplateInput {

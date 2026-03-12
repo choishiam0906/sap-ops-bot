@@ -88,6 +88,7 @@ export function AnalysisMode() {
     setCaseContext({
       filePath: activeResult.metadata.fileName || store.fileName,
       objectName: (activeResult.metadata.fileName || store.fileName).replace(/\.[^.]+$/, ''),
+      sourceContent: store.sourceText.trim() || undefined,
     })
     if (store.useLlm) {
       setChatProvider(store.provider)
@@ -134,6 +135,12 @@ export function AnalysisMode() {
     try {
       const res = await api.pickAndAnalyzeCboFile(analysisOpts())
       if (!res || res.canceled) { store.setStatus('파일 선택 취소됨'); return }
+      if (res.sourceContent) {
+        store.setSourceText(res.sourceContent)
+      }
+      if (res.result?.metadata.fileName) {
+        store.setFileName(res.result.metadata.fileName)
+      }
       store.setResult(res.result)
       store.setStatus(`파일 분석 완료: ${res.filePath}`)
     } catch (e) { store.setError(e instanceof Error ? e.message : '분석 실패') }

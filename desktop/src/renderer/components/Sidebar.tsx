@@ -35,7 +35,6 @@ const MAIN_NAV_ITEMS: NavGroupItem[] = [
       { id: 'sa-chat', subPage: 'chat', label: '💬 대화' },
       { id: 'sa-flagged', subPage: 'chat:flagged', label: '중요 세션' },
       { id: 'sa-saved', subPage: 'chat:saved', label: '보관함' },
-      { id: 'sa-code-lab', subPage: 'code-lab', label: '🧪 코드 랩' },
     ],
   },
   {
@@ -44,10 +43,13 @@ const MAIN_NAV_ITEMS: NavGroupItem[] = [
     label: 'Knowledge',
     Icon: BookOpen,
     position: 'main',
+    defaultSubPage: 'code-lab',
     children: [
+      { id: 'knowledge-process', subPage: 'process', label: '📐 프로세스' },
       { id: 'knowledge-skills', subPage: 'skills', label: '⚡ 스킬' },
       { id: 'knowledge-agents', subPage: 'agents', label: '🤖 에이전트' },
       { id: 'knowledge-vault', subPage: 'vault', label: '🔐 볼트' },
+      { id: 'knowledge-code-lab', subPage: 'code-lab', label: '🧪 코드 랩' },
     ],
   },
 ]

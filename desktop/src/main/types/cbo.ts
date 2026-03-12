@@ -61,6 +61,7 @@ export interface CboAnalyzePickOutput {
   canceled: boolean;
   filePath: string | null;
   result: CboAnalysisResult | null;
+  sourceContent?: string | null;
 }
 
 export type CboAnalysisMode = "text" | "file" | "folder";

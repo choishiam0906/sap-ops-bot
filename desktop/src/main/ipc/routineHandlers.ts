@@ -1,6 +1,7 @@
 import { ipcMain } from "electron";
 
 import type {
+  RoutineKnowledgeLinkInput,
   RoutineTemplateInput,
   RoutineTemplateUpdate,
   RoutineFrequency,
@@ -39,6 +40,18 @@ export function registerRoutineHandlers(ctx: IpcContext): void {
 
   ipcMain.handle("routine:templates:toggle", (_e, id: string) => {
     return ctx.routineTemplateRepo.toggle(id);
+  });
+
+  ipcMain.handle("routine:knowledge:list", (_e, templateId: string) => {
+    return ctx.routineKnowledgeLinkRepo.listByTemplateId(templateId);
+  });
+
+  ipcMain.handle("routine:knowledge:link", (_e, input: RoutineKnowledgeLinkInput) => {
+    return ctx.routineKnowledgeLinkRepo.upsert(input);
+  });
+
+  ipcMain.handle("routine:knowledge:unlink", (_e, id: string) => {
+    return ctx.routineKnowledgeLinkRepo.delete(id);
   });
 
   // ─── Execution ───

@@ -16,6 +16,11 @@ import type {
 } from "../contracts.js";
 import { loadCustomSkills } from "./skillLoaderService.js";
 
+const MAX_INLINE_SOURCE_CHARS = 12_000;
+const MAX_CONFIGURED_SOURCE_TOTAL_CHARS = 12_000;
+const MAX_CONFIGURED_SOURCE_DOCUMENTS = 3;
+const MAX_CONFIGURED_SOURCE_DOC_CHARS = 4_000;
+
 const PRESET_SKILLS: SapSkillDefinition[] = [
   {
     id: "cbo-impact-analysis",
@@ -444,31 +449,43 @@ export class SkillSourceRegistry {
           );
         }
       } else if (source.id === "local-imported-files" && input.context.caseContext?.filePath) {
+        const sourceContent = input.context.caseContext.sourceContent?.trim();
+        if (sourceContent) {
+          promptContext.push(
+            buildInlineSourceContext(
+              source.title,
+              input.context.caseContext.filePath,
+              sourceContent
+            )
+          );
+        }
         sourceReferences.push({
           id: source.id,
           title: input.context.caseContext.filePath.split(/[\\/]/).pop() ?? source.title,
           category: "local-file",
           relevance_score: 0.88,
-          description: input.context.caseContext.filePath,
+          description: sourceContent
+            ? `${input.context.caseContext.filePath} (원문 포함)`
+            : input.context.caseContext.filePath,
         });
       } else if (source.id.startsWith("configured-source:") && source.configuredSourceId) {
         const documents = this.sourceDocumentRepo.search({
           sourceId: source.configuredSourceId,
-          limit: 3,
+          limit: 10,
         });
         if (documents.length > 0) {
+          const contextualDocuments = rankDocumentsForMessage(documents, input.context.message)
+            .slice(0, MAX_CONFIGURED_SOURCE_DOCUMENTS);
           promptContext.push(
-            `[근거 Source: ${source.title}]\n${documents
-              .map((document) => `- ${document.relativePath}: ${document.excerpt ?? "요약 없음"}`)
-              .join("\n")}`
+            buildConfiguredSourceContext(source.title, contextualDocuments)
           );
           sourceReferences.push(
-            ...documents.map((document, index) => ({
+            ...contextualDocuments.map((document, index) => ({
               id: document.id,
               title: document.title,
               category: "configured-source",
               relevance_score: Math.max(0.6, 0.9 - index * 0.1),
-              description: document.relativePath,
+              description: `${document.relativePath} (원문 포함)`,
             }))
           );
         } else {
@@ -525,4 +542,81 @@ function labelDomainPack(domainPack: DomainPack): string {
     default:
       return domainPack;
   }
+}
+
+function buildInlineSourceContext(title: string, filePath: string | undefined, sourceContent: string): string {
+  const heading = [`[근거 Source: ${title}]`];
+  if (filePath) {
+    heading.push(`[파일] ${filePath}`);
+  }
+  heading.push(truncateForPrompt(sourceContent, MAX_INLINE_SOURCE_CHARS));
+  return heading.join("\n");
+}
+
+function buildConfiguredSourceContext(title: string, documents: Array<{ relativePath: string; contentText: string }>): string {
+  const sections = [`[근거 Source: ${title}]`];
+  let remaining = MAX_CONFIGURED_SOURCE_TOTAL_CHARS;
+
+  for (const document of documents) {
+    if (remaining <= 0) break;
+    const snippet = truncateForPrompt(
+      document.contentText,
+      Math.min(MAX_CONFIGURED_SOURCE_DOC_CHARS, remaining)
+    );
+    sections.push(`[문서] ${document.relativePath}\n${snippet}`);
+    remaining -= snippet.length;
+  }
+
+  return sections.join("\n\n");
+}
+
+function truncateForPrompt(content: string, maxChars: number): string {
+  const normalized = content.replace(/\r\n/g, "\n").trim();
+  if (normalized.length <= maxChars) {
+    return normalized;
+  }
+  return `${normalized.slice(0, maxChars).trim()}\n... (생략)`;
+}
+
+function rankDocumentsForMessage<T extends { title: string; relativePath: string; excerpt: string | null; contentText: string }>(
+  documents: T[],
+  message?: string
+): T[] {
+  const tokens = extractSearchTokens(message);
+  if (tokens.length === 0) {
+    return documents;
+  }
+
+  return [...documents].sort((left, right) => {
+    const scoreDiff = scoreDocument(right, tokens) - scoreDocument(left, tokens);
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
+    return 0;
+  });
+}
+
+function extractSearchTokens(message?: string): string[] {
+  if (!message) return [];
+  const tokens = message
+    .toLowerCase()
+    .split(/[^a-z0-9가-힣_]+/i)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+
+  return [...new Set(tokens)];
+}
+
+function scoreDocument(
+  document: { title: string; relativePath: string; excerpt: string | null; contentText: string },
+  tokens: string[]
+): number {
+  const haystack = [
+    document.title,
+    document.relativePath,
+    document.excerpt ?? "",
+    document.contentText.slice(0, 8_000),
+  ].join(" ").toLowerCase();
+
+  return tokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
 }

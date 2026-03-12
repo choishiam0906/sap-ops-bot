@@ -32,6 +32,8 @@ import type {
   ReadArchiveFileInput,
   RoutineExecution,
   RoutineFrequency,
+  RoutineKnowledgeLink,
+  RoutineKnowledgeLinkInput,
   RoutineTemplate,
   RoutineTemplateInput,
   RoutineTemplateStep,
@@ -315,6 +317,15 @@ const desktopApi = {
   },
   toggleRoutineTemplate(id: string): Promise<RoutineTemplate | null> {
     return ipcRenderer.invoke("routine:templates:toggle", id);
+  },
+  listRoutineKnowledgeLinks(templateId: string): Promise<RoutineKnowledgeLink[]> {
+    return ipcRenderer.invoke("routine:knowledge:list", templateId);
+  },
+  linkRoutineKnowledge(input: RoutineKnowledgeLinkInput): Promise<RoutineKnowledgeLink> {
+    return ipcRenderer.invoke("routine:knowledge:link", input);
+  },
+  unlinkRoutineKnowledge(linkId: string): Promise<boolean> {
+    return ipcRenderer.invoke("routine:knowledge:unlink", linkId);
   },
   executeRoutinesNow(): Promise<{ created: number; skipped: number }> {
     return ipcRenderer.invoke("routine:execute:now");

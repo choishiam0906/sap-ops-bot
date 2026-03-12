@@ -9,3 +9,4 @@ export { ClosingPlanRepository } from "./closingPlanRepository.js";
 export { ClosingStepRepository } from "./closingStepRepository.js";
 export { RoutineTemplateRepository } from "./routineTemplateRepository.js";
 export { RoutineExecutionRepository } from "./routineExecutionRepository.js";
+export { RoutineKnowledgeLinkRepository } from "./routineKnowledgeLinkRepository.js";

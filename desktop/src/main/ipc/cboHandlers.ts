@@ -9,6 +9,7 @@ import type {
   CboRunDiffInput,
   CboSyncKnowledgeInput,
 } from "../contracts.js";
+import { parseCboFile } from "../cbo/parser.js";
 import type { IpcContext } from "./types.js";
 
 let folderAbortController: AbortController | null = null;
@@ -62,17 +63,19 @@ export function registerCboHandlers(ctx: IpcContext): void {
       }
 
       const filePath = selection.filePaths[0];
-      const result = await ctx.cboAnalyzer.analyzeFile({
-        filePath,
-        provider: input.provider,
-        model: input.model,
-        domainPack: input.domainPack,
-      });
+      const parsed = await parseCboFile(filePath);
+      const result = await ctx.cboAnalyzer.analyzeContent(
+        parsed.fileName,
+        parsed.content,
+        input.provider,
+        input.model
+      );
 
       return {
         canceled: false,
         filePath,
         result,
+        sourceContent: parsed.content,
       };
     }
   );

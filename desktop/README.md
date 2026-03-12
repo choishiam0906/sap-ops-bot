@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](https://github.com/boxlogodev/sap-assistant-desktop/releases/tag/v4.0.0)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d4.svg)](#)
-[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](#)
+[![Node](https://img.shields.io/badge/node-22.x-brightgreen.svg)](#)
 [![Website](https://img.shields.io/badge/website-boxlogodev.com-ff6b35.svg)](https://www.boxlogodev.com)
 
 **SAP 운영 자동화 봇 플랫폼** – 로컬 우선(Local-First) 아키텍처로 민감한 데이터를 보호하면서, 커스텀 에이전트와 스킬을 통해 SAP 운영 워크플로우를 자동화합니다.
@@ -249,7 +249,7 @@ src/
 | **데이터 페칭** | React Query | 5.x |
 | **언어** | TypeScript | 5.7 |
 | **번들러** | Vite | 6.x |
-| **백엔드** | Node.js | 18+ |
+| **백엔드** | Node.js | 22.x LTS |
 | **데이터베이스** | better-sqlite3 | 11.x |
 | **로깅** | Pino | 8.x |
 | **LLM SDK** | Model Context Protocol | 1.27.x |
@@ -262,8 +262,8 @@ src/
 
 ### 필수 요구사항
 
-- **Node.js** ≥ 18.0.0
-- **npm** ≥ 9.0.0 또는 **pnpm** ≥ 8.0.0
+- **Node.js** 22.22.1 LTS 권장 (`.nvmrc`, `.node-version` 제공)
+- **npm** 10.9.4 이상
 - **Windows** 10 이상 (Electron 31 호환)
 - **메모리**: 최소 4GB RAM
 - **디스크**: 설치 후 최소 500MB 여유 공간
@@ -273,12 +273,13 @@ src/
 ```bash
 # 저장소 클론
 git clone https://github.com/boxlogodev/sap-assistant-desktop.git
-cd sap-assistant/desktop
+cd sap-assistant-desktop/desktop
 
-# 의존성 설치
+# 런타임 확인
+npm run check:runtime
+
+# 의존성 설치 (Electron 네이티브 모듈 자동 재빌드 포함)
 npm install
-# 또는
-pnpm install
 ```
 
 ### 2단계: 환경 설정
@@ -293,19 +294,15 @@ cp .env.example .env
 # GOOGLE_API_KEY=...
 ```
 
-### 3단계: 개발 모드 실행
+### 3단계: 앱 실행
 
 ```bash
-# 개발 서버 + 앱 실행
-npm run dev
-
-# 또는 별도 터미널에서
-# 터미널 1: Vite 개발 서버
-npm run build:renderer
-
-# 터미널 2: Electron 앱
-npm run dev
+# 권장: 렌더러를 먼저 빌드한 뒤 앱 실행
+npm run build
+npm run start
 ```
+
+> `npm run start`는 Electron과 충돌할 수 있는 `NODE_OPTIONS`를 정리한 뒤 앱을 실행합니다.
 
 ### 4단계: 빌드 및 배포
 
@@ -341,7 +338,7 @@ GOOGLE_API_KEY=...
 
 # 애플리케이션
 APP_NAME=SAP Assistant
-APP_VERSION=3.0.0
+APP_VERSION=4.0.0
 
 # 개발/프로덕션
 NODE_ENV=development|production
@@ -642,13 +639,14 @@ Ask SAP
 
 ```bash
 # 개발
-npm run dev              # Electron + React 핫 리로드
+npm run check:runtime    # Node/npm 런타임 확인
+npm run dev              # 메인 프로세스 개발 실행 (tsx)
 npm run build:renderer   # React 빌드 (Vite)
 npm run build:main      # Electron Main 빌드
 
 # 프로덕션 빌드
 npm run build           # build:main + build:renderer
-npm run start           # 빌드된 앱 실행
+npm run start           # 빌드된 앱 실행 (충돌하는 NODE_OPTIONS 자동 정리)
 
 # 패키징
 npm run pack            # 앱 패킹 (dist/ 생성)

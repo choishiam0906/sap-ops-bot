@@ -161,6 +161,7 @@ describe('CboPage (AnalysisMode 래퍼)', () => {
       expect.arrayContaining(['workspace-context', 'local-imported-files', 'vault-confidential'])
     )
     expect(useChatStore.getState().caseContext?.filePath).toBe('zsd_billing.txt')
+    expect(useChatStore.getState().caseContext?.sourceContent).toBe('REPORT ZSD_BILLING.')
     expect(useChatStore.getState().input).toContain('현업 사용자에게 비기술 용어로 설명')
   })
 

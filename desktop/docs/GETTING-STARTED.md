@@ -2,8 +2,8 @@
 
 ## 필수 요구사항
 
-- **Node.js** >= 18.0.0
-- **npm** >= 9.0.0
+- **Node.js** 22.22.1 LTS 권장 (`.nvmrc`, `.node-version` 제공)
+- **npm** 10.9.4 이상
 - **Windows** 10 이상
 - **메모리**: 최소 4GB RAM
 - **디스크**: 500MB 이상 여유 공간
@@ -17,7 +17,10 @@
 git clone https://github.com/boxlogodev/sap-assistant-desktop.git
 cd sap-assistant-desktop/desktop
 
-# 의존성 설치
+# 런타임 확인
+npm run check:runtime
+
+# 의존성 설치 (Electron 네이티브 모듈 자동 재빌드 포함)
 npm install
 ```
 
@@ -45,15 +48,14 @@ GOOGLE_API_KEY=...
 ## 개발 모드
 
 ```bash
-# 메인 프로세스 + 렌더러 빌드
+# 권장: 렌더러를 먼저 빌드한 뒤 앱 실행
 npm run build
 
 # Electron 앱 실행
 npm run start
-
-# 또는 개발 모드 (핫 리로드)
-npm run dev
 ```
+
+> `npm run start`는 Electron과 충돌하는 `NODE_OPTIONS`를 정리한 뒤 앱을 실행합니다.
 
 ---
 
@@ -78,6 +80,9 @@ npm run dist
 ## 검증
 
 ```bash
+# 런타임 버전 검증
+npm run check:runtime
+
 # 전체 검증 (빌드 + 린트 + 테스트)
 npm run verify
 

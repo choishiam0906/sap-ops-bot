@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type {
   RoutineTemplate,
   RoutineTemplateInput,
+  RoutineKnowledgeLink,
+  RoutineKnowledgeLinkInput,
   RoutineTemplateStep,
   RoutineTemplateUpdate,
   RoutineExecution,
@@ -73,6 +75,34 @@ export function useToggleRoutineTemplate() {
     mutationFn: (id) => api.toggleRoutineTemplate(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['routine:templates'] })
+    },
+  })
+}
+
+export function useRoutineKnowledgeLinks(templateId: string | null) {
+  return useQuery<RoutineKnowledgeLink[]>({
+    queryKey: ['routine:knowledge', templateId],
+    queryFn: () => (templateId ? api.listRoutineKnowledgeLinks(templateId) : Promise.resolve([])),
+    enabled: !!templateId,
+  })
+}
+
+export function usePinRoutineKnowledgeLink() {
+  const qc = useQueryClient()
+  return useMutation<RoutineKnowledgeLink, Error, RoutineKnowledgeLinkInput>({
+    mutationFn: (input) => api.linkRoutineKnowledge(input),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['routine:knowledge', input.templateId] })
+    },
+  })
+}
+
+export function useUnpinRoutineKnowledgeLink() {
+  const qc = useQueryClient()
+  return useMutation<boolean, Error, { linkId: string; templateId: string }>({
+    mutationFn: ({ linkId }) => api.unlinkRoutineKnowledge(linkId),
+    onSuccess: (_data, { templateId }) => {
+      qc.invalidateQueries({ queryKey: ['routine:knowledge', templateId] })
     },
   })
 }

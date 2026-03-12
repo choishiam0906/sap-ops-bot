@@ -26,6 +26,7 @@ export interface CaseContext {
   runId?: string;
   filePath?: string;
   objectName?: string;
+  sourceContent?: string;
 }
 
 export interface SkillExecutionContext {
