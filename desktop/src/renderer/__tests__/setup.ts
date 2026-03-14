@@ -325,6 +325,35 @@ const mockApi: { [K in keyof DesktopApi]: ReturnType<typeof vi.fn> } = {
   saveCustomSkill: vi.fn().mockResolvedValue(undefined),
   deleteCustomSkill: vi.fn().mockResolvedValue(undefined),
   openSkillFolder: vi.fn().mockResolvedValue(undefined),
+
+  // LLM 스트리밍
+  streamMessage: vi.fn().mockResolvedValue(undefined),
+  onStreamChunk: vi.fn().mockReturnValue(() => {}),
+  onStreamDone: vi.fn().mockReturnValue(() => {}),
+  onStreamError: vi.fn().mockReturnValue(() => {}),
+
+  // Chat History 설정
+  setChatHistoryLimit: vi.fn().mockResolvedValue(undefined),
+  getChatHistoryLimit: vi.fn().mockResolvedValue(10),
+
+  // 정책 엔진
+  listPolicyRules: vi.fn().mockResolvedValue([]),
+  createPolicyRule: vi.fn().mockResolvedValue({ id: 'rule-1', name: '테스트 규칙', conditions: [], action: 'auto_approve', priority: 100, enabled: true, createdAt: '', updatedAt: '' }),
+  updatePolicyRule: vi.fn().mockResolvedValue(null),
+  deletePolicyRule: vi.fn().mockResolvedValue(true),
+  evaluatePolicy: vi.fn().mockResolvedValue({ action: 'auto_approve', matchedRule: null }),
+  listPendingApprovals: vi.fn().mockResolvedValue([]),
+  decideApproval: vi.fn().mockResolvedValue(undefined),
+
+  // 스케줄 자동 실행
+  listScheduledTasks: vi.fn().mockResolvedValue([]),
+  createScheduledTask: vi.fn().mockResolvedValue({ id: 'st-1', templateId: 'rt-1', cronExpression: '0 9 * * 1-5', enabled: true, lastRunAt: null, nextRunAt: null, createdAt: '' }),
+  updateScheduledTask: vi.fn().mockResolvedValue(null),
+  deleteScheduledTask: vi.fn().mockResolvedValue(true),
+  executeScheduleNow: vi.fn().mockResolvedValue(undefined),
+  listScheduleLogs: vi.fn().mockResolvedValue([]),
+  listRecentScheduleLogs: vi.fn().mockResolvedValue([]),
+  onScheduleExecutionComplete: vi.fn().mockReturnValue(() => {}),
 }
 
 Object.defineProperty(window, 'sapOpsDesktop', {

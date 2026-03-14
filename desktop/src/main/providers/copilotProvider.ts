@@ -3,6 +3,7 @@ import {
   LlmProvider,
   ProviderChatInput,
   ProviderChatOutput,
+  StreamChunk,
 } from "./base.js";
 
 /**
@@ -120,5 +121,95 @@ export class CopilotProvider implements LlmProvider {
       inputTokens: payload.usage?.prompt_tokens ?? 0,
       outputTokens: payload.usage?.completion_tokens ?? 0,
     };
+  }
+
+  async sendMessageStream(
+    tokens: SecureRecord,
+    input: ProviderChatInput,
+    onChunk: (chunk: StreamChunk) => void,
+  ): Promise<ProviderChatOutput> {
+    const githubToken = tokens.accessToken;
+    const copilotToken = await this.getCopilotToken(githubToken);
+
+    const messages = [
+      ...input.history,
+      { role: "user", content: input.message },
+    ];
+
+    const response = await fetch(COPILOT_CHAT_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${copilotToken}`,
+        "Content-Type": "application/json",
+        "Editor-Version": "vscode/1.100.0",
+        "Editor-Plugin-Version": "copilot/1.300.0",
+        "Copilot-Integration-Id": "vscode-chat",
+      },
+      body: JSON.stringify({
+        model: input.model,
+        messages,
+        temperature: 0.2,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401 && this.cachedToken) {
+        this.cachedToken = null;
+        return this.sendMessageStream(tokens, input, onChunk);
+      }
+      const errText = await response.text();
+      throw new Error(`Copilot stream 요청 실패 (${response.status}): ${errText}`);
+    }
+
+    let fullContent = "";
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(data) as {
+              choices?: Array<{ delta?: { content?: string } }>;
+              usage?: { prompt_tokens?: number; completion_tokens?: number };
+            };
+
+            const delta = parsed.choices?.[0]?.delta?.content ?? "";
+            if (delta) {
+              fullContent += delta;
+              onChunk({ delta });
+            }
+
+            if (parsed.usage) {
+              inputTokens = parsed.usage.prompt_tokens ?? 0;
+              outputTokens = parsed.usage.completion_tokens ?? 0;
+            }
+          } catch {
+            // JSON 파싱 실패 무시
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    onChunk({ delta: "", inputTokens, outputTokens });
+    return { content: fullContent, inputTokens, outputTokens };
   }
 }

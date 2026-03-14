@@ -9,9 +9,10 @@ import { YearlyClosingPanel } from './cockpit/YearlyClosingPanel'
 import { CockpitSubNav } from './cockpit/CockpitSubNav'
 import { PlanListPanel } from './cockpit/PlanListPanel'
 import { PlanDetailPanel } from './cockpit/PlanDetailPanel'
+import { SchedulePanel } from './cockpit/SchedulePanel'
 import './CockpitPage.css'
 
-const VALID_VIEW_MODES: CockpitViewMode[] = ['overview', 'daily', 'monthly', 'yearly', 'all-plans']
+const VALID_VIEW_MODES: CockpitViewMode[] = ['overview', 'daily', 'monthly', 'yearly', 'all-plans', 'schedule']
 
 export function CockpitPage() {
   const subPage = useAppShellStore((s) => s.subPage)
@@ -34,6 +35,7 @@ export function CockpitPage() {
       {viewMode === 'daily' && <DailyTasksPanel />}
       {viewMode === 'monthly' && <MonthlyClosingPanel />}
       {viewMode === 'yearly' && <YearlyClosingPanel />}
+      {viewMode === 'schedule' && <SchedulePanel />}
       {viewMode === 'all-plans' && (
         <>
           <CockpitSubNav />

@@ -27,11 +27,14 @@ import {
   ProviderAccountRepository,
   RoutineExecutionRepository,
   RoutineTemplateRepository,
+  ScheduledTaskRepository,
+  ScheduleLogRepository,
   SessionRepository,
   SourceDocumentRepository,
   VaultRepository,
 } from "./storage/repositories.js";
 import { RoutineExecutor } from "./services/routineExecutor.js";
+import { RoutineScheduler } from "./services/routineScheduler.js";
 import { seedRoutineTemplates } from "./services/routineSeedData.js";
 import { AgentExecutor } from "./agents/executor.js";
 import { LocalDatabase } from "./storage/sqlite.js";
@@ -42,6 +45,10 @@ import { LocalFolderSourceLibrary } from "./sources/localFolderLibrary.js";
 import { McpConnector } from "./sources/mcpConnector.js";
 import { registerAllIpcHandlers } from "./ipc/index.js";
 import type { IpcContext } from "./ipc/index.js";
+import { PolicyEngine } from "./policy/policyEngine.js";
+import { ApprovalManager } from "./policy/approvalManager.js";
+import { registerPolicyHandlers } from "./ipc/policyHandlers.js";
+import { DEFAULT_POLICY_RULES } from "./policy/policyRules.js";
 
 let mainWindow: BrowserWindow | null = null;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
@@ -84,6 +91,14 @@ function initRuntime(): void {
   // 앱 시작 시 루틴 자동 실행
   routineExecutor.executeDueRoutines();
 
+  // 스케줄 자동 실행
+  const scheduledTaskRepo = new ScheduledTaskRepository(db);
+  const scheduleLogRepo = new ScheduleLogRepository(db);
+  const routineScheduler = new RoutineScheduler(
+    scheduledTaskRepo, scheduleLogRepo, routineExecutor, () => mainWindow
+  );
+  routineScheduler.startAll();
+
   const agentExecutionRepo = new AgentExecutionRepository(db);
 
   const localFolderLibrary = new LocalFolderSourceLibrary(configuredSourceRepo, sourceDocumentRepo);
@@ -102,6 +117,17 @@ function initRuntime(): void {
     auditRepo, skillRegistry
   );
   const oauthManager = new OAuthManager(secureStore, accountRepo, config);
+
+  // 정책 엔진 초기화
+  const policyEngine = new PolicyEngine(db);
+  const approvalManager = new ApprovalManager();
+
+  // 기본 정책 규칙 시드 (규칙이 없을 때만)
+  if (policyEngine.listRules().length === 0) {
+    for (const rule of DEFAULT_POLICY_RULES) {
+      policyEngine.createRule(rule);
+    }
+  }
 
   const agentExecutor = new AgentExecutor(chatRuntime, skillRegistry, agentExecutionRepo);
 
@@ -131,8 +157,13 @@ function initRuntime(): void {
     routineTemplateRepo,
     routineExecutionRepo,
     routineExecutor,
+    routineScheduler,
+    scheduledTaskRepo,
+    scheduleLogRepo,
     agentExecutionRepo,
     agentExecutor,
+    policyEngine,
+    approvalManager,
     getMainWindow: () => mainWindow,
   };
 }
@@ -181,6 +212,10 @@ app.whenReady().then(() => {
   logger.info({ version: app.getVersion() }, "앱 시작");
   initRuntime();
   registerAllIpcHandlers(ipcContext);
+  registerPolicyHandlers({
+    policyEngine: ipcContext.policyEngine,
+    approvalManager: ipcContext.approvalManager,
+  });
   createWindow();
   checkForUpdates();
   logger.info("윈도우 생성 완료");
@@ -189,5 +224,11 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
+  }
+});
+
+app.on("before-quit", () => {
+  if (ipcContext?.routineScheduler) {
+    ipcContext.routineScheduler.stopAll();
   }
 });

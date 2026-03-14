@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type { ChatSession } from '../../../main/contracts.js'
 import { useChatStore } from '../../stores/chatStore.js'
+import { useAppShellStore } from '../../stores/appShellStore.js'
 import { useAskSapStore } from '../../stores/askSapStore.js'
 import type { SessionFilterTab } from '../../stores/askSapStore.js'
 import { useSessions } from '../../hooks/useSessions.js'
@@ -53,6 +54,9 @@ export function ChatMode({ chatFilter }: ChatModeProps) {
 
   function handleFilterTabChange(tab: SessionFilterTab) {
     setFilterTab(tab)
+    // appShellStore.subPage도 함께 동기화해야 useEffect 리셋 방지
+    const sub = tab === 'all' ? 'chat' : `chat:${tab}`
+    useAppShellStore.getState().setSection('sap-assistant', sub)
   }
 
   return (

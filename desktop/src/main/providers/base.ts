@@ -13,10 +13,23 @@ export interface ProviderChatOutput {
   outputTokens: number;
 }
 
+export interface StreamChunk {
+  delta: string;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
 export interface LlmProvider {
   readonly type: ProviderType;
   sendMessage(
     tokens: SecureRecord,
     input: ProviderChatInput
+  ): Promise<ProviderChatOutput>;
+
+  /** 스트리밍 지원 시 구현. 미구현 시 sendMessage 폴백. */
+  sendMessageStream?(
+    tokens: SecureRecord,
+    input: ProviderChatInput,
+    onChunk: (chunk: StreamChunk) => void,
   ): Promise<ProviderChatOutput>;
 }

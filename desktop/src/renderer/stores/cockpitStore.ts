@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 export type PlanFilter = 'all' | 'in-progress' | 'completed' | 'delayed'
-export type CockpitViewMode = 'overview' | 'daily' | 'monthly' | 'yearly' | 'all-plans'
+export type CockpitViewMode = 'overview' | 'daily' | 'monthly' | 'yearly' | 'all-plans' | 'schedule'
 
 interface CockpitState {
   selectedPlanId: string | null

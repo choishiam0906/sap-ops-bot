@@ -8,9 +8,10 @@ import {
   ProviderType,
   ChatMessage,
   ChatSession,
+  DomainPack,
 } from "./contracts.js";
 import { SecureStore } from "./auth/secureStore.js";
-import { LlmProvider } from "./providers/base.js";
+import { LlmProvider, StreamChunk } from "./providers/base.js";
 import { AuditRepository, MessageRepository, SessionRepository } from "./storage/repositories.js";
 import { SkillSourceRegistry } from "./skills/registry.js";
 
@@ -18,6 +19,7 @@ export class ChatRuntime {
   private readonly providers: Map<ProviderType, LlmProvider>;
   // P4-5: 세션 생성 동시 요청 방지 — 동일 provider에 대한 중복 생성을 막는 Promise mutex
   private readonly sessionMutex = new Map<string, Promise<ChatSession>>();
+  private _chatHistoryLimit = 10;
 
   constructor(
     providers: LlmProvider[],
@@ -30,6 +32,14 @@ export class ChatRuntime {
     this.providers = new Map(
       providers.map((provider) => [provider.type, provider])
     );
+  }
+
+  get chatHistoryLimit(): number {
+    return this._chatHistoryLimit;
+  }
+
+  set chatHistoryLimit(value: number) {
+    this._chatHistoryLimit = Math.max(2, Math.min(100, value));
   }
 
   listSessions(limit = 50) {
@@ -107,6 +117,108 @@ export class ChatRuntime {
       timestamp: new Date().toISOString(),
       domainPack: input.domainPack,
       action: "send_message",
+      externalTransfer: true,
+      policyDecision: "ALLOWED",
+      provider: input.provider,
+      model: input.model,
+      skillId: execution.meta.skillUsed,
+      sourceIds: execution.meta.sourceIds,
+      sourceCount: execution.meta.sourceCount,
+    });
+
+    this.sessionRepo.touch(session.id);
+    return {
+      session: this.sessionRepo.getById(session.id) ?? session,
+      userMessage,
+      assistantMessage,
+      meta: execution.meta,
+    };
+  }
+
+  /**
+   * Provider 네이티브 스트리밍으로 메시지 전송.
+   * onChunk 콜백을 통해 실시간 토큰을 Renderer에 전달.
+   */
+  async sendMessageWithStream(
+    input: SendMessageInput,
+    onChunk: (chunk: StreamChunk) => void,
+  ): Promise<SendMessageOutput> {
+    const execution = this.skillRegistry.resolveSkillExecution({
+      skillId: input.skillId,
+      sourceIds: input.sourceIds,
+      context: {
+        domainPack: input.domainPack,
+        dataType: "chat",
+        message: input.message,
+        caseContext: input.caseContext,
+      },
+    });
+
+    const provider = this.providers.get(input.provider);
+    if (!provider) {
+      throw new Error(`Unsupported provider: ${input.provider}`);
+    }
+
+    const session = await this.resolveSession(input);
+
+    if (session.provider !== input.provider) {
+      throw new Error(
+        "Provider cannot be changed inside an existing session. Create a new session."
+      );
+    }
+
+    const userMessage = this.messageRepo.append(
+      session.id,
+      "user",
+      input.message
+    );
+    const historyMessages = this.messageRepo
+      .listBySession(session.id, 100)
+      .slice(0, -1);
+
+    const history = this.toProviderHistory(historyMessages);
+    const tokenRecord = await this.secureStore.get(input.provider);
+    if (!tokenRecord?.accessToken) {
+      throw new Error(
+        `${input.provider} is not authenticated. Complete OAuth first.`
+      );
+    }
+
+    const message = this.composeMessage(input.message, execution.promptContext);
+
+    let llmResult;
+    if (provider.sendMessageStream) {
+      llmResult = await provider.sendMessageStream(
+        tokenRecord,
+        { model: input.model, message, history },
+        onChunk,
+      );
+    } else {
+      // 스트리밍 미지원 Provider: 동기 호출 후 전체 내용을 한 번에 전달
+      llmResult = await provider.sendMessage(tokenRecord, {
+        model: input.model,
+        message,
+        history,
+      });
+      onChunk({ delta: llmResult.content });
+    }
+
+    const assistantMessage = this.messageRepo.append(
+      session.id,
+      "assistant",
+      llmResult.content,
+      llmResult.inputTokens,
+      llmResult.outputTokens,
+      execution.meta.sources
+    );
+
+    this.auditRepo.append({
+      id: randomUUID(),
+      sessionId: session.id,
+      runId: null,
+      timestamp: new Date().toISOString(),
+      domainPack: input.domainPack,
+      action: "send_message_stream",
       externalTransfer: true,
       policyDecision: "ALLOWED",
       provider: input.provider,
@@ -220,7 +332,7 @@ export class ChatRuntime {
   ): Array<{ role: "user" | "assistant" | "system"; content: string }> {
     return messages
       .filter((message) => message.role === "user" || message.role === "assistant")
-      .slice(-10)
+      .slice(-this._chatHistoryLimit)
       .map((message) => ({
         role: message.role,
         content: message.content,

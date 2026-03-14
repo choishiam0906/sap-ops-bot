@@ -1,4 +1,4 @@
-# CLAUDE.md - SAP Assistant Desktop Platform v3.0.0
+# CLAUDE.md - SAP Assistant Desktop Platform v5.0.0
 
 ## 프로젝트 개요
 
@@ -10,7 +10,7 @@
 - **UI 라이브러리**: lucide-react (아이콘)
 - **스타일**: CSS 변수 시스템 (Tailwind/CSS-in-JS 미사용)
 
-**버전**: v3.0.0
+**버전**: v5.0.0
 
 ---
 
@@ -60,8 +60,14 @@ Renderer (React)
   - `auditHandlers`
   - `authHandlers`
   - `cboHandlers`
-  - `chatHandlers`
+  - `chatHandlers` (스트리밍 포함)
   - `sourceHandlers`
+  - `closingHandlers`
+  - `routineHandlers`
+  - `archiveHandlers`
+  - `agentHandlers`
+  - `scheduleHandlers` (v5.0)
+  - `policyHandlers` (v5.0)
 
 ### 스타일 시스템
 - **변수 파일**: `src/renderer/styles/variables.css`
@@ -211,9 +217,19 @@ desktop/
 
 ---
 
+### v5.0 신규 기능
+- **DB 마이그레이션 시스템**: `src/main/storage/migrationRunner.ts` + `migrations/`
+- **LLM 스트리밍**: Provider 레벨 `sendMessageStream()`, IPC 스트리밍 채널
+- **스케줄 자동 실행**: `node-cron` 기반 `RoutineScheduler`, Cockpit SchedulePanel
+- **정책 엔진**: `PolicyEngine` + DB 기반 규칙 관리, Settings PolicySettingsPage
+- **에러 복원력**: `ProviderResilience` (Retry + Circuit Breaker + Fallback)
+- **Chat History 설정화**: configurable history window (2~100)
+- **다크 모드**: CSS 변수 + data-theme 속성 전환 (이미 v4에서 준비됨)
+
 ## 최근 변경 이력
 
 | 버전 | 날짜 | 변경 사항 |
 |------|------|----------|
+| 5.0.0 | 2026-03-11 | v5.0 전체 구현: 스트리밍, 스케줄, 정책 엔진, 에러 복원력, DB 마이그레이션 |
 | 3.0.0 | 2026-03-09 | 프로젝트별 CLAUDE.md 작성 (초안) |
 

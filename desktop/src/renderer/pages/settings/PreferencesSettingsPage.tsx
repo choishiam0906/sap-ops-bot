@@ -2,12 +2,13 @@ import {
   SettingsSection,
   SettingsCard,
   SettingsInput,
+  SettingsRow,
   SettingsSelect,
 } from '../../components/settings/primitives/index.js'
 import { useSettingsStore } from '../../stores/settingsStore.js'
 
 export function PreferencesSettingsPage() {
-  const { userName, setUserName, language, setLanguage } = useSettingsStore()
+  const { userName, setUserName, language, setLanguage, chatHistoryLimit, setChatHistoryLimit } = useSettingsStore()
 
   return (
     <div className="sp-page page-enter">
@@ -36,6 +37,22 @@ export function PreferencesSettingsPage() {
                     { value: 'en', label: 'English' },
                   ]}
                 />
+              </SettingsCard>
+            </SettingsSection>
+
+            <SettingsSection title="채팅">
+              <SettingsCard>
+                <SettingsRow label={`대화 히스토리 (${chatHistoryLimit}개 메시지)`}>
+                  <input
+                    type="range"
+                    min={2}
+                    max={50}
+                    value={chatHistoryLimit}
+                    onChange={(e) => setChatHistoryLimit(Number(e.target.value))}
+                    style={{ width: 200, accentColor: 'var(--color-primary)' }}
+                    aria-label="대화 히스토리 메시지 수"
+                  />
+                </SettingsRow>
               </SettingsCard>
             </SettingsSection>
 

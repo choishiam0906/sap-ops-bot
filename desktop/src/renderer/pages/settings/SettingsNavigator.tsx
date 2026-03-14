@@ -1,7 +1,7 @@
 import type { SettingsCategory } from '../../components/settings/types.js'
 import {
   Monitor, Sparkles, Palette, Keyboard,
-  FolderCog, ShieldCheck, Tag, Command, User,
+  FolderCog, ShieldCheck, Tag, Command, User, Shield,
 } from 'lucide-react'
 
 const CATEGORIES: { id: SettingsCategory; label: string; desc: string; Icon: typeof Monitor }[] = [
@@ -14,6 +14,7 @@ const CATEGORIES: { id: SettingsCategory; label: string; desc: string; Icon: typ
   { id: 'labels', label: 'Labels', desc: '세션 레이블 관리', Icon: Tag },
   { id: 'shortcuts', label: 'Shortcuts', desc: '키보드 단축키', Icon: Command },
   { id: 'preferences', label: 'Preferences', desc: '사용자 설정', Icon: User },
+  { id: 'policy', label: 'Policy', desc: '정책 규칙 관리', Icon: Shield },
 ]
 
 interface SettingsNavigatorProps {

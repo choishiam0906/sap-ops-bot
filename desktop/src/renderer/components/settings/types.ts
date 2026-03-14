@@ -8,3 +8,4 @@ export type SettingsCategory =
   | 'labels'
   | 'shortcuts'
   | 'preferences'
+  | 'policy'

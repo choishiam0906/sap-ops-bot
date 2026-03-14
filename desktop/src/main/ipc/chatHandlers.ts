@@ -12,6 +12,39 @@ export function registerChatHandlers(ctx: IpcContext): void {
     return ctx.chatRuntime.sendMessage(input);
   });
 
+  ipcMain.handle("chat:stream-message", async (_event, input: SendMessageInput) => {
+    const win = ctx.getMainWindow();
+    try {
+      const result = await ctx.chatRuntime.sendMessageWithStream(input, (chunk) => {
+        if (win && !win.isDestroyed()) {
+          win.webContents.send("chat:stream-chunk", chunk);
+        }
+      });
+      if (win && !win.isDestroyed()) {
+        win.webContents.send("chat:stream-done", {
+          session: result.session,
+          assistantMessage: result.assistantMessage,
+          meta: result.meta,
+        });
+      }
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (win && !win.isDestroyed()) {
+        win.webContents.send("chat:stream-error", { error: message });
+      }
+      throw err;
+    }
+  });
+
+  ipcMain.handle("chat:set-history-limit", (_event, limit: number) => {
+    ctx.chatRuntime.chatHistoryLimit = limit;
+  });
+
+  ipcMain.handle("chat:get-history-limit", () => {
+    return ctx.chatRuntime.chatHistoryLimit;
+  });
+
   ipcMain.handle("chat:stop", async () => {
     const runtime = ctx.chatRuntime as unknown as Record<string, unknown>;
     if (typeof runtime["stopGeneration"] === "function") {

@@ -19,7 +19,12 @@ import type {
   VaultRepository,
 } from "../storage/repositories.js";
 import type { RoutineExecutor } from "../services/routineExecutor.js";
+import type { RoutineScheduler } from "../services/routineScheduler.js";
 import type { AgentExecutor } from "../agents/executor.js";
+import type { ScheduledTaskRepository } from "../storage/repositories/scheduledTaskRepository.js";
+import type { ScheduleLogRepository } from "../storage/repositories/scheduleLogRepository.js";
+import type { PolicyEngine } from "../policy/policyEngine.js";
+import type { ApprovalManager } from "../policy/approvalManager.js";
 
 export interface IpcContext {
   oauthManager: OAuthManager;
@@ -39,7 +44,12 @@ export interface IpcContext {
   routineTemplateRepo: RoutineTemplateRepository;
   routineExecutionRepo: RoutineExecutionRepository;
   routineExecutor: RoutineExecutor;
+  routineScheduler: RoutineScheduler;
+  scheduledTaskRepo: ScheduledTaskRepository;
+  scheduleLogRepo: ScheduleLogRepository;
   agentExecutionRepo: AgentExecutionRepository;
   agentExecutor: AgentExecutor;
+  policyEngine: PolicyEngine;
+  approvalManager: ApprovalManager;
   getMainWindow: () => BrowserWindow | null;
 }

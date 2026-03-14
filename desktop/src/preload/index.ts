@@ -95,6 +95,33 @@ const desktopApi = {
   sendMessage(input: SendMessageInput) {
     return ipcRenderer.invoke("chat:send", input);
   },
+  streamMessage(input: SendMessageInput) {
+    return ipcRenderer.invoke("chat:stream-message", input);
+  },
+  onStreamChunk(callback: (chunk: { delta: string; inputTokens?: number; outputTokens?: number }) => void) {
+    const handler = (_event: Electron.IpcRendererEvent, data: { delta: string; inputTokens?: number; outputTokens?: number }) =>
+      callback(data);
+    ipcRenderer.on("chat:stream-chunk", handler);
+    return () => { ipcRenderer.removeListener("chat:stream-chunk", handler); };
+  },
+  onStreamDone(callback: (data: { session: unknown; assistantMessage: unknown; meta: unknown }) => void) {
+    const handler = (_event: Electron.IpcRendererEvent, data: { session: unknown; assistantMessage: unknown; meta: unknown }) =>
+      callback(data);
+    ipcRenderer.on("chat:stream-done", handler);
+    return () => { ipcRenderer.removeListener("chat:stream-done", handler); };
+  },
+  onStreamError(callback: (data: { error: string }) => void) {
+    const handler = (_event: Electron.IpcRendererEvent, data: { error: string }) =>
+      callback(data);
+    ipcRenderer.on("chat:stream-error", handler);
+    return () => { ipcRenderer.removeListener("chat:stream-error", handler); };
+  },
+  setChatHistoryLimit(limit: number): Promise<void> {
+    return ipcRenderer.invoke("chat:set-history-limit", limit);
+  },
+  getChatHistoryLimit(): Promise<number> {
+    return ipcRenderer.invoke("chat:get-history-limit");
+  },
   stopGeneration(): Promise<void> {
     return ipcRenderer.invoke("chat:stop");
   },
@@ -360,6 +387,59 @@ const desktopApi = {
   },
   openAgentFolder(): Promise<void> {
     return ipcRenderer.invoke("agents:openFolder");
+  },
+
+  // ─── Policy (정책 엔진) API ───
+
+  listPolicyRules() {
+    return ipcRenderer.invoke("policy:rules:list");
+  },
+  createPolicyRule(input: { name: string; description?: string; conditions: unknown[]; action: string; priority?: number }) {
+    return ipcRenderer.invoke("policy:rules:create", input);
+  },
+  updatePolicyRule(id: string, patch: Record<string, unknown>) {
+    return ipcRenderer.invoke("policy:rules:update", id, patch);
+  },
+  deletePolicyRule(id: string) {
+    return ipcRenderer.invoke("policy:rules:delete", id);
+  },
+  evaluatePolicy(context: { action: string; provider?: string; domainPack?: string; skillId?: string; externalTransfer?: boolean }) {
+    return ipcRenderer.invoke("policy:evaluate", context);
+  },
+  listPendingApprovals() {
+    return ipcRenderer.invoke("policy:approvals:list");
+  },
+  decideApproval(requestId: string, approved: boolean) {
+    return ipcRenderer.invoke("policy:approvals:decide", requestId, approved);
+  },
+
+  // ─── Schedule (스케줄 자동 실행) API ───
+
+  listScheduledTasks() {
+    return ipcRenderer.invoke("schedule:list");
+  },
+  createScheduledTask(input: { templateId: string; cronExpression: string; enabled?: boolean }) {
+    return ipcRenderer.invoke("schedule:create", input);
+  },
+  updateScheduledTask(id: string, patch: { cronExpression?: string; enabled?: boolean }) {
+    return ipcRenderer.invoke("schedule:update", id, patch);
+  },
+  deleteScheduledTask(id: string) {
+    return ipcRenderer.invoke("schedule:delete", id);
+  },
+  executeScheduleNow(id: string) {
+    return ipcRenderer.invoke("schedule:execute-now", id);
+  },
+  listScheduleLogs(taskId: string, limit?: number) {
+    return ipcRenderer.invoke("schedule:logs", taskId, limit);
+  },
+  listRecentScheduleLogs(limit?: number) {
+    return ipcRenderer.invoke("schedule:logs:recent", limit);
+  },
+  onScheduleExecutionComplete(callback: (data: unknown) => void) {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data);
+    ipcRenderer.on("schedule:execution-complete", handler);
+    return () => { ipcRenderer.removeListener("schedule:execution-complete", handler); };
   },
 
   // ─── 커스텀 스킬 CRUD ───

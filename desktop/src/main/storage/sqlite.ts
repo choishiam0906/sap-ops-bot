@@ -3,6 +3,9 @@ import { dirname } from "node:path";
 
 import Database from "better-sqlite3";
 
+import { MigrationRunner } from "./migrationRunner.js";
+import { allMigrations } from "./migrations/index.js";
+
 export class LocalDatabase {
   private readonly db: Database.Database;
 
@@ -12,6 +15,12 @@ export class LocalDatabase {
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
     this.initSchema();
+    this.runMigrations();
+  }
+
+  private runMigrations(): void {
+    const runner = new MigrationRunner(this.db);
+    runner.run(allMigrations);
   }
 
   private initSchema(): void {

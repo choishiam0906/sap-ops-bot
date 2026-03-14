@@ -10,3 +10,7 @@ export { ClosingStepRepository } from "./repositories/closingStepRepository.js";
 export { RoutineTemplateRepository } from "./repositories/routineTemplateRepository.js";
 export { RoutineExecutionRepository } from "./repositories/routineExecutionRepository.js";
 export { AgentExecutionRepository } from "./repositories/agentExecutionRepository.js";
+export { ScheduledTaskRepository } from "./repositories/scheduledTaskRepository.js";
+export type { ScheduledTaskRow, ScheduledTaskInput } from "./repositories/scheduledTaskRepository.js";
+export { ScheduleLogRepository } from "./repositories/scheduleLogRepository.js";
+export type { ScheduleLogRow } from "./repositories/scheduleLogRepository.js";

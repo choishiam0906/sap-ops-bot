@@ -3,6 +3,7 @@ import type { DomainPack } from './policy.js';
 
 export type AuditAction =
   | "send_message"
+  | "send_message_stream"
   | "analyze_cbo"
   | "sync_knowledge"
   | "stream_message";

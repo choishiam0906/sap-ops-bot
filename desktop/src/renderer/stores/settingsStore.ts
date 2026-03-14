@@ -20,6 +20,7 @@ interface SettingsState {
   userName: string
   language: Language
   thinkingLevel: ThinkingLevel
+  chatHistoryLimit: number
 
   setTheme: (theme: Theme) => void
   setDefaultProvider: (provider: ProviderType) => void
@@ -32,6 +33,7 @@ interface SettingsState {
   setUserName: (n: string) => void
   setLanguage: (l: Language) => void
   setThinkingLevel: (l: ThinkingLevel) => void
+  setChatHistoryLimit: (v: number) => void
 }
 
 function getInitialTheme(): Theme {
@@ -152,6 +154,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   notificationsEnabled: getInitialBoolean('sap-ops-notifications', true),
   userName: getInitialString('sap-ops-user-name', ''),
   language: getInitialLanguage(),
+  chatHistoryLimit: Number(getInitialString('sap-ops-chat-history-limit', '10')),
   thinkingLevel: getInitialThinkingLevel(),
   setTheme: (theme) => {
     applyTheme(theme)
@@ -200,5 +203,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setThinkingLevel: (thinkingLevel) => {
     persistValue('sap-ops-thinking-level', thinkingLevel)
     set({ thinkingLevel })
+  },
+  setChatHistoryLimit: (chatHistoryLimit) => {
+    const clamped = Math.max(2, Math.min(100, chatHistoryLimit))
+    persistValue('sap-ops-chat-history-limit', String(clamped))
+    // Main 프로세스에도 동기화
+    try { window.sapOpsDesktop?.setChatHistoryLimit(clamped) } catch { /* 무시 */ }
+    set({ chatHistoryLimit: clamped })
   },
 }))

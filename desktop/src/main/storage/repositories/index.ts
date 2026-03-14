@@ -9,3 +9,5 @@ export { ClosingPlanRepository } from "./closingPlanRepository.js";
 export { ClosingStepRepository } from "./closingStepRepository.js";
 export { RoutineTemplateRepository } from "./routineTemplateRepository.js";
 export { RoutineExecutionRepository } from "./routineExecutionRepository.js";
+export { ScheduledTaskRepository } from "./scheduledTaskRepository.js";
+export { ScheduleLogRepository } from "./scheduleLogRepository.js";
