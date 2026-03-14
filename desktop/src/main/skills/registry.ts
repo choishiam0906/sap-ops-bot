@@ -3,7 +3,7 @@ import type {
   ConfiguredSourceRepository,
   SourceDocumentRepository,
   VaultRepository,
-} from "../storage/repositories.js";
+} from "../storage/repositories/index.js";
 import type {
   DomainPack,
   SkillPackDefinition,

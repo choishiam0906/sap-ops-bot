@@ -12,7 +12,7 @@ import {
 } from "./contracts.js";
 import { SecureStore } from "./auth/secureStore.js";
 import { LlmProvider, StreamChunk } from "./providers/base.js";
-import { AuditRepository, MessageRepository, SessionRepository } from "./storage/repositories.js";
+import { AuditRepository, MessageRepository, SessionRepository } from "./storage/repositories/index.js";
 import { SkillSourceRegistry } from "./skills/registry.js";
 
 export class ChatRuntime {

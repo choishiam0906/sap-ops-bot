@@ -2,7 +2,14 @@ import { useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { ChatSession, SapSkillDefinition } from '../../../main/contracts.js'
-import { useChatStore } from '../../stores/chatStore.js'
+import {
+  useChatSession,
+  useChatInput,
+  useChatProvider,
+  useChatError,
+  useChatSkillSources,
+  useChatStreaming,
+} from '../../stores/chatStore.js'
 import { useChatUIStore } from '../../stores/chatUIStore.js'
 import { useMessages } from '../../hooks/useMessages.js'
 import { useSendMessage } from '../../hooks/useSendMessage.js'
@@ -24,14 +31,17 @@ interface ChatDetailProps {
 
 export function ChatDetail({ currentSession }: ChatDetailProps) {
   const queryClient = useQueryClient()
+  const { currentSessionId, setCurrentSessionId } = useChatSession()
+  const { input, setInput } = useChatInput()
+  const { provider, model, setProvider, setModel } = useChatProvider()
+  const { error, setError, clearError } = useChatError()
   const {
-    currentSessionId, input, provider, model, error,
     selectedSkillId, selectedSourceIds, caseContext, lastExecutionMeta,
-    isStreaming, streamingContent, streamingMeta,
-    setCurrentSessionId, setInput, setProvider, setModel,
-    setError, clearError, setSelectedSkillId, setSelectedSourceIds,
-    toggleSourceId, setLastExecutionMeta, resetStreaming,
-  } = useChatStore()
+    setSelectedSkillId, setSelectedSourceIds, toggleSourceId, setLastExecutionMeta,
+  } = useChatSkillSources()
+  const {
+    isStreaming, streamingContent, streamingMeta, resetStreaming,
+  } = useChatStreaming()
   const { skillsCollapsed, sourcesCollapsed, toggleSkillsCollapsed, toggleSourcesCollapsed } = useChatUIStore()
   const domainPack = useWorkspaceStore((state) => state.domainPack)
 

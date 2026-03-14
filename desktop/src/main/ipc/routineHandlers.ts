@@ -7,64 +7,35 @@ import type {
   RoutineFrequency,
 } from "../contracts.js";
 import type { IpcContext } from "./types.js";
+import { registerCrudHandlers } from "./helpers/registerCrudHandlers.js";
 
 export function registerRoutineHandlers(ctx: IpcContext): void {
-  // ─── Template CRUD ───
-
-  ipcMain.handle("routine:templates:list", () => {
-    return ctx.routineTemplateRepo.list();
+  // ─── 순수 패스쓰루 ───
+  registerCrudHandlers({
+    "routine:templates:list": () => ctx.routineTemplateRepo.list(),
+    "routine:templates:listByFrequency": (frequency: RoutineFrequency) =>
+      ctx.routineTemplateRepo.listByFrequency(frequency, false),
+    "routine:templates:create": (input: RoutineTemplateInput) =>
+      ctx.routineTemplateRepo.create(input),
+    "routine:templates:update": (payload: { id: string; patch: RoutineTemplateUpdate }) =>
+      ctx.routineTemplateRepo.update(payload.id, payload.patch),
+    "routine:templates:delete": (id: string) => ctx.routineTemplateRepo.delete(id),
+    "routine:templates:toggle": (id: string) => ctx.routineTemplateRepo.toggle(id),
+    "routine:knowledge:list": (templateId: string) =>
+      ctx.routineKnowledgeLinkRepo.listByTemplateId(templateId),
+    "routine:knowledge:link": (input: RoutineKnowledgeLinkInput) =>
+      ctx.routineKnowledgeLinkRepo.upsert(input),
+    "routine:knowledge:unlink": (id: string) => ctx.routineKnowledgeLinkRepo.delete(id),
+    "routine:execute:now": () => ctx.routineExecutor.executeDueRoutines(),
+    "routine:executions:list": (date?: string) => ctx.routineExecutionRepo.listByDate(date),
+    "routine:executions:planIds": (date: string) => ctx.routineExecutionRepo.getPlanIdsByDate(date),
   });
 
-  ipcMain.handle("routine:templates:listByFrequency", (_e, frequency: RoutineFrequency) => {
-    return ctx.routineTemplateRepo.listByFrequency(frequency, false);
-  });
-
+  // ─── 커스텀 로직 (template + steps 결합) ───
   ipcMain.handle("routine:templates:get", (_e, id: string) => {
     const template = ctx.routineTemplateRepo.getById(id);
     if (!template) return null;
     const steps = ctx.routineTemplateRepo.getSteps(id);
     return { template, steps };
-  });
-
-  ipcMain.handle("routine:templates:create", (_e, input: RoutineTemplateInput) => {
-    return ctx.routineTemplateRepo.create(input);
-  });
-
-  ipcMain.handle("routine:templates:update", (_e, payload: { id: string; patch: RoutineTemplateUpdate }) => {
-    return ctx.routineTemplateRepo.update(payload.id, payload.patch);
-  });
-
-  ipcMain.handle("routine:templates:delete", (_e, id: string) => {
-    return ctx.routineTemplateRepo.delete(id);
-  });
-
-  ipcMain.handle("routine:templates:toggle", (_e, id: string) => {
-    return ctx.routineTemplateRepo.toggle(id);
-  });
-
-  ipcMain.handle("routine:knowledge:list", (_e, templateId: string) => {
-    return ctx.routineKnowledgeLinkRepo.listByTemplateId(templateId);
-  });
-
-  ipcMain.handle("routine:knowledge:link", (_e, input: RoutineKnowledgeLinkInput) => {
-    return ctx.routineKnowledgeLinkRepo.upsert(input);
-  });
-
-  ipcMain.handle("routine:knowledge:unlink", (_e, id: string) => {
-    return ctx.routineKnowledgeLinkRepo.delete(id);
-  });
-
-  // ─── Execution ───
-
-  ipcMain.handle("routine:execute:now", () => {
-    return ctx.routineExecutor.executeDueRoutines();
-  });
-
-  ipcMain.handle("routine:executions:list", (_e, date?: string) => {
-    return ctx.routineExecutionRepo.listByDate(date);
-  });
-
-  ipcMain.handle("routine:executions:planIds", (_e, date: string) => {
-    return ctx.routineExecutionRepo.getPlanIdsByDate(date);
   });
 }

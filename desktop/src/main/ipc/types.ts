@@ -15,15 +15,15 @@ import type {
   RoutineExecutionRepository,
   RoutineKnowledgeLinkRepository,
   RoutineTemplateRepository,
+  ScheduledTaskRepository,
+  ScheduleLogRepository,
   SessionRepository,
   SourceDocumentRepository,
   VaultRepository,
-} from "../storage/repositories.js";
+} from "../storage/repositories/index.js";
 import type { RoutineExecutor } from "../services/routineExecutor.js";
 import type { RoutineScheduler } from "../services/routineScheduler.js";
 import type { AgentExecutor } from "../agents/executor.js";
-import type { ScheduledTaskRepository } from "../storage/repositories/scheduledTaskRepository.js";
-import type { ScheduleLogRepository } from "../storage/repositories/scheduleLogRepository.js";
 import type { PolicyEngine } from "../policy/policyEngine.js";
 import type { ApprovalManager } from "../policy/approvalManager.js";
 

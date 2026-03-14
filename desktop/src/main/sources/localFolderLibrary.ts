@@ -15,7 +15,7 @@ import type {
 import {
   ConfiguredSourceRepository,
   SourceDocumentRepository,
-} from "../storage/repositories.js";
+} from "../storage/repositories/index.js";
 
 const DEFAULT_INCLUDE_GLOBS = ["**/*.txt", "**/*.md", "**/*.log"];
 const DEFAULT_EXTENSIONS = new Set([".txt", ".md", ".log"]);

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 import type { CaseContext, ProviderType, SkillExecutionMeta } from '../../main/contracts.js'
 import { DEFAULT_MODELS } from '../../main/contracts.js'
 import { useSettingsStore } from './settingsStore.js'
@@ -77,3 +78,49 @@ export const useChatStore = create<ChatUIState>((set) => ({
   resetStreaming: () =>
     set({ isStreaming: false, streamingContent: '', streamingMeta: null }),
 }))
+
+// ─── 셀렉터 훅 (부분 구독으로 불필요 리렌더링 방지) ───
+
+export const useChatInput = () =>
+  useChatStore(useShallow((s) => ({ input: s.input, setInput: s.setInput })))
+
+export const useChatSession = () =>
+  useChatStore(useShallow((s) => ({
+    currentSessionId: s.currentSessionId,
+    setCurrentSessionId: s.setCurrentSessionId,
+  })))
+
+export const useChatProvider = () =>
+  useChatStore(useShallow((s) => ({
+    provider: s.provider,
+    model: s.model,
+    setProvider: s.setProvider,
+    setModel: s.setModel,
+  })))
+
+export const useChatStreaming = () =>
+  useChatStore(useShallow((s) => ({
+    isStreaming: s.isStreaming,
+    streamingContent: s.streamingContent,
+    streamingMeta: s.streamingMeta,
+    setIsStreaming: s.setIsStreaming,
+    appendStreamingContent: s.appendStreamingContent,
+    setStreamingMeta: s.setStreamingMeta,
+    resetStreaming: s.resetStreaming,
+  })))
+
+export const useChatSkillSources = () =>
+  useChatStore(useShallow((s) => ({
+    selectedSkillId: s.selectedSkillId,
+    selectedSourceIds: s.selectedSourceIds,
+    caseContext: s.caseContext,
+    lastExecutionMeta: s.lastExecutionMeta,
+    setSelectedSkillId: s.setSelectedSkillId,
+    setSelectedSourceIds: s.setSelectedSourceIds,
+    setCaseContext: s.setCaseContext,
+    toggleSourceId: s.toggleSourceId,
+    setLastExecutionMeta: s.setLastExecutionMeta,
+  })))
+
+export const useChatError = () =>
+  useChatStore(useShallow((s) => ({ error: s.error, setError: s.setError, clearError: s.clearError })))

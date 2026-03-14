@@ -2,7 +2,14 @@ import { useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MessageSquare, Sparkles, ShieldCheck, Code, Database, CheckCircle2 } from 'lucide-react'
 import type { ChatSession, SapSkillDefinition, SapSourceDefinition } from '../../main/contracts.js'
-import { useChatStore } from '../stores/chatStore.js'
+import {
+  useChatStore,
+  useChatSession,
+  useChatInput,
+  useChatProvider,
+  useChatError,
+  useChatSkillSources,
+} from '../stores/chatStore.js'
 import { useSessions } from '../hooks/useSessions.js'
 import { useMessages } from '../hooks/useMessages.js'
 import { useSendMessage } from '../hooks/useSendMessage.js'
@@ -22,28 +29,21 @@ const api = window.sapOpsDesktop
 
 export function ChatPage() {
   const queryClient = useQueryClient()
+  const { currentSessionId, setCurrentSessionId } = useChatSession()
+  const { input, setInput } = useChatInput()
+  const { provider, model, setProvider, setModel } = useChatProvider()
+  const { error, setError, clearError } = useChatError()
   const {
-    currentSessionId,
-    input,
-    provider,
-    model,
-    error,
     selectedSkillId,
     selectedSourceIds,
     caseContext,
     lastExecutionMeta,
-    setCurrentSessionId,
-    setInput,
-    setProvider,
-    setModel,
-    setError,
-    clearError,
     setSelectedSkillId,
     setSelectedSourceIds,
     setCaseContext,
     toggleSourceId,
     setLastExecutionMeta,
-  } = useChatStore()
+  } = useChatSkillSources()
   const { authenticatedTypes } = useAuthenticatedProviders()
   const domainPack = useWorkspaceStore((state) => state.domainPack)
   const packDetail = DOMAIN_PACK_DETAILS[domainPack]

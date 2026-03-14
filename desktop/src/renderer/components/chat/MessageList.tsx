@@ -3,7 +3,7 @@ import { ThumbsUp, ThumbsDown, BookOpen, ChevronDown, ChevronUp } from 'lucide-r
 import type { ChatMessage, SourceReference } from '../../../main/contracts.js'
 import { MarkdownRenderer } from '../MarkdownRenderer.js'
 import { SkeletonMessage } from '../ui/Skeleton.js'
-import { useChatStore } from '../../stores/chatStore.js'
+import { useChatStreaming } from '../../stores/chatStore.js'
 
 interface MessageListProps {
   messages: ChatMessage[]
@@ -45,7 +45,7 @@ function SourceCitations({ sources }: { sources: SourceReference[] }) {
 
 export function MessageList({ messages, onFeedback }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null)
-  const { isStreaming, streamingContent } = useChatStore()
+  const { isStreaming, streamingContent } = useChatStreaming()
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })

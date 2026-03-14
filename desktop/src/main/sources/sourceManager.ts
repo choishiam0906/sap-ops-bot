@@ -7,7 +7,7 @@ import type {
 import {
   ConfiguredSourceRepository,
   SourceDocumentRepository,
-} from "../storage/repositories.js";
+} from "../storage/repositories/index.js";
 import { LocalFolderSourceLibrary } from "./localFolderLibrary.js";
 import { McpConnector, type McpServerConfig } from "./mcpConnector.js";
 

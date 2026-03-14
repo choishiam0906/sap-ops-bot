@@ -7,49 +7,15 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { OAuthManager } from "./auth/oauthManager.js";
-import { SecureStore } from "./auth/secureStore.js";
-import { OpenAiProvider } from "./providers/openaiProvider.js";
-import { AnthropicProvider } from "./providers/anthropicProvider.js";
-import { GoogleProvider } from "./providers/googleProvider.js";
-import { CopilotProvider } from "./providers/copilotProvider.js";
-import { ChatRuntime } from "./chatRuntime.js";
-import { CboAnalyzer } from "./cbo/analyzer.js";
-import { CboBatchRuntime } from "./cbo/batchRuntime.js";
-import {
-  AgentExecutionRepository,
-  AuditRepository,
-  CboAnalysisRepository,
-  ClosingPlanRepository,
-  ClosingStepRepository,
-  ConfiguredSourceRepository,
-  MessageRepository,
-  ProviderAccountRepository,
-  RoutineExecutionRepository,
-  RoutineKnowledgeLinkRepository,
-  RoutineTemplateRepository,
-  ScheduledTaskRepository,
-  ScheduleLogRepository,
-  SessionRepository,
-  SourceDocumentRepository,
-  VaultRepository,
-} from "./storage/repositories.js";
-import { RoutineExecutor } from "./services/routineExecutor.js";
-import { RoutineScheduler } from "./services/routineScheduler.js";
-import { seedRoutineTemplates } from "./services/routineSeedData.js";
-import { AgentExecutor } from "./agents/executor.js";
-import { LocalDatabase } from "./storage/sqlite.js";
+import { createRepositories } from "./bootstrap/createRepositories.js";
+import { createServices } from "./bootstrap/createServices.js";
+import { seedData } from "./bootstrap/seedData.js";
 import { loadConfig } from "./config.js";
-import { logger } from "./logger.js";
-import { SkillSourceRegistry } from "./skills/registry.js";
-import { LocalFolderSourceLibrary } from "./sources/localFolderLibrary.js";
-import { McpConnector } from "./sources/mcpConnector.js";
 import { registerAllIpcHandlers } from "./ipc/index.js";
 import type { IpcContext } from "./ipc/index.js";
-import { PolicyEngine } from "./policy/policyEngine.js";
-import { ApprovalManager } from "./policy/approvalManager.js";
 import { registerPolicyHandlers } from "./ipc/policyHandlers.js";
-import { DEFAULT_POLICY_RULES } from "./policy/policyRules.js";
+import { logger } from "./logger.js";
+import { LocalDatabase } from "./storage/sqlite.js";
 
 let mainWindow: BrowserWindow | null = null;
 const mainDir = fileURLToPath(new URL(".", import.meta.url));
@@ -63,110 +29,13 @@ function initRuntime(): void {
   const dbPath = join(app.getPath("userData"), "sap-ops-bot.sqlite");
   const db = new LocalDatabase(dbPath);
 
-  const sessionRepo = new SessionRepository(db);
-  const messageRepo = new MessageRepository(db);
-  const accountRepo = new ProviderAccountRepository(db);
-  const analysisRepo = new CboAnalysisRepository(db);
-  const configuredSourceRepo = new ConfiguredSourceRepository(db);
-  const sourceDocumentRepo = new SourceDocumentRepository(db);
-  const secureStore = new SecureStore("sap-ops-bot-desktop");
-
-  const openaiProvider = new OpenAiProvider(config.openaiApiBaseUrl);
-  const anthropicProvider = new AnthropicProvider(config.anthropicApiBaseUrl);
-  const googleProvider = new GoogleProvider(config.googleApiBaseUrl);
-
-  const auditRepo = new AuditRepository(db);
-  const vaultRepo = new VaultRepository(db);
-  const closingPlanRepo = new ClosingPlanRepository(db);
-  const closingStepRepo = new ClosingStepRepository(db);
-  const routineTemplateRepo = new RoutineTemplateRepository(db);
-  const routineExecutionRepo = new RoutineExecutionRepository(db);
-  const routineKnowledgeLinkRepo = new RoutineKnowledgeLinkRepository(db);
-
-  // 시드 데이터: 첫 실행 시 기본 SAP 루틴 템플릿 삽입
-  seedRoutineTemplates(routineTemplateRepo);
-
-  const routineExecutor = new RoutineExecutor(
-    routineTemplateRepo, routineExecutionRepo, closingPlanRepo, closingStepRepo
-  );
-
-  // 앱 시작 시 루틴 자동 실행
-  routineExecutor.executeDueRoutines();
-
-  // 스케줄 자동 실행
-  const scheduledTaskRepo = new ScheduledTaskRepository(db);
-  const scheduleLogRepo = new ScheduleLogRepository(db);
-  const routineScheduler = new RoutineScheduler(
-    scheduledTaskRepo, scheduleLogRepo, routineExecutor, () => mainWindow
-  );
-  routineScheduler.startAll();
-
-  const agentExecutionRepo = new AgentExecutionRepository(db);
-
-  const localFolderLibrary = new LocalFolderSourceLibrary(configuredSourceRepo, sourceDocumentRepo);
-  const mcpConnector = new McpConnector(configuredSourceRepo, sourceDocumentRepo);
-
-  const copilotProvider = new CopilotProvider();
-  const providers = [openaiProvider, anthropicProvider, googleProvider, copilotProvider];
-  const skillRegistry = new SkillSourceRegistry(
-    vaultRepo,
-    analysisRepo,
-    configuredSourceRepo,
-    sourceDocumentRepo
-  );
-  const chatRuntime = new ChatRuntime(
-    providers, secureStore, sessionRepo, messageRepo,
-    auditRepo, skillRegistry
-  );
-  const oauthManager = new OAuthManager(secureStore, accountRepo, config);
-
-  // 정책 엔진 초기화
-  const policyEngine = new PolicyEngine(db);
-  const approvalManager = new ApprovalManager();
-
-  // 기본 정책 규칙 시드 (규칙이 없을 때만)
-  if (policyEngine.listRules().length === 0) {
-    for (const rule of DEFAULT_POLICY_RULES) {
-      policyEngine.createRule(rule);
-    }
-  }
-
-  const agentExecutor = new AgentExecutor(chatRuntime, skillRegistry, agentExecutionRepo);
-
-  const cboAnalyzer = new CboAnalyzer(providers, secureStore);
-  const cboBatchRuntime = new CboBatchRuntime(
-    cboAnalyzer,
-    analysisRepo,
-    config.backendApiBaseUrl,
-    vaultRepo
-  );
+  const repos = createRepositories(db);
+  const services = createServices(config, repos, db, () => mainWindow);
+  seedData(repos, services);
 
   ipcContext = {
-    oauthManager,
-    chatRuntime,
-    cboAnalyzer,
-    cboBatchRuntime,
-    auditRepo,
-    vaultRepo,
-    sessionRepo,
-    skillRegistry,
-    configuredSourceRepo,
-    sourceDocumentRepo,
-    localFolderLibrary,
-    mcpConnector,
-    closingPlanRepo,
-    closingStepRepo,
-    routineTemplateRepo,
-    routineExecutionRepo,
-    routineKnowledgeLinkRepo,
-    routineExecutor,
-    routineScheduler,
-    scheduledTaskRepo,
-    scheduleLogRepo,
-    agentExecutionRepo,
-    agentExecutor,
-    policyEngine,
-    approvalManager,
+    ...repos,
+    ...services,
     getMainWindow: () => mainWindow,
   };
 }

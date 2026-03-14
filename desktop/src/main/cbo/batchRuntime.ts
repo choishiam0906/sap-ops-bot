@@ -16,7 +16,7 @@ import {
   CboSyncKnowledgeInput,
   CboSyncKnowledgeOutput,
 } from "../contracts.js";
-import { CboAnalysisRepository, VaultRepository } from "../storage/repositories.js";
+import { CboAnalysisRepository, VaultRepository } from "../storage/repositories/index.js";
 import { CboAnalyzer } from "./analyzer.js";
 import { parseCboFile } from "./parser.js";
 

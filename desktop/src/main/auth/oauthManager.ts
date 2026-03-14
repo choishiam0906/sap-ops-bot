@@ -8,7 +8,7 @@ import {
   SetApiKeyInput,
 } from "../contracts.js";
 import type { AppConfig } from "../config.js";
-import { ProviderAccountRepository } from "../storage/repositories.js";
+import { ProviderAccountRepository } from "../storage/repositories/index.js";
 import { SecureStore } from "./secureStore.js";
 import { randomCodeVerifier, codeChallenge, randomState } from "./pkce.js";
 import {

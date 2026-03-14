@@ -1,12 +1,17 @@
 import { ipcMain } from "electron";
 import type { IpcContext } from "./types.js";
 import type { ScheduledTaskInput } from "../storage/repositories/scheduledTaskRepository.js";
+import { registerCrudHandlers } from "./helpers/registerCrudHandlers.js";
 
 export function registerScheduleHandlers(ctx: IpcContext): void {
-  ipcMain.handle("schedule:list", () => {
-    return ctx.scheduledTaskRepo.list();
+  // ─── 순수 패스쓰루 ───
+  registerCrudHandlers({
+    "schedule:list": () => ctx.scheduledTaskRepo.list(),
+    "schedule:logs": (taskId: string, limit?: number) => ctx.scheduleLogRepo.listByTask(taskId, limit),
+    "schedule:logs:recent": (limit?: number) => ctx.scheduleLogRepo.listRecent(limit),
   });
 
+  // ─── 사이드 이펙트 핸들러 (scheduler 연동) ───
   ipcMain.handle("schedule:create", (_event, input: ScheduledTaskInput) => {
     const task = ctx.scheduledTaskRepo.create(input);
     if (task.enabled) {
@@ -34,13 +39,5 @@ export function registerScheduleHandlers(ctx: IpcContext): void {
 
   ipcMain.handle("schedule:execute-now", async (_event, id: string) => {
     await ctx.routineScheduler.executeNow(id);
-  });
-
-  ipcMain.handle("schedule:logs", (_event, taskId: string, limit?: number) => {
-    return ctx.scheduleLogRepo.listByTask(taskId, limit);
-  });
-
-  ipcMain.handle("schedule:logs:recent", (_event, limit?: number) => {
-    return ctx.scheduleLogRepo.listRecent(limit);
   });
 }

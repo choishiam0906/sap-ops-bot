@@ -8,44 +8,26 @@ import type {
   PlanStatus,
 } from "../contracts.js";
 import type { IpcContext } from "./types.js";
+import { registerCrudHandlers } from "./helpers/registerCrudHandlers.js";
 
 export function registerClosingHandlers(ctx: IpcContext): void {
-  // ─── Plan CRUD ───
-
-  ipcMain.handle("cockpit:plans:list", (_e, limit?: number) => {
-    return ctx.closingPlanRepo.list(limit);
+  // ─── Plan CRUD (순수 패스쓰루) ───
+  registerCrudHandlers({
+    "cockpit:plans:list": (limit?: number) => ctx.closingPlanRepo.list(limit),
+    "cockpit:plans:get": (planId: string) => ctx.closingPlanRepo.getById(planId),
+    "cockpit:plans:create": (input: ClosingPlanInput) => ctx.closingPlanRepo.create(input),
+    "cockpit:plans:update": (payload: { planId: string; update: ClosingPlanUpdate }) =>
+      ctx.closingPlanRepo.update(payload.planId, payload.update),
+    "cockpit:plans:delete": (planId: string) => ctx.closingPlanRepo.delete(planId),
+    "cockpit:plans:listOverdue": () => ctx.closingPlanRepo.listOverdue(),
+    "cockpit:plans:listByStatus": (status: PlanStatus) => ctx.closingPlanRepo.listByStatus(status),
+    "cockpit:stats": () => ctx.closingPlanRepo.getStats(),
+    "cockpit:steps:list": (planId: string) => ctx.closingStepRepo.listByPlan(planId),
+    "cockpit:steps:reorder": (payload: { planId: string; stepIds: string[] }) =>
+      ctx.closingStepRepo.reorder(payload.planId, payload.stepIds),
   });
 
-  ipcMain.handle("cockpit:plans:get", (_e, planId: string) => {
-    return ctx.closingPlanRepo.getById(planId);
-  });
-
-  ipcMain.handle("cockpit:plans:create", (_e, input: ClosingPlanInput) => {
-    return ctx.closingPlanRepo.create(input);
-  });
-
-  ipcMain.handle("cockpit:plans:update", (_e, payload: { planId: string; update: ClosingPlanUpdate }) => {
-    return ctx.closingPlanRepo.update(payload.planId, payload.update);
-  });
-
-  ipcMain.handle("cockpit:plans:delete", (_e, planId: string) => {
-    return ctx.closingPlanRepo.delete(planId);
-  });
-
-  ipcMain.handle("cockpit:plans:listOverdue", () => {
-    return ctx.closingPlanRepo.listOverdue();
-  });
-
-  ipcMain.handle("cockpit:plans:listByStatus", (_e, status: PlanStatus) => {
-    return ctx.closingPlanRepo.listByStatus(status);
-  });
-
-  // ─── Step CRUD ───
-
-  ipcMain.handle("cockpit:steps:list", (_e, planId: string) => {
-    return ctx.closingStepRepo.listByPlan(planId);
-  });
-
+  // ─── Step 사이드 이펙트 핸들러 (recalcProgress) ───
   ipcMain.handle("cockpit:steps:create", (_e, input: ClosingStepInput) => {
     const step = ctx.closingStepRepo.create(input);
     ctx.closingPlanRepo.recalcProgress(input.planId);
@@ -66,15 +48,5 @@ export function registerClosingHandlers(ctx: IpcContext): void {
       ctx.closingPlanRepo.recalcProgress(planId);
     }
     return deleted;
-  });
-
-  ipcMain.handle("cockpit:steps:reorder", (_e, payload: { planId: string; stepIds: string[] }) => {
-    ctx.closingStepRepo.reorder(payload.planId, payload.stepIds);
-  });
-
-  // ─── Stats ───
-
-  ipcMain.handle("cockpit:stats", () => {
-    return ctx.closingPlanRepo.getStats();
   });
 }

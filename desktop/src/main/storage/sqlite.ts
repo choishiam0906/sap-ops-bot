@@ -30,6 +30,10 @@ export class LocalDatabase {
         title TEXT NOT NULL,
         provider TEXT NOT NULL,
         model TEXT NOT NULL,
+        todo_state TEXT DEFAULT 'open',
+        is_flagged INTEGER DEFAULT 0,
+        is_archived INTEGER DEFAULT 0,
+        labels TEXT DEFAULT '[]',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -41,6 +45,7 @@ export class LocalDatabase {
         content TEXT NOT NULL,
         input_tokens INTEGER NOT NULL DEFAULT 0,
         output_tokens INTEGER NOT NULL DEFAULT 0,
+        source_references_json TEXT DEFAULT '[]',
         created_at TEXT NOT NULL,
         FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
       );
@@ -106,6 +111,9 @@ export class LocalDatabase {
 
       CREATE INDEX IF NOT EXISTS idx_sessions_updated
       ON sessions (updated_at);
+
+      CREATE INDEX IF NOT EXISTS idx_sessions_cockpit
+      ON sessions (is_archived, todo_state, is_flagged, updated_at DESC);
 
       CREATE INDEX IF NOT EXISTS idx_analysis_runs_started
       ON analysis_runs (started_at DESC);
@@ -198,50 +206,6 @@ export class LocalDatabase {
       CREATE INDEX IF NOT EXISTS idx_source_documents_domain
       ON source_documents (domain_pack, indexed_at DESC);
     `);
-
-    // 마이그레이션: 기존 DB에 auth_type 컬럼 추가
-    try {
-      this.db.exec(`ALTER TABLE provider_accounts ADD COLUMN auth_type TEXT`);
-    } catch {
-      // 이미 존재하면 무시 (duplicate column name 에러)
-    }
-    try {
-      this.db.exec(`ALTER TABLE audit_logs ADD COLUMN skill_id TEXT`);
-    } catch {
-      // 이미 존재하면 무시
-    }
-    try {
-      this.db.exec(`ALTER TABLE audit_logs ADD COLUMN source_ids TEXT`);
-    } catch {
-      // 이미 존재하면 무시
-    }
-    try {
-      this.db.exec(`ALTER TABLE audit_logs ADD COLUMN source_count INTEGER NOT NULL DEFAULT 0`);
-    } catch {
-      // 이미 존재하면 무시
-    }
-
-    // Cockpit 컬럼 마이그레이션
-    for (const col of [
-      "ALTER TABLE sessions ADD COLUMN todo_state TEXT DEFAULT 'open'",
-      "ALTER TABLE sessions ADD COLUMN is_flagged INTEGER DEFAULT 0",
-      "ALTER TABLE sessions ADD COLUMN is_archived INTEGER DEFAULT 0",
-      "ALTER TABLE sessions ADD COLUMN labels TEXT DEFAULT '[]'",
-    ]) {
-      try { this.db.exec(col); } catch { /* 이미 존재 */ }
-    }
-
-    this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_sessions_cockpit
-      ON sessions (is_archived, todo_state, is_flagged, updated_at DESC)
-    `);
-
-    // Sources → Chat: 메시지에 소스 참조 저장
-    try {
-      this.db.exec(`ALTER TABLE messages ADD COLUMN source_references_json TEXT DEFAULT '[]'`);
-    } catch {
-      // 이미 존재하면 무시
-    }
 
     // ─── Closing (마감 관리) 테이블 ───
     this.db.exec(`

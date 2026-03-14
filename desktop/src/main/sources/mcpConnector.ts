@@ -12,7 +12,7 @@ import type {
 import {
   ConfiguredSourceRepository,
   SourceDocumentRepository,
-} from "../storage/repositories.js";
+} from "../storage/repositories/index.js";
 import { logger } from "../logger.js";
 
 export interface McpServerConfig {
